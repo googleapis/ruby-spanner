@@ -2,10 +2,10 @@ source "http://rubygems.org"
 
 gemspec
 
-gem "google-cloud-core", path: "../google-cloud-core"
-gem "google-cloud-errors", path: "../google-cloud-errors"
-gem "google-cloud-spanner-admin-database-v1", path: "../google-cloud-spanner-admin-database-v1"
-gem "google-cloud-spanner-admin-instance-v1", path: "../google-cloud-spanner-admin-instance-v1"
-gem "google-cloud-spanner-v1", path: "../google-cloud-spanner-v1"
+gem "google-cloud-core", "~> 1.6.0"
+gem "google-cloud-errors", "~> 1.2.0"
+gem "google-cloud-spanner-admin-database-v1", ">= 0.11.0"
+gem "google-cloud-spanner-admin-instance-v1", ">= 0.7.0"
+gem "google-cloud-spanner-v1", ">= 0.10.0"
 
 gem "rake"
