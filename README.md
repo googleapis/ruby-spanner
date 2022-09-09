@@ -34,7 +34,7 @@ db.transaction do |tx|
   results = tx.execute_query "SELECT * FROM users"
 
   results.rows.each do |row|
-    puts "User #{row[:id]} is #{row[:name]}"
+    puts "User #{row[:id]} is #{row[:name]}."
   end
 end
 ```
