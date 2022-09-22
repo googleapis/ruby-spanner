@@ -25,7 +25,7 @@ describe "Spanner Instances Client", :spanner do
     client.delete_instance name: instance_path
   end
 
-  it "creates, gets, updates, and deletes an instance" do
+  it "creates, gets, updates and deletes an instance" do
     instance_config_path = client.instance_config_path project: spanner.project, instance_config: "regional-asia-south1"
 
     instance = Google::Cloud::Spanner::Admin::Instance::V1::Instance.new name: instance_path,
