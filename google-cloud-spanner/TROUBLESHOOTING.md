@@ -26,6 +26,6 @@ improved, *please* create a new issue on GitHub so we can talk about it.
 
 [so-ruby]: http://stackoverflow.com/questions/tagged/google-cloud-platform+ruby+spanner
 
-[gh-search-ruby]: https://github.com/googlecloudplatform/google-cloud-ruby/issues?q=label%3A%22api%3A+spanner%22
+[gh-search-ruby]: https://github.com/googlecloudplatform/ruby-spanner/issues
 
-[gh-ruby]: https://github.com/googlecloudplatform/google-cloud-ruby/issues/new
+[gh-ruby]: https://github.com/googlecloudplatform/ruby-spanner/issues/new

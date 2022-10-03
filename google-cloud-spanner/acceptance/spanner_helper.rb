@@ -117,7 +117,7 @@ end
 
 # Create buckets to be shared with all the tests
 require "date"
-$spanner_instance_id = "google-cloud-ruby-tests"
+$spanner_instance_id = "ruby-spanner-tests"
 # $spanner_database_id is already 22 characters, can only add 7 additional characters
 $spanner_database_id = "gcruby-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
 $spanner_pg_database_id = "gcruby-pg-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
@@ -129,7 +129,7 @@ fixture.extend Acceptance::Fixtures
 instance = $spanner.instance $spanner_instance_id
 
 instance ||= begin
-  inst_job = $spanner.create_instance $spanner_instance_id, name: "google-cloud-ruby-tests",
+  inst_job = $spanner.create_instance $spanner_instance_id, name: "ruby-spanner-tests",
 config: "regional-us-central1", nodes: 1
   inst_job.wait_until_done!
   raise GRPC::BadStatus.new(inst_job.error.code, inst_job.error.message) if inst_job.error?

@@ -391,7 +391,7 @@ tool "report-failures" do
     encoded_dir = encode_str dir
     result = capture [
       "gh", "issue", "list",
-      "--repo", "googleapis/google-cloud-ruby",
+      "--repo", "googleapis/ruby-spanner",
       "--search", "#{encoded_dir} in:body state:open type:issue label:\"nightly failure\"",
       "--json", "number"
     ]
@@ -403,7 +403,7 @@ tool "report-failures" do
     body = create_body dir, tasks
     exec [
       "gh", "issue", "comment", issue_id.to_s,
-      "--repo", "googleapis/google-cloud-ruby",
+      "--repo", "googleapis/ruby-spanner",
       "--body", body
     ]
     puts "Added to issue #{issue_id}: reported #{dir}: #{tasks.join ', '}", :yellow
@@ -413,7 +413,7 @@ tool "report-failures" do
     body = "#{create_body dir, tasks}\n\n#{encode_str dir}"
     exec [
       "gh", "issue", "create",
-      "--repo", "googleapis/google-cloud-ruby",
+      "--repo", "googleapis/ruby-spanner",
       "--title", "[Nightly CI Failures] Failures detected for #{dir}",
       "--label", "type: bug,priority: p1,nightly failure",
       "--body", body,
