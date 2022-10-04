@@ -30,9 +30,9 @@ module Google
       #
       # NOTE: From `google-cloud-spanner/v2.11.0` onwards, new features for
       # mananging instances will only be available through the
-      # [google-cloud-spanner-admin-instance-v1](https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-spanner-admin-instance-v1)
+      # [google-cloud-spanner-admin-instance-v1](https://github.com/googleapis/ruby-spanner/tree/main/google-cloud-spanner-admin-instance-v1)
       # client. See the
-      # [README](https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-spanner#google-cloud-spanner)
+      # [README](https://github.com/googleapis/ruby-spanner/tree/main/google-cloud-spanner#google-cloud-spanner)
       # for further details.
       #
       # Represents a Cloud Spanner instance. Instances are dedicated Cloud

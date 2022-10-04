@@ -17,14 +17,14 @@ databases, instances and backups will only be available through the
 and
 [google-cloud-spanner-admin-database-v1](https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-spanner-admin-database-v1)
 packages**. The
-[`Database`](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-spanner/lib/google/cloud/spanner/database.rb),
+[`Database`](https://github.com/googleapis/ruby-spanner/blob/main/google-cloud-spanner/lib/google/cloud/spanner/database.rb),
 
-[`Instance`](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-spanner/lib/google/cloud/spanner/instance.rb) and
-[`Backup`](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-spanner/lib/google/cloud/spanner/backup.rb)
+[`Instance`](https://github.com/googleapis/ruby-spanner/blob/main/google-cloud-spanner/lib/google/cloud/spanner/instance.rb) and
+[`Backup`](https://github.com/googleapis/ruby-spanner/blob/main/google-cloud-spanner/lib/google/cloud/spanner/backup.rb)
 classes in
-[google-cloud-spanner](https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-spanner)
+[google-cloud-spanner](https://github.com/googleapis/ruby-spanner/tree/main/google-cloud-spanner)
 and methods related to database and instance management in the
-[`Project`](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-spanner/lib/google/cloud/spanner/project.rb)
+[`Project`](https://github.com/googleapis/ruby-spanner/blob/main/google-cloud-spanner/lib/google/cloud/spanner/project.rb)
 class,
 will no longer be updated to support new features. Please refer to the [FAQ](#faq-for-freezing-development-of-database-and-instance-classes)
 for further details.
@@ -140,7 +140,7 @@ instances will include code samples on how to use the feature through
 `google-cloud-spanner-admin-database-v1` in the documentation.
 
 Code samples on how to manage instances and databases can also be found in
-[OVERVIEW](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-spanner/OVERVIEW.md).
+[OVERVIEW](https://github.com/googleapis/ruby-spanner/blob/main/google-cloud-spanner/OVERVIEW.md).
 
 ## Supported Ruby Versions
 
@@ -178,7 +178,7 @@ This library is licensed under Apache 2.0. Full license text is available in
 ## Support
 
 Please [report bugs at the project on
-Github](https://github.com/googleapis/google-cloud-ruby/issues). Don't
+Github](https://github.com/googleapis/ruby-spanner/issues). Don't
 hesitate to [ask
 questions](http://stackoverflow.com/questions/tagged/google-cloud-ruby) about
 the client or APIs on [StackOverflow](http://stackoverflow.com).

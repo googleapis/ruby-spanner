@@ -118,7 +118,7 @@ $ bundle exec rake acceptance
 
 ### Integration Tests
 
-The ruby-spanner integration tests are end-to-end tests that validate library functionality on real Google Cloud Platform hosting environments. The integration process deploys several Rack-based applications to Google Cloud Platform one by one, then validates google-cloud-ruby code by making requests to these test applications.
+The ruby-spanner integration tests are end-to-end tests that validate library functionality on real Google Cloud Platform hosting environments. The integration process deploys several Rack-based applications to Google Cloud Platform one by one, then validates ruby-spanner code by making requests to these test applications.
 
 See the [integration/README.md](integration/README.md) for instructions on how to setup for the integration tests and other details.
 
