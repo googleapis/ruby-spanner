@@ -1,5 +1,11 @@
 # Release History
 
+### 2.16.1 (2022-10-31)
+
+#### Documentation
+
+* Update gemspace and documentation ([#14](https://github.com/googleapis/ruby-spanner/issues/14)) 
+
 ### 2.16.0 (2022-10-25)
 
 #### Features
