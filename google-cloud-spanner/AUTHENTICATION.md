@@ -32,7 +32,7 @@ client = Google::Cloud::Spanner.new
 ## Project and Credential Lookup
 
 The google-cloud-spanner library aims to make authentication
-as simple as possible, and provides several mechanisms to configure your system
+as simple as possible and provides several mechanisms to configure your system
 without providing **Project ID** and **Service Account Credentials** directly in
 code.
 
