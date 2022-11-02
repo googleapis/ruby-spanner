@@ -1,5 +1,15 @@
 # Release History
 
+### 2.17.0 (2022-11-02)
+
+#### Features
+
+* Support fine grained access control ([#17](https://github.com/googleapis/ruby-spanner/issues/17)) 
+* support pg jsonb ([#20](https://github.com/googleapis/ruby-spanner/issues/20)) 
+#### Documentation
+
+* Update gemspace and documentation ([#14](https://github.com/googleapis/ruby-spanner/issues/14)) 
+
 ### 2.16.0 (2022-10-25)
 
 #### Features
