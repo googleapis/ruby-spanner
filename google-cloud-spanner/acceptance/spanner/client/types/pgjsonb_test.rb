@@ -69,7 +69,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and reads array of json" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     db.upsert table_name, { id: id, json_array: json_array_params }
     results = db.read table_name, [:id, :json_array], keys: id
@@ -80,7 +79,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and queries array of json" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     db.upsert table_name, { id: id, json_array: json_array_params }
     results = db.execute_query "SELECT id, json_array FROM #{table_name} WHERE id = $1", params: { p1: id }
@@ -91,7 +89,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and reads array of json with NULL" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     params = [nil].concat json_array_params
     db.upsert table_name, { id: id, json_array: params }
@@ -103,7 +100,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and queries array of json with NULL" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     params = [nil].concat json_array_params
     db.upsert table_name, { id: id, json_array: params }
@@ -115,7 +111,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and reads empty array of json" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     db.upsert table_name, { id: id, json_array: [] }
     results = db.read table_name, [:id, :json_array], keys: id
@@ -126,7 +121,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and queries empty array of json array" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     db.upsert table_name, { id: id, json_array: [] }
     results = db.execute_query "SELECT id, json_array FROM #{table_name} WHERE id = $1", params: { p1: id }
@@ -137,7 +131,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and reads NULL array of json" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     db.upsert table_name, { id: id, json_array: nil }
     results = db.read table_name, [:id, :json_array], keys: id
@@ -148,7 +141,6 @@ describe "Spanner Client", :types, :json, :spanner do
   end
 
   it "writes and queries NULL array of json" do
-    skip "Arrays not supported yet"
     id = SecureRandom.int64
     db.upsert table_name, { id: id, json_array: nil }
     results = db.execute_query "SELECT id, json_array FROM #{table_name} WHERE id = $1", params: { p1: id }
