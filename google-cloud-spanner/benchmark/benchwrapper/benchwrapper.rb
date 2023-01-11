@@ -86,7 +86,7 @@ def main
   end
 
   addr = "0.0.0.0:#{port}"
-  s = GRPC::RpcServer.new pool_size: 40
+  s = GRPC::RpcServer.new pool_size: 50
   s.add_http2_port(addr, :this_port_is_insecure)
   puts "starting benchwrapper for Spanner on localhost:#{addr}"
   s.handle(ServerImpl.new)
