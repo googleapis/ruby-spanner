@@ -91,7 +91,7 @@ def main
   puts "starting benchwrapper for Spanner on localhost:#{addr}"
   s.handle(ServerImpl.new)
   # Runs the server with SIGHUP, SIGINT and SIGQUIT signal handlers to 
-  #   gracefully shutdown.
+  #  gracefully shutdown.
   # User could also choose to run server via call to run_till_terminated
   s.run_till_terminated_or_interrupted([1, 'int', 'SIGQUIT'])
 end
