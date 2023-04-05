@@ -225,7 +225,6 @@ module Google
           resume_token && !resume_token.empty?
         end
 
-
         ##
         # @private
         # Resumes a request, by re-executing it with a resume token.

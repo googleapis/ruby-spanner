@@ -1816,7 +1816,7 @@ module Google
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
             rescue GRPC::Aborted,
-                   Google::Cloud::AbortedError, 
+                   Google::Cloud::AbortedError,
                    GRPC::Internal,
                    Google::Cloud::InternalError => e
               raise e if internal_error_and_not_retryable? e
@@ -2272,10 +2272,10 @@ module Google
           nil
         end
 
-        def internal_error_and_not_retryable? e
-          (e.instance_of?(Google::Cloud::InternalError) ||
-          e.instance_of?(GRPC::Internal)) &&
-          !@project.service.retryable?(e)  
+        def internal_error_and_not_retryable? error
+          (error.instance_of?(Google::Cloud::InternalError) ||
+          error.instance_of?(GRPC::Internal)) &&
+            !@project.service.retryable?(error)
         end
       end
     end
