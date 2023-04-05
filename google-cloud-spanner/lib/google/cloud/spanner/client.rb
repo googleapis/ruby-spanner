@@ -1815,7 +1815,11 @@ module Google
                 call_options: call_options
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
-            rescue GRPC::Aborted, Google::Cloud::AbortedError => e
+            rescue GRPC::Aborted,
+                   Google::Cloud::AbortedError, 
+                   GRPC::Internal,
+                   Google::Cloud::InternalError => e
+              raise e if internal_error_and_not_retryable? e
               # Re-raise if deadline has passed
               if current_time - start_time > deadline
                 if e.is_a? GRPC::BadStatus
@@ -2266,6 +2270,12 @@ module Google
         rescue StandardError
           # Any error indicates the backoff should be handled elsewhere
           nil
+        end
+
+        def internal_error_and_not_retryable? e
+          (e.instance_of?(Google::Cloud::InternalError) ||
+          e.instance_of?(GRPC::Internal)) &&
+          !@project.service.retryable?(e)  
         end
       end
     end

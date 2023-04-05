@@ -388,6 +388,103 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
+  it "retries internal error with rst stream error" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        update: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1, "Charlie", false]).list_value]
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    spanner.service.mocked_service = mock
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+      session: session_grpc.name, options: tx_opts, request_options: nil
+    }, default_options]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+
+    mock.expect :begin_transaction, transaction_grpc, [{
+      session: session_grpc.name, options: tx_opts, request_options: nil
+    }, default_options]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+
+    # transaction checkin
+    mock.expect :begin_transaction, transaction_grpc, [{
+      session: session_grpc.name, options: tx_opts, request_options: nil
+    }, default_options]
+
+    def mock.commit *args
+      # first time called this will raise
+      if @called == nil
+        @called = true
+        raise GRPC::Internal.new "Received RST_STREAM error"
+      end
+      # second call will return correct response
+      Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: Google::Protobuf::Timestamp.new()
+    end
+    mock.expect :sleep, nil, [1.3]
+
+    client.define_singleton_method :sleep do |count|
+      # call the mock to satisfy the expectation
+      mock.sleep count
+    end
+
+    results = nil
+    client.transaction do |tx|
+      _(tx).must_be_kind_of Google::Cloud::Spanner::Transaction
+      results = tx.execute_query "SELECT * FROM users"
+      tx.update "users", [{ id: 1, name: "Charlie", active: false }]
+    end
+
+    assert_results results
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "raises internal error if non retryable" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        update: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1, "Charlie", false]).list_value]
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    spanner.service.mocked_service = mock
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+      session: session_grpc.name, options: tx_opts, request_options: nil
+    }, default_options]
+    
+
+    def mock.commit *args
+      # first time called this will raise
+      if @called == nil
+        @called = true
+        raise GRPC::Internal.new "Other error"
+      end
+      # second call will return correct response expect to be not called twice
+      Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: Google::Protobuf::Timestamp.new()
+    end
+    
+    assert_raises GRPC::Internal do
+      client.transaction do |tx|
+        _(tx).must_be_kind_of Google::Cloud::Spanner::Transaction
+      end
+    end
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 
