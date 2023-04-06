@@ -24,7 +24,7 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
     p.all_sessions = [session]
-    p.session_queue = [session]
+    p.session_stack = [session]
     p
   end
 
@@ -49,8 +49,8 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 1
-    _(pool.transaction_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 1
 
     mock.verify
   end
@@ -77,8 +77,8 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 1
-    _(pool.transaction_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 1
 
     mock.verify
   end
@@ -105,8 +105,8 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 5
-    _(pool.session_queue.size).must_equal 2
-    _(pool.transaction_queue.size).must_equal 3
+    _(pool.session_stack.size).must_equal 2
+    _(pool.transaction_stack.size).must_equal 3
 
     mock.verify
   end
@@ -135,8 +135,8 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 8
-    _(pool.session_queue.size).must_equal 6
-    _(pool.transaction_queue.size).must_equal 2
+    _(pool.session_stack.size).must_equal 6
+    _(pool.transaction_stack.size).must_equal 2
 
     mock.verify
   end

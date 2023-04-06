@@ -26,7 +26,7 @@ describe Google::Cloud::Spanner::Pool, :close, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
     p.all_sessions = [session]
-    p.session_queue = [session]
+    p.session_stack = [session]
     p
   end
 

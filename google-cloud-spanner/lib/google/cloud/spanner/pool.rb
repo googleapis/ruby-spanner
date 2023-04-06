@@ -30,8 +30,8 @@ module Google
       #
       class Pool
         attr_accessor :all_sessions
-        attr_accessor :session_queue
-        attr_accessor :transaction_queue
+        attr_accessor :session_stack
+        attr_accessor :transaction_stack
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
                        write_ratio: 0.3, fail: true, threads: nil
@@ -69,9 +69,9 @@ module Google
 
               # Use LIFO to ensure sessions are used from backend caches, which
               # will reduce the read / write latencies on user requests.
-              read_session = session_queue.pop # LIFO
+              read_session = session_stack.pop # LIFO
               return read_session if read_session
-              write_transaction = transaction_queue.pop # LIFO
+              write_transaction = transaction_stack.pop # LIFO
               return write_transaction.session if write_transaction
 
               if can_allocate_more_sessions?
@@ -94,7 +94,7 @@ module Google
               raise ArgumentError, "Cannot checkin session"
             end
 
-            session_queue.push session
+            session_stack.push session
 
             @resource.signal
           end
@@ -121,9 +121,9 @@ module Google
             loop do
               raise ClientClosedError if @closed
 
-              write_transaction = transaction_queue.pop # LIFO
+              write_transaction = transaction_stack.pop # LIFO
               return write_transaction if write_transaction
-              read_session = session_queue.pop
+              read_session = session_stack.pop
               if read_session
                 action = read_session
                 break
@@ -151,7 +151,7 @@ module Google
               raise ArgumentError, "Cannot checkin session"
             end
 
-            transaction_queue.push txn
+            transaction_stack.push txn
 
             @resource.signal
           end
@@ -182,11 +182,11 @@ module Google
           to_release = []
 
           @mutex.synchronize do
-            available_count = session_queue.count + transaction_queue.count
+            available_count = session_stack.count + transaction_stack.count
             release_count = @min - available_count
             release_count = 0 if release_count.negative?
 
-            to_keepalive += (session_queue + transaction_queue).select do |x|
+            to_keepalive += (session_stack + transaction_stack).select do |x|
               x.idle_since? @keepalive
             end
 
@@ -196,8 +196,8 @@ module Google
 
             # Remove those to be released from circulation
             @all_sessions -= to_release.map(&:session)
-            @session_queue -= to_release
-            @transaction_queue -= to_release
+            @session_stack -= to_release
+            @transaction_stack -= to_release
           end
 
           to_release.each { |x| future { x.release! } }
@@ -212,7 +212,7 @@ module Google
             max_threads: @threads
           # init the queues
           @new_sessions_in_process = 0
-          @transaction_queue = []
+          @transaction_stack = []
           # init the keepalive task
           create_keepalive_task!
           # init session queue
@@ -224,7 +224,7 @@ module Google
           pending_transactions.each do |transaction|
             future { checkin_transaction transaction.create_transaction }
           end
-          @session_queue = sessions
+          @session_stack = sessions
         end
 
         def shutdown
@@ -238,8 +238,8 @@ module Google
           @mutex.synchronize do
             @all_sessions.each { |s| future { s.release! } }
             @all_sessions = []
-            @session_queue = []
-            @transaction_queue = []
+            @session_stack = []
+            @transaction_stack = []
           end
           # shutdown existing thread pool
           @thread_pool.shutdown
