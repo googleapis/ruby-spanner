@@ -46,6 +46,25 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_query, :mock_spanner 
     assert_partitions deserialized_partitions
   end
 
+  it "can execute a query with data_boost_enabled" do
+    mock = Minitest::Mock.new
+    sql = "SELECT * FROM users"
+    mock.expect :partition_query, partitions_resp, [{ session: session.path, sql: sql, transaction: tx_selector, params: nil, param_types: nil, partition_options: nil }, default_options]
+    batch_snapshot.session.service.mocked_service = mock
+
+    partitions = batch_snapshot.partition_query sql, data_boost_enabled: true
+
+    mock.verify
+
+    assert_partitions partitions
+
+    serialized_partitions = partitions.map(&:dump)
+    deserialized_partitions = serialized_partitions.map do |sp|
+      Google::Cloud::Spanner::Partition.load sp
+    end
+    assert_partitions deserialized_partitions, data_boost_enabled: true
+  end
+
   it "can execute a query with bool param" do
     mock = Minitest::Mock.new
     sql = "SELECT * FROM users WHERE active = @active"
@@ -436,7 +455,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_query, :mock_spanner 
     assert_partitions deserialized_partitions
   end
 
-  def assert_partitions partitions, sql = "SELECT * FROM users", params: nil, types: nil
+  def assert_partitions partitions, sql = "SELECT * FROM users", params: nil, types: nil, data_boost_enabled: nil
     _(partitions).must_be_kind_of Array
     _(partitions).wont_be :empty?
 
@@ -455,6 +474,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_query, :mock_spanner 
       end
       types_hash = Hash[Hash(types).map { |key, value| [key, value.to_h] }]
       _(partition.execute.param_types.to_h).must_equal types_hash
+      _(partition.execute.data_boost_enabled).must_equal true if !data_boost_enabled.nil?
 
       _(partition.read).must_be_nil
     end

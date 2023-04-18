@@ -188,6 +188,9 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
+        # @param [Boolean] data_boost_enabled  If this field is
+        #   set `true`, the request will be executed via offline access.
+        #   Defaults to `false`.
         #
         # @return [Array<Google::Cloud::Spanner::Partition>] The partitions
         #   created by the query partition.
@@ -211,7 +214,7 @@ module Google
         #
         def partition_query sql, params: nil, types: nil,
                             partition_size_bytes: nil, max_partitions: nil,
-                            query_options: nil, call_options: nil
+                            query_options: nil, call_options: nil, data_boost_enabled: false
           ensure_session!
 
           params, types = Convert.to_input_params_and_types params, types
@@ -231,7 +234,8 @@ module Google
                 param_types: types,
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
-                query_options: query_options
+                query_options: query_options,
+                data_boost_enabled: data_boost_enabled
               }.delete_if { |_, v| v.nil? }
             )
             Partition.from_execute_sql_grpc execute_sql_grpc
@@ -277,6 +281,9 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
+        # @param [Boolean] data_boost_enabled  If this field is
+        #   set `true`, the request will be executed via offline access.
+        #   Defaults to `false`.
         #
         # @return [Array<Google::Cloud::Spanner::Partition>] The partitions
         #   created by the read partition.
@@ -298,7 +305,7 @@ module Google
         #
         def partition_read table, columns, keys: nil, index: nil,
                            partition_size_bytes: nil, max_partitions: nil,
-                           call_options: nil
+                           call_options: nil, data_boost_enabled: false
           ensure_session!
 
           columns = Array(columns).map(&:to_s)
@@ -321,7 +328,8 @@ module Google
                 key_set: keys,
                 index: index,
                 transaction: tx_selector,
-                partition_token: grpc.partition_token
+                partition_token: grpc.partition_token,
+                data_boost_enabled: data_boost_enabled
               }.delete_if { |_, v| v.nil? }
             )
             Partition.from_read_grpc read_grpc
