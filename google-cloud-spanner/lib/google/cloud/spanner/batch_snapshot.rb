@@ -812,7 +812,8 @@ module Google
             transaction: partition.execute.transaction,
             partition_token: partition.execute.partition_token,
             query_options: query_options,
-            call_options: call_options
+            call_options: call_options,
+            data_boost_enabled: partition.execute.data_boost_enabled
         end
 
         def execute_partition_read partition, call_options: nil
@@ -822,7 +823,8 @@ module Google
                        index: partition.read.index,
                        transaction: partition.read.transaction,
                        partition_token: partition.read.partition_token,
-                       call_options: call_options
+                       call_options: call_options,
+                       data_boost_enabled: partition.read.data_boost_enabled
         end
       end
     end

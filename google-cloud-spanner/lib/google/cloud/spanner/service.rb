@@ -329,7 +329,7 @@ module Google
                                   params: nil, types: nil, resume_token: nil,
                                   partition_token: nil, seqno: nil,
                                   query_options: nil, request_options: nil,
-                                  call_options: nil
+                                  call_options: nil, data_boost_enabled: nil
           opts = default_options session_name: session_name,
                                  call_options: call_options
           request =  {
@@ -342,8 +342,9 @@ module Google
             partition_token: partition_token,
             seqno: seqno,
             query_options: query_options,
-            request_options: request_options
+            request_options: request_options,
           }
+          request[:data_boost_enabled] = data_boost_enabled if !data_boost_enabled.nil?
           service.execute_streaming_sql request, opts
         end
 
@@ -375,7 +376,8 @@ module Google
         def streaming_read_table session_name, table_name, columns, keys: nil,
                                  index: nil, transaction: nil, limit: nil,
                                  resume_token: nil, partition_token: nil,
-                                 request_options: nil, call_options: nil
+                                 request_options: nil, call_options: nil,
+                                 data_boost_enabled: nil
           opts = default_options session_name: session_name,
                                  call_options: call_options
           request = {
@@ -384,6 +386,7 @@ module Google
             limit: limit, resume_token: resume_token,
             partition_token: partition_token, request_options: request_options
           }
+          request[:data_boost_enabled] = data_boost_enabled if !data_boost_enabled.nil?
           service.streaming_read request, opts
         end
 
