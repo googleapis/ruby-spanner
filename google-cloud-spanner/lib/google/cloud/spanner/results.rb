@@ -309,7 +309,7 @@ module Google
             query_options: query_options, request_options: request_options,
             call_options: call_options
           }
-          execute_query_options[:data_boost_enabled] = data_boost_enabled if !data_boost_enabled.nil?
+          execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           enum = service.execute_streaming_sql session_path, sql,
                                                **execute_query_options
           from_enum(enum, service).tap do |results|
@@ -333,7 +333,7 @@ module Google
             call_options: call_options,
             data_boost_enabled: data_boost_enabled
           }
-          read_options[:data_boost_enabled] = data_boost_enabled if !data_boost_enabled.nil?
+          read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           enum = service.streaming_read_table \
             session_path, table, columns, **read_options
           from_enum(enum, service).tap do |results|
