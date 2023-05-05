@@ -48,7 +48,7 @@ module Google
           @mutex = Mutex.new
           @resource = ConditionVariable.new
 
-          # initialize pool and availability queue
+          # initialize pool and availability stack
           init
         end
 
@@ -210,17 +210,17 @@ module Google
           # init the thread pool
           @thread_pool = Concurrent::ThreadPoolExecutor.new \
             max_threads: @threads
-          # init the queues
+          # init the stacks
           @new_sessions_in_process = 0
           @transaction_stack = []
           # init the keepalive task
           create_keepalive_task!
-          # init session queue
+          # init session stack
           @all_sessions = @client.batch_create_new_sessions @min
           sessions = @all_sessions.dup
           num_transactions = (@min * @write_ratio).round
           pending_transactions = sessions.shift num_transactions
-          # init transaction queue
+          # init transaction stack
           pending_transactions.each do |transaction|
             future { checkin_transaction transaction.create_transaction }
           end
