@@ -36,6 +36,9 @@ module Google
         attr_accessor :lib_version
         attr_accessor :quota_project
 
+        RST_STREAM_INTERNAL_ERROR = "Received RST_STREAM".freeze
+        EOS_INTERNAL_ERROR = "Received unexpected EOS on DATA frame from server".freeze
+
         ##
         # Creates a new Service instance.
         def initialize project, credentials, quota_project: nil,
@@ -578,6 +581,21 @@ module Google
             encryption_config: encryption_config
           }
           databases.restore_database request, opts
+        end
+
+        ##
+        # Checks if a request can be retried. This is based on the error returned.
+        # Retryable errors are:
+        #   - Unavailable error
+        #   - Internal EOS error
+        #   - Internal RST_STREAM error
+        def retryable? err
+          err.instance_of?(Google::Cloud::UnavailableError) ||
+            err.instance_of?(GRPC::Unavailable) ||
+            (err.instance_of?(Google::Cloud::InternalError) && err.message.include?(EOS_INTERNAL_ERROR)) ||
+            (err.instance_of?(GRPC::Internal) && err.details.include?(EOS_INTERNAL_ERROR)) ||
+            (err.instance_of?(Google::Cloud::InternalError) && err.message.include?(RST_STREAM_INTERNAL_ERROR)) ||
+            (err.instance_of?(GRPC::Internal) && err.details.include?(RST_STREAM_INTERNAL_ERROR))
         end
 
         def inspect

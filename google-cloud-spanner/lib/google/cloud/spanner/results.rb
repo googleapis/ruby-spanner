@@ -41,8 +41,6 @@ module Google
       #   end
       #
       class Results
-        RST_STREAM_INTERNAL_ERROR = "Received RST_STREAM".freeze
-        EOS_INTERNAL_ERROR = "Received unexpected EOS on DATA frame from server".freeze
         ##
         # The read timestamp chosen for single-use snapshots (read-only
         # transactions).
@@ -177,7 +175,7 @@ module Google
 
               if resumable?(resume_token)
                 should_resume_request = true
-              elsif retryable?(err)
+              elsif @service.retryable?(err)
                 should_retry_request = true
               elsif err.is_a?(Google::Cloud::Error)
                 raise err
@@ -225,22 +223,6 @@ module Google
         # Checks if a request can be resumed by inspecting the resume token
         def resumable? resume_token
           resume_token && !resume_token.empty?
-        end
-
-        ##
-        # @private
-        # Checks if a request can be retried. This is based on the error returned.
-        # Retryable errors are:
-        #   - Unavailable error
-        #   - Internal EOS error
-        #   - Internal RST_STREAM error
-        def retryable? err
-          err.instance_of?(Google::Cloud::UnavailableError) ||
-            err.instance_of?(GRPC::Unavailable) ||
-            (err.instance_of?(Google::Cloud::InternalError) && err.message.include?(EOS_INTERNAL_ERROR)) ||
-            (err.instance_of?(GRPC::Internal) && err.details.include?(EOS_INTERNAL_ERROR)) ||
-            (err.instance_of?(Google::Cloud::InternalError) && err.message.include?(RST_STREAM_INTERNAL_ERROR)) ||
-            (err.instance_of?(GRPC::Internal) && err.details.include?(RST_STREAM_INTERNAL_ERROR))
         end
 
         ##

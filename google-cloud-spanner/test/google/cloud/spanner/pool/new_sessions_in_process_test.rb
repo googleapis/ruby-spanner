@@ -47,7 +47,7 @@ describe Google::Cloud::Spanner::Pool, :new_sessions_in_process, :mock_spanner d
     _(pool.session_stack.size).must_equal 1
     _(pool.instance_variable_get(:@new_sessions_in_process)).must_equal 0
 
-    s1 = pool.checkout_session # gets the one session from the queue
+    s1 = pool.checkout_session # gets the one session from the stack
 
     _(pool.all_sessions.size).must_equal 1
     _(pool.session_stack.size).must_equal 0
