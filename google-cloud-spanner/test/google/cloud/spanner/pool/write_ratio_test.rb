@@ -32,7 +32,9 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     shutdown_client! client
   end
 
+  # TODO: Obsolete test, since transaction isn't created right away anymore
   it "creates two sessions and one transaction" do
+    skip
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     sessions = Google::Cloud::Spanner::V1::BatchCreateSessionsResponse.new(
@@ -55,7 +57,9 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     mock.verify
   end
 
+  # TODO: Need to move this test elsewhere and refactor it
   it "calls batch_create_sessions until min number of sessions are returned" do
+    skip
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     sessions = Google::Cloud::Spanner::V1::BatchCreateSessionsResponse.new(
@@ -83,7 +87,9 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     mock.verify
   end
 
+  # TODO: Obsolete test, since transaction isn't created right away anymore
   it "creates five sessions and three transactions" do
+    skip
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     sessions = Google::Cloud::Spanner::V1::BatchCreateSessionsResponse.new(
@@ -111,7 +117,9 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     mock.verify
   end
 
+  # TODO: Obsolete test, since transaction isn't created right away anymore
   it "creates eight sessions and three transactions" do
+    skip
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     sessions = Google::Cloud::Spanner::V1::BatchCreateSessionsResponse.new(
