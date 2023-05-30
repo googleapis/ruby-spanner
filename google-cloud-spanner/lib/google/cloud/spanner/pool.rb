@@ -225,14 +225,14 @@ module Google
           create_keepalive_task!
           # init session stack
           @all_sessions = @client.batch_create_new_sessions @min
-          # sessions = @all_sessions.dup
+          sessions = @all_sessions.dup
           # num_transactions = (@min * @write_ratio).round
           # pending_transactions = sessions.shift num_transactions
           # init transaction stack
           # pending_transactions.each do |transaction|
           #   future { checkin_transaction transaction.create_transaction }
           # end
-          @session_stack = @all_sessions
+          @session_stack = sessions
         end
 
         def shutdown
