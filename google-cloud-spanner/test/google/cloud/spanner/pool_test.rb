@@ -184,8 +184,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_stack.size).must_equal 0
-    _(pool.transaction_stack.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 0
   end
 
   it "creates new transaction when needed" do
@@ -219,8 +219,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_stack.size).must_equal 0
-    _(pool.transaction_stack.size).must_equal 2
+    _(pool.session_stack.size).must_equal 2
+    _(pool.transaction_stack.size).must_equal 0
 
     mock.verify
   end
@@ -263,8 +263,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_stack.size).must_equal 0
-    _(pool.transaction_stack.size).must_equal 2
+    _(pool.session_stack.size).must_equal 2
+    _(pool.transaction_stack.size).must_equal 0
 
     mock.verify
   end
@@ -274,7 +274,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    # created when checking out
+    # created when checsing out
     mock.expect :begin_transaction, Google::Cloud::Spanner::V1::Transaction.new(id: "tx-001-01"), [{
       session: session_path(instance_id, database_id, session_id), options: tx_opts,
       request_options: nil
@@ -316,22 +316,22 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     pool.checkin_transaction tx4
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_stack.size).must_equal 0
-    _(pool.transaction_stack.size).must_equal 4
+    _(pool.session_stack.size).must_equal 4
+    _(pool.transaction_stack.size).must_equal 0
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_stack.size).must_equal 0
-    _(pool.transaction_stack.size).must_equal 2
+    _(pool.session_stack.size).must_equal 2
+    _(pool.transaction_stack.size).must_equal 0
 
     pool.checkin_session s1
     pool.checkin_session s2
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_stack.size).must_equal 2
-    _(pool.transaction_stack.size).must_equal 2
+    _(pool.session_stack.size).must_equal 4
+    _(pool.transaction_stack.size).must_equal 0
 
     shutdown_pool! pool
 
