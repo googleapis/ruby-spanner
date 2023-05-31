@@ -30,17 +30,7 @@ module Google
       #
       class Pool
         attr_accessor :all_sessions
-
-        ##
-        # @private
-        #
-        # Object of type [Array<Session>]
         attr_accessor :session_stack
-
-        ##
-        # @private
-        #
-        # Object of type [Array<Transaction>]
         attr_accessor :transaction_stack
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
@@ -49,6 +39,9 @@ module Google
           @min = min
           @max = max
           @keepalive = keepalive
+          @write_ratio = write_ratio
+          @write_ratio = 0 if write_ratio.negative?
+          @write_ratio = 1 if write_ratio > 1
           @fail = fail
           @threads = threads || [2, Concurrent.processor_count * 2].max
 
@@ -78,8 +71,8 @@ module Google
               # will reduce the read / write latencies on user requests.
               read_session = session_stack.pop # LIFO
               return read_session if read_session
-              # write_transaction = transaction_stack.pop # LIFO
-              # return write_transaction.session if write_transaction
+              write_transaction = transaction_stack.pop # LIFO
+              return write_transaction.session if write_transaction
 
               if can_allocate_more_sessions?
                 action = :new
@@ -128,8 +121,8 @@ module Google
             loop do
               raise ClientClosedError if @closed
 
-              # write_transaction = transaction_stack.pop # LIFO
-              # return write_transaction if write_transaction
+              write_transaction = transaction_stack.pop # LIFO
+              return write_transaction if write_transaction
               read_session = session_stack.pop
               if read_session
                 action = read_session
@@ -159,7 +152,6 @@ module Google
             end
 
             session_stack.push txn.session
-            # transaction_stack.push txn
 
             @resource.signal
           end
