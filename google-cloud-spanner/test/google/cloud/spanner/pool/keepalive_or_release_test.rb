@@ -69,49 +69,12 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     mock.verify
   end
 
-  it "calls keepalive on the transactions that need it" do
-    # update the session so it was last updated an hour ago
-    session.instance_variable_set :@last_updated_at, Time.now - 60*60
-    # set the session in the pool
-    pool.all_sessions = [session]
-    pool.transaction_stack = [transaction]
-
-    mock = Minitest::Mock.new
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    session.service.mocked_service = mock
-
-    pool.keepalive_or_release!
-
-    shutdown_pool! pool
-
-    mock.verify
-  end
-
   it "doesn't call keepalive on sessions that don't need it" do
     # update the session so it was last updated now
     session.instance_variable_set :@last_updated_at, Time.now
     # set the session in the pool
     pool.all_sessions = [session]
     pool.session_stack = [session]
-
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
-
-    pool.keepalive_or_release!
-
-    shutdown_pool! pool
-
-    mock.verify
-  end
-
-  it "doesn't call keepalive on transactions that don't need it" do
-    # update the session so it was last updated now
-    session.instance_variable_set :@last_updated_at, Time.now
-    # set the session in the pool
-    pool.all_sessions = [session]
-    pool.transaction_stack = [transaction]
 
     mock = Minitest::Mock.new
     session.service.mocked_service = mock

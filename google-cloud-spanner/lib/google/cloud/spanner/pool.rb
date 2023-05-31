@@ -178,11 +178,11 @@ module Google
           to_release = []
 
           @mutex.synchronize do
-            available_count = session_stack.count + transaction_stack.count
+            available_count = session_stack.count
             release_count = @min - available_count
             release_count = 0 if release_count.negative?
 
-            to_keepalive += (session_stack + transaction_stack).select do |x|
+            to_keepalive += session_stack.select do |x|
               x.idle_since? @keepalive
             end
 
@@ -193,7 +193,6 @@ module Google
             # Remove those to be released from circulation
             @all_sessions -= to_release.map(&:session)
             @session_stack -= to_release
-            @transaction_stack -= to_release
           end
 
           to_release.each { |x| future { x.release! } }
