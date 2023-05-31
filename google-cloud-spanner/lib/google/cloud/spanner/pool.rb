@@ -71,8 +71,6 @@ module Google
               # will reduce the read / write latencies on user requests.
               read_session = session_stack.pop # LIFO
               return read_session if read_session
-              write_transaction = transaction_stack.pop # LIFO
-              return write_transaction.session if write_transaction
 
               if can_allocate_more_sessions?
                 action = :new
@@ -121,8 +119,6 @@ module Google
             loop do
               raise ClientClosedError if @closed
 
-              write_transaction = transaction_stack.pop # LIFO
-              return write_transaction if write_transaction
               read_session = session_stack.pop
               if read_session
                 action = read_session
@@ -218,12 +214,6 @@ module Google
           # init session stack
           @all_sessions = @client.batch_create_new_sessions @min
           sessions = @all_sessions.dup
-          # num_transactions = (@min * @write_ratio).round
-          # pending_transactions = sessions.shift num_transactions
-          # init transaction stack
-          # pending_transactions.each do |transaction|
-          #   future { checkin_transaction transaction.create_transaction }
-          # end
           @session_stack = sessions
         end
 
