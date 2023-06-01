@@ -34,14 +34,11 @@ module Google
         attr_accessor :transaction_stack
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
-                       write_ratio: 0.3, fail: true, threads: nil
+                       fail: true, threads: nil
           @client = client
           @min = min
           @max = max
           @keepalive = keepalive
-          @write_ratio = write_ratio
-          @write_ratio = 0 if write_ratio.negative?
-          @write_ratio = 1 if write_ratio > 1
           @fail = fail
           @threads = threads || [2, Concurrent.processor_count * 2].max
 

@@ -515,11 +515,6 @@ module Google
         #     before an attempt is made to prevent the idle sessions from being
         #     closed by the Cloud Spanner service. The default is 1800 (30
         #     minutes).
-        #   * `:write_ratio` (Float) The ratio of sessions with pre-allocated
-        #     transactions to those without. Pre-allocating transactions
-        #     improves the performance of writes made by the client. The higher
-        #     the value, the more transactions are pre-allocated. The value must
-        #     be >= 0 and <= 1. The default is 0.3.
         #   * `:fail` (true/false) When `true` the client raises a
         #     {SessionLimitError} when the client has allocated the `max` number
         #     of sessions. When `false` the client blocks until a session
@@ -673,8 +668,10 @@ module Google
 
         def valid_session_pool_options opts = {}
           {
-            min: opts[:min], max: opts[:max], keepalive: opts[:keepalive],
-            write_ratio: opts[:write_ratio], fail: opts[:fail],
+            min: opts[:min],
+            max: opts[:max],
+            keepalive: opts[:keepalive],
+            fail: opts[:fail],
             threads: opts[:threads]
           }.delete_if { |_k, v| v.nil? }
         end

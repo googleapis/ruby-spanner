@@ -49,7 +49,7 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     mock.expect :batch_create_sessions, sessions_1, [{ database: database_path(instance_id, database_id), session_count: 2, session_template: nil }, default_options]
     mock.expect :batch_create_sessions, sessions_2, [{ database: database_path(instance_id, database_id), session_count: 1, session_template: nil }, default_options]
 
-    pool = Google::Cloud::Spanner::Pool.new client, min: 2, write_ratio: 0.5
+    pool = Google::Cloud::Spanner::Pool.new client, min: 2
 
     shutdown_pool! pool
 
