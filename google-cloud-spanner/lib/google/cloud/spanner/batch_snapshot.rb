@@ -232,7 +232,7 @@ module Google
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
                 query_options: query_options
-              }.delete_if { |_, v| v.nil? }
+              }.compact
             )
             Partition.from_execute_sql_grpc execute_sql_grpc
           end
@@ -322,7 +322,7 @@ module Google
                 index: index,
                 transaction: tx_selector,
                 partition_token: grpc.partition_token
-              }.delete_if { |_, v| v.nil? }
+              }.compact
             )
             Partition.from_read_grpc read_grpc
           end

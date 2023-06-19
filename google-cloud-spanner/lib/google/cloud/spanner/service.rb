@@ -141,7 +141,7 @@ module Google
             display_name: name, config: instance_config_path(config),
             node_count: nodes, processing_units: processing_units,
             labels: labels
-          }.delete_if { |_, v| v.nil? })
+          }.compact)
 
           request = {
             parent:      project_path,
@@ -470,7 +470,7 @@ module Google
                 read_timestamp: Convert.time_to_timestamp(timestamp),
                 exact_staleness: Convert.number_to_duration(staleness),
                 return_read_timestamp: true
-              }.delete_if { |_, v| v.nil? }
+              }.compact
             )
           )
           opts = default_options session_name: session_name,

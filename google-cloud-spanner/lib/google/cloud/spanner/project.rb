@@ -676,7 +676,7 @@ module Google
             min: opts[:min], max: opts[:max], keepalive: opts[:keepalive],
             write_ratio: opts[:write_ratio], fail: opts[:fail],
             threads: opts[:threads]
-          }.delete_if { |_k, v| v.nil? }
+          }.compact
         end
       end
     end
