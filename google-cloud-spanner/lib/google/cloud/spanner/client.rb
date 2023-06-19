@@ -1788,7 +1788,7 @@ module Google
         def transaction deadline: 120, commit_options: nil,
                         request_options: nil, call_options: nil
           ensure_service!
-          unless Thread.current[:transaction_id].nil?
+          unless Thread.current[:is_transaction_running].nil?
             raise "Nested transactions are not allowed"
           end
 
@@ -1805,7 +1805,7 @@ module Google
             end
 
             begin
-              Thread.current[:transaction_id] = tx.transaction_id
+              Thread.current[:is_transaction_running] = true
               yield tx
               commit_resp = @project.service.commit \
                 tx.session.path, tx.mutations,
@@ -1840,7 +1840,7 @@ module Google
               # Re-raise error.
               raise e
             ensure
-              Thread.current[:transaction_id] = nil
+              Thread.current[:is_transaction_running] = nil
             end
           end
         end
@@ -1923,7 +1923,7 @@ module Google
                                   exact_staleness: exact_staleness
 
           ensure_service!
-          unless Thread.current[:transaction_id].nil?
+          unless Thread.current[:is_transaction_running].nil?
             raise "Nested snapshots are not allowed"
           end
 
@@ -1933,11 +1933,11 @@ module Google
                             timestamp: (timestamp || read_timestamp),
                             staleness: (staleness || exact_staleness),
                             call_options: call_options
-            Thread.current[:transaction_id] = snp_grpc.id
+            Thread.current[:is_transaction_running] = true
             snp = Snapshot.from_grpc snp_grpc, session
             yield snp if block_given?
           ensure
-            Thread.current[:transaction_id] = nil
+            Thread.current[:is_transaction_running] = nil
           end
           nil
         end
