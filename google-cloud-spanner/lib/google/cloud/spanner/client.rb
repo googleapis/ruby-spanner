@@ -2219,7 +2219,7 @@ module Google
                 min_read_timestamp: bounded_timestamp,
                 max_staleness: bounded_staleness,
                 return_read_timestamp: true
-              }.delete_if { |_, v| v.nil? })))
+              }.compact)))
         end
 
         def pdml_transaction session
