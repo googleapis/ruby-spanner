@@ -1,5 +1,11 @@
 # Release History
 
+### 2.17.0 (2023-06-23)
+
+#### Features
+
+* support data_boost_enabled for partitioned query and read ([#46](https://github.com/googleapis/ruby-spanner/issues/46)) 
+
 ### 2.16.1 (2022-11-02)
 
 #### Documentation
