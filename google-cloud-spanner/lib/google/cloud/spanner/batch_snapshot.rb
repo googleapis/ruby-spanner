@@ -234,9 +234,9 @@ module Google
                 param_types: types,
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
-                query_options: query_options,
+                query_options: query_options
                 data_boost_enabled: data_boost_enabled
-              }.delete_if { |_, v| v.nil? }
+              }.compact
             )
             Partition.from_execute_sql_grpc execute_sql_grpc
           end
@@ -328,9 +328,9 @@ module Google
                 key_set: keys,
                 index: index,
                 transaction: tx_selector,
-                partition_token: grpc.partition_token,
+                partition_token: grpc.partition_token
                 data_boost_enabled: data_boost_enabled
-              }.delete_if { |_, v| v.nil? }
+              }.compact
             )
             Partition.from_read_grpc read_grpc
           end

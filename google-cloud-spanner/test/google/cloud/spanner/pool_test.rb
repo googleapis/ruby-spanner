@@ -27,8 +27,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
     p.all_sessions = [session]
-    p.session_queue = [session]
-    p.transaction_queue = []
+    p.session_stack = [session]
+    p.transaction_stack = []
     p
   end
 
@@ -38,19 +38,19 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
   it "can checkout and checkin a session" do
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
 
     s = pool.checkout_session
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
 
     pool.checkin_session s
 
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
   end
 
   it "creates new sessions when needed" do
@@ -59,13 +59,13 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
 
     pool.checkin_session s1
     pool.checkin_session s2
@@ -73,7 +73,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 2
+    _(pool.session_stack.size).must_equal 2
 
     mock.verify
   end
@@ -86,7 +86,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 1
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
@@ -98,7 +98,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     end
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
 
     pool.checkin_session s1
     pool.checkin_session s2
@@ -108,7 +108,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_queue.size).must_equal 4
+    _(pool.session_stack.size).must_equal 4
 
     mock.verify
   end
@@ -123,8 +123,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   it "uses existing transaction when checking out and checking in a transaction" do
-    init_tx = Google::Cloud::Spanner::Transaction.from_grpc Google::Cloud::Spanner::V1::Transaction.new(id: "tx-001-01"), pool.session_queue.shift
-    pool.transaction_queue << init_tx
+    init_tx = Google::Cloud::Spanner::Transaction.from_grpc Google::Cloud::Spanner::V1::Transaction.new(id: "tx-001-01"), pool.session_stack.shift
+    pool.transaction_stack << init_tx
 
     mock = Minitest::Mock.new
     # created when checking in
@@ -138,24 +138,24 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 1
-    _(pool.transaction_queue.first).must_equal init_tx
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 1
+    _(pool.transaction_stack.first).must_equal init_tx
 
     tx = pool.checkout_transaction
     _(tx).must_equal init_tx
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 0
 
     pool.checkin_transaction tx
 
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 1
   end
 
   it "can create a transaction when checking out and checking in a transaction" do
@@ -170,22 +170,22 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 0
 
     tx = pool.checkout_transaction
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 0
 
     pool.checkin_transaction tx
 
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 1
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 1
   end
 
   it "creates new transaction when needed" do
@@ -203,15 +203,15 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 0
 
     tx1 = pool.checkout_transaction
     tx2 = pool.checkout_transaction
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 0
 
     pool.checkin_transaction tx1
     pool.checkin_transaction tx2
@@ -219,8 +219,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 2
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 2
 
     mock.verify
   end
@@ -249,22 +249,22 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 0
 
     pool.with_transaction do |tx1|
       pool.with_transaction do |tx1|
         _(pool.all_sessions.size).must_equal 2
-        _(pool.session_queue.size).must_equal 0
-        _(pool.transaction_queue.size).must_equal 0
+        _(pool.session_stack.size).must_equal 0
+        _(pool.transaction_stack.size).must_equal 0
       end
     end
 
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 2
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 2
 
     mock.verify
   end
@@ -294,8 +294,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_queue.size).must_equal 1
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 1
+    _(pool.transaction_stack.size).must_equal 0
 
     tx1 = pool.checkout_transaction
     tx2 = pool.checkout_transaction
@@ -307,8 +307,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     end
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 0
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 0
 
     pool.checkin_transaction tx1
     pool.checkin_transaction tx2
@@ -316,22 +316,22 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     pool.checkin_transaction tx4
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 4
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 4
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_queue.size).must_equal 0
-    _(pool.transaction_queue.size).must_equal 2
+    _(pool.session_stack.size).must_equal 0
+    _(pool.transaction_stack.size).must_equal 2
 
     pool.checkin_session s1
     pool.checkin_session s2
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_queue.size).must_equal 2
-    _(pool.transaction_queue.size).must_equal 2
+    _(pool.session_stack.size).must_equal 2
+    _(pool.transaction_stack.size).must_equal 2
 
     shutdown_pool! pool
 

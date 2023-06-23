@@ -94,7 +94,7 @@ module Google
         def upsert table, *rows
           rows = Array(rows).flatten
           return rows if rows.empty?
-          rows.delete_if(&:nil?)
+          rows.compact
           rows.delete_if(&:empty?)
           @mutations += rows.map do |row|
             V1::Mutation.new(
@@ -153,7 +153,7 @@ module Google
         def insert table, *rows
           rows = Array(rows).flatten
           return rows if rows.empty?
-          rows.delete_if(&:nil?)
+          rows.compact
           rows.delete_if(&:empty?)
           @mutations += rows.map do |row|
             V1::Mutation.new(
@@ -211,7 +211,7 @@ module Google
         def update table, *rows
           rows = Array(rows).flatten
           return rows if rows.empty?
-          rows.delete_if(&:nil?)
+          rows.compact
           rows.delete_if(&:empty?)
           @mutations += rows.map do |row|
             V1::Mutation.new(
@@ -271,7 +271,7 @@ module Google
         def replace table, *rows
           rows = Array(rows).flatten
           return rows if rows.empty?
-          rows.delete_if(&:nil?)
+          rows.compact
           rows.delete_if(&:empty?)
           @mutations += rows.map do |row|
             V1::Mutation.new(
