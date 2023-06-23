@@ -16,7 +16,7 @@
 module Google
   module Cloud
     module Spanner
-      VERSION = "2.16.1".freeze
+      VERSION = "2.17.0".freeze
     end
   end
 end
