@@ -1171,6 +1171,10 @@ module Google
           Transaction.from_grpc tx_grpc, self
         end
 
+        def create_empty_transaction
+          Transaction.from_grpc nil, self
+        end
+
         ##
         # Reloads the session resource. Useful for determining if the session is
         # still valid on the Spanner API.

@@ -1799,7 +1799,8 @@ module Google
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
-          @pool.with_transaction do |tx|
+          @pool.with_session do |session|
+            tx = session.create_empty_transaction
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
             end

@@ -342,7 +342,7 @@ module Google
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
           session.execute_query sql, params: params, types: types,
-                                     transaction: tx_selector, seqno: @seqno,
+                                     transaction: tx_selector(is_begin: true), seqno: @seqno,
                                      query_options: query_options,
                                      request_options: request_options,
                                      call_options: call_options
@@ -615,7 +615,7 @@ module Google
           @seqno += 1
 
           request_options = build_request_options request_options
-          session.batch_update tx_selector, @seqno,
+          session.batch_update tx_selector(is_begin: true), @seqno,
                                request_options: request_options,
                                call_options: call_options, &block
         end
@@ -1114,7 +1114,14 @@ module Google
         protected
 
         # The TransactionSelector to be used for queries
-        def tx_selector
+        def tx_selector is_begin: nil
+          if is_begin
+            return V1::TransactionSelector.new(
+              begin: V1::TransactionOptions.new(
+                read_write: V1::TransactionOptions::ReadWrite.new
+              )
+            )
+          end
           return nil if transaction_id.nil?
           V1::TransactionSelector.new id: transaction_id
         end
