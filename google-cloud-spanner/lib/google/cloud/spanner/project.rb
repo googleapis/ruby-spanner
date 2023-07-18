@@ -673,7 +673,7 @@ module Google
             keepalive: opts[:keepalive],
             fail: opts[:fail],
             threads: opts[:threads]
-          }.delete_if { |_k, v| v.nil? }
+          }.compact
         end
       end
     end

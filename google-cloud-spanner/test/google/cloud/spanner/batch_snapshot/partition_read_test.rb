@@ -52,6 +52,29 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     assert_partitions deserialized_partitions
   end
 
+  it "can read all rows with data_boost_enabled" do
+
+    mock = Minitest::Mock.new
+    key_set = Google::Cloud::Spanner::V1::KeySet.new(all: true)
+    mock.expect :partition_read, partitions_resp, [{
+      session: session.path, table: "my-table", key_set: key_set,
+      transaction: tx_selector, index: nil, columns: columns_arg, partition_options: nil
+    }, default_options]
+    batch_snapshot.session.service.mocked_service = mock
+
+    partitions = batch_snapshot.partition_read "my-table", columns, data_boost_enabled: true
+
+    mock.verify
+
+    assert_partitions partitions
+
+    serialized_partitions = partitions.map(&:dump)
+    deserialized_partitions = serialized_partitions.map do |sp|
+      Google::Cloud::Spanner::Partition.load sp
+    end
+    assert_partitions deserialized_partitions, data_boost_enabled: true
+  end
+
   it "can read rows by id" do
     mock = Minitest::Mock.new
     key_set = Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([3]).list_value])
@@ -201,7 +224,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     assert_partitions deserialized_partitions
   end
 
-  def assert_partitions partitions, keys: nil, index: nil
+  def assert_partitions partitions, keys: nil, index: nil, data_boost_enabled: nil
     _(partitions).must_be_kind_of Array
     _(partitions).wont_be :empty?
 
@@ -213,6 +236,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
       _(partition.read.key_set).must_equal Google::Cloud::Spanner::Convert.to_key_set(keys)
       _(partition.read.columns).must_equal columns.map(&:to_s)
       _(partition.read.index).must_equal index.to_s
+      _(partition.read.data_boost_enabled).must_equal true if !data_boost_enabled.nil?
 
       _(partition.execute).must_be_nil
     end

@@ -338,7 +338,7 @@ module Google
         #
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
-                          request_options: nil, call_options: nil
+                          request_options: nil, call_options: nil, data_boost_enabled: nil
           ensure_service!
           if query_options.nil?
             query_options = @query_options
@@ -353,7 +353,8 @@ module Google
                                           seqno: seqno,
                                           query_options: query_options,
                                           request_options: request_options,
-                                          call_options: call_options
+                                          call_options: call_options,
+                                          data_boost_enabled: data_boost_enabled
           @last_updated_at = Time.now
           results
         end
@@ -496,7 +497,7 @@ module Google
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
-                 call_options: nil
+                 call_options: nil, data_boost_enabled: nil
           ensure_service!
 
           results = Results.read service, path, table, columns,
@@ -504,7 +505,8 @@ module Google
                                  transaction: transaction,
                                  partition_token: partition_token,
                                  request_options: request_options,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 data_boost_enabled: data_boost_enabled
           @last_updated_at = Time.now
           results
         end
