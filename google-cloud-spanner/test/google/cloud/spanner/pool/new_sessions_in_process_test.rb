@@ -28,7 +28,6 @@ describe Google::Cloud::Spanner::Pool, :new_sessions_in_process, :mock_spanner d
     p = client.instance_variable_get :@pool
     p.all_sessions = [session]
     p.session_stack = [session]
-    p.transaction_stack = []
     p
   end
 

@@ -31,7 +31,7 @@ module Google
       class Pool
         attr_accessor :all_sessions
         attr_accessor :session_stack
-        attr_accessor :transaction_stack
+        attr_accessor :checked_out_sessions
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
                        fail: true, threads: nil
@@ -204,7 +204,6 @@ module Google
             max_threads: @threads
           # init the stacks
           @new_sessions_in_process = 0
-          @transaction_stack = []
           # init the keepalive task
           create_keepalive_task!
           # init session stack
@@ -225,7 +224,6 @@ module Google
             @all_sessions.each { |s| future { s.release! } }
             @all_sessions = []
             @session_stack = []
-            @transaction_stack = []
           end
           # shutdown existing thread pool
           @thread_pool.shutdown

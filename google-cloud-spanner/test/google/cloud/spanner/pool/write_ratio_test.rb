@@ -55,7 +55,6 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
 
     _(pool.all_sessions.size).must_equal 2
     _(pool.session_stack.size).must_equal 2
-    _(pool.transaction_stack.size).must_equal 0
 
     mock.verify
   end
