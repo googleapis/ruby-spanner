@@ -341,11 +341,13 @@ module Google
 
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
-          session.execute_query sql, params: params, types: types,
-                                     transaction: tx_selector(is_begin: true), seqno: @seqno,
-                                     query_options: query_options,
-                                     request_options: request_options,
-                                     call_options: call_options
+          results = session.execute_query sql, params: params, types: types,
+                                               transaction: tx_selector(is_begin: true), seqno: @seqno,
+                                               query_options: query_options,
+                                               request_options: request_options,
+                                               call_options: call_options
+          @grpc = results.metadata.transaction
+          results
         end
         alias execute execute_query
         alias query execute_query

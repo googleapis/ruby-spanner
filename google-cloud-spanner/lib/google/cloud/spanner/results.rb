@@ -41,6 +41,10 @@ module Google
       #   end
       #
       class Results
+
+        # @private
+        attr_reader :metadata
+
         ##
         # The read timestamp chosen for single-use snapshots (read-only
         # transactions).
