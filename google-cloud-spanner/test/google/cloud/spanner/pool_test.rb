@@ -123,7 +123,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # TODO: Redesign this test to make it easily testable
-  it "uses existing transaction when checking out and checking in a transaction" do
+  skip; it "uses existing transaction when checking out and checking in a transaction" do
     skip
     init_tx = Google::Cloud::Spanner::Transaction.from_grpc Google::Cloud::Spanner::V1::Transaction.new(id: "tx-001-01"), pool.session_stack.shift
     pool.transaction_stack << init_tx
@@ -161,8 +161,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # TODO: This should be removed
-  it "can create a transaction when checking out and checking in a transaction" do
-    skip
+  skip; it "can create a transaction when checking out and checking in a transaction" do
     mock = Minitest::Mock.new
     # created when checking out
     mock.expect :begin_transaction, Google::Cloud::Spanner::V1::Transaction.new(id: "tx-001-01"), [{
@@ -193,8 +192,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # This should be changed or removed
-  it "creates new transaction when needed" do
-    skip
+  skip; it "creates new transaction when needed" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     # created when checking out
@@ -232,8 +230,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # This should probably be removed
-  it "creates new transaction when needed using with_transaction" do
-    skip
+  skip; it "creates new transaction when needed using with_transaction" do
     mock = Minitest::Mock.new
    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     # created when checking out
@@ -278,8 +275,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # Remove or change this test
-  it "raises when checking out more than MAX transaction" do
-    skip
+  skip; it "raises when checking out more than MAX transaction" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]

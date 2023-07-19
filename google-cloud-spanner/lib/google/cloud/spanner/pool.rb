@@ -31,8 +31,6 @@ module Google
       class Pool
         attr_accessor :all_sessions
         attr_accessor :session_stack
-
-        ## Obect of type [Set<String>]
         attr_accessor :checked_out_sessions
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
@@ -53,14 +51,10 @@ module Google
 
         def with_session
           session = checkout_session
-          # TODO: Move below line to checkout_session method
-          checked_out_sessions << session.session_id
           begin
             yield session
           ensure
             checkin_session session
-          # TODO: Move below line to checkout_session method
-            checked_out_sessions.delete session.session_id
           end
         end
 
@@ -91,7 +85,7 @@ module Google
 
         def checkin_session session
           @mutex.synchronize do
-            unless checked_out_sessions.include? session.session_id
+            unless all_sessions.include? session
               raise ArgumentError, "Cannot checkin session"
             end
 
@@ -216,7 +210,6 @@ module Google
           @all_sessions = @client.batch_create_new_sessions @min
           sessions = @all_sessions.dup
           @session_stack = sessions
-          @checked_out_sessions = Set.new
         end
 
         def shutdown
