@@ -97,61 +97,6 @@ module Google
           nil
         end
 
-        def with_transaction
-          tx = checkout_transaction
-          begin
-            yield tx
-          ensure
-            future do
-              # Create and checkin a new transaction
-              tx = tx.session.create_transaction
-              checkin_transaction tx
-            end
-          end
-        end
-
-        def checkout_transaction
-          action = nil
-          @mutex.synchronize do
-            loop do
-              raise ClientClosedError if @closed
-
-              read_session = session_stack.pop
-              if read_session
-                action = read_session
-                break
-              end
-
-              if can_allocate_more_sessions?
-                action = :new
-                break
-              end
-
-              raise SessionLimitError if @fail
-
-              @resource.wait @mutex
-            end
-          end
-          if action.is_a? Google::Cloud::Spanner::Session
-            return action.create_transaction
-          end
-          return new_transaction! if action == :new
-        end
-
-        def checkin_transaction txn
-          @mutex.synchronize do
-            unless all_sessions.include? txn.session
-              raise ArgumentError, "Cannot checkin session"
-            end
-
-            session_stack.push txn.session
-
-            @resource.signal
-          end
-
-          nil
-        end
-
         def reset
           close
           init
@@ -183,7 +128,7 @@ module Google
               x.idle_since? @keepalive
             end
 
-            # Remove a random portion of the sessions and transactions
+            # Remove a random portion of the sessions
             to_release = to_keepalive.sample release_count
             to_keepalive -= to_release
 
@@ -249,10 +194,6 @@ module Google
           end
 
           session
-        end
-
-        def new_transaction!
-          new_session!.create_transaction
         end
 
         def can_allocate_more_sessions?
