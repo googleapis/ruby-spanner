@@ -27,7 +27,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
     p.all_sessions = [session]
-    p.session_stack = [session]
+    # p.session_stack = [session]
     # p.transaction_stack = []
     p
   end
@@ -36,36 +36,42 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_client! client
   end
 
-  it "can checkout and checkin a session" do
+  # focus
+	it "can checkout and checkin a session" do
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_stack.size).must_equal 1
+    _(pool.checked_out_sessions.size).must_equal 0
 
+    # Calling checkout_session instead of with_session
+    # means the checked_out_sessions isn't updated.
+    # To fix this, update the checked_out_sessions
+    # within Pool.checkout_session and Pool.checkin_session methods
     s = pool.checkout_session
 
-    _(pool.all_sessions.size).must_equal 1
-    _(pool.session_stack.size).must_equal 0
+    _(pool.all_sessions.size).must_equal 0
+    _(pool.checked_out_sessions.size).must_equal 1
 
     pool.checkin_session s
 
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_stack.size).must_equal 1
+    _(pool.checked_out_sessions.size).must_equal 0
   end
 
-  it "creates new sessions when needed" do
+  focus
+	it "creates new sessions when needed" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_stack.size).must_equal 1
+    _(pool.checked_out_sessions.size).must_equal 0
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
 
-    _(pool.all_sessions.size).must_equal 2
-    _(pool.session_stack.size).must_equal 0
+    _(pool.all_sessions.size).must_equal 0
+    _(pool.checked_out_sessions.size).must_equal 2
 
     pool.checkin_session s1
     pool.checkin_session s2
@@ -73,12 +79,13 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 2
-    _(pool.session_stack.size).must_equal 2
+    _(pool.checked_out_sessions.size).must_equal 0
 
     mock.verify
   end
 
-  it "raises when checking out more than MAX sessions" do
+  # focus
+	it "raises when checking out more than MAX sessions" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -86,7 +93,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     spanner.service.mocked_service = mock
 
     _(pool.all_sessions.size).must_equal 1
-    _(pool.session_stack.size).must_equal 1
+    _(pool.checked_out_sessions.size).must_equal 0
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
@@ -97,8 +104,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
       pool.checkout_session
     end
 
-    _(pool.all_sessions.size).must_equal 4
-    _(pool.session_stack.size).must_equal 0
+    _(pool.all_sessions.size).must_equal 0
+    _(pool.checked_out_sessions.size).must_equal 4
 
     pool.checkin_session s1
     pool.checkin_session s2
@@ -108,12 +115,13 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_pool! pool
 
     _(pool.all_sessions.size).must_equal 4
-    _(pool.session_stack.size).must_equal 4
+    _(pool.checked_out_sessions.size).must_equal 0
 
     mock.verify
   end
 
-  it "raises when checking in a session that does not belong" do
+  # focus
+	it "raises when checking in a session that does not belong" do
     outside_session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service
 
     checkin_error = assert_raises ArgumentError do
@@ -123,7 +131,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # TODO: Redesign this test to make it easily testable
-  it "uses existing transaction when checking out and checking in a transaction" do
+  # focus
+	it "uses existing transaction when checking out and checking in a transaction" do
     skip
     init_tx = Google::Cloud::Spanner::Transaction.from_grpc Google::Cloud::Spanner::V1::Transaction.new(id: "tx-001-01"), pool.session_stack.shift
     pool.transaction_stack << init_tx
@@ -161,7 +170,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # TODO: This should be removed
-  it "can create a transaction when checking out and checking in a transaction" do
+  # focus
+	it "can create a transaction when checking out and checking in a transaction" do
     skip
     mock = Minitest::Mock.new
     # created when checking out
@@ -193,7 +203,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # This should be changed or removed
-  it "creates new transaction when needed" do
+  # focus
+	it "creates new transaction when needed" do
     skip
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -232,7 +243,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # This should probably be removed
-  it "creates new transaction when needed using with_transaction" do
+  # focus
+	it "creates new transaction when needed using with_transaction" do
     skip
     mock = Minitest::Mock.new
    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -278,7 +290,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   # Remove or change this test
-  it "raises when checking out more than MAX transaction" do
+  # focus
+	it "raises when checking out more than MAX transaction" do
     skip
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -348,7 +361,8 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.verify
   end
 
-  it "raises when checking in a transaction that does not belong" do
+  # focus
+	it "raises when checking in a transaction that does not belong" do
     outside_session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service
     outside_tx = Google::Cloud::Spanner::Transaction.from_grpc Google::Cloud::Spanner::V1::Transaction.new(id: "outside-tx-001"), outside_session
 

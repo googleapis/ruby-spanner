@@ -16,6 +16,7 @@
 require "concurrent"
 require "google/cloud/spanner/errors"
 require "google/cloud/spanner/session"
+# require 'debug/open'
 
 module Google
   module Cloud
@@ -30,8 +31,6 @@ module Google
       #
       class Pool
         attr_accessor :all_sessions
-        attr_accessor :session_stack
-
         ## Obect of type [Set<String>]
         attr_accessor :checked_out_sessions
 
@@ -53,14 +52,10 @@ module Google
 
         def with_session
           session = checkout_session
-          # TODO: Move below line to checkout_session method
-          checked_out_sessions << session.session_id
           begin
             yield session
           ensure
             checkin_session session
-          # TODO: Move below line to checkout_session method
-            checked_out_sessions.delete session.session_id
           end
         end
 
@@ -72,8 +67,11 @@ module Google
 
               # Use LIFO to ensure sessions are used from backend caches, which
               # will reduce the read / write latencies on user requests.
-              read_session = session_stack.pop # LIFO
-              return read_session if read_session
+              read_session = @all_sessions.pop # LIFO
+              if read_session
+                checked_out_sessions << read_session.session_id
+                return read_session
+              end
 
               if can_allocate_more_sessions?
                 action = :new
@@ -86,7 +84,14 @@ module Google
             end
           end
 
-          return new_session! if action == :new
+          session = new_session!
+          if action == :new
+            @mutex.synchronize do
+              @all_sessions.pop
+              checked_out_sessions << session.session_id
+              return session
+            end
+          end
         end
 
         def checkin_session session
@@ -95,7 +100,8 @@ module Google
               raise ArgumentError, "Cannot checkin session"
             end
 
-            session_stack.push session
+            @all_sessions.push session
+            checked_out_sessions.delete session.session_id
 
             @resource.signal
           end
@@ -122,7 +128,7 @@ module Google
             loop do
               raise ClientClosedError if @closed
 
-              read_session = session_stack.pop
+              read_session = @all_sessions.pop
               if read_session
                 action = read_session
                 break
@@ -146,11 +152,11 @@ module Google
 
         def checkin_transaction txn
           @mutex.synchronize do
-            unless all_sessions.include? txn.session
+            unless @all_sessions.include? txn.session
               raise ArgumentError, "Cannot checkin session"
             end
 
-            session_stack.push txn.session
+            @all_sessions.push txn.session
 
             @resource.signal
           end
@@ -181,11 +187,11 @@ module Google
           to_release = []
 
           @mutex.synchronize do
-            available_count = session_stack.count
+            available_count = @all_sessions.count
             release_count = @min - available_count
             release_count = 0 if release_count.negative?
 
-            to_keepalive += session_stack.select do |x|
+            to_keepalive += @all_sessions.select do |x|
               x.idle_since? @keepalive
             end
 
@@ -195,7 +201,6 @@ module Google
 
             # Remove those to be released from circulation
             @all_sessions -= to_release.map(&:session)
-            @session_stack -= to_release
           end
 
           to_release.each { |x| future { x.release! } }
@@ -214,8 +219,6 @@ module Google
           create_keepalive_task!
           # init session stack
           @all_sessions = @client.batch_create_new_sessions @min
-          sessions = @all_sessions.dup
-          @session_stack = sessions
           @checked_out_sessions = Set.new
         end
 
@@ -230,7 +233,7 @@ module Google
           @mutex.synchronize do
             @all_sessions.each { |s| future { s.release! } }
             @all_sessions = []
-            @session_stack = []
+            @checked_out_sessions = Set.new
           end
           # shutdown existing thread pool
           @thread_pool.shutdown
@@ -252,7 +255,7 @@ module Google
 
           @mutex.synchronize do
             @new_sessions_in_process -= 1
-            all_sessions << session
+            @all_sessions << session
           end
 
           session

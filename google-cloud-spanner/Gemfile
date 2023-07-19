@@ -9,3 +9,5 @@ gem "google-cloud-spanner-admin-instance-v1", ">= 0.7.0"
 gem "google-cloud-spanner-v1", ">= 0.10.0"
 
 gem "rake"
+
+gem 'debug'
