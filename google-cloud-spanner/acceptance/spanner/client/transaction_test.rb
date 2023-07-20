@@ -35,6 +35,16 @@ describe "Spanner Client", :transaction, :spanner do
     db.delete "accounts"
   end
 
+  focus
+  it "runs basic inline begin transaction" do
+    db.transaction do |tx|
+      _(tx.transaction_id).must_be :nil?
+      tx_results = tx.execute_query "SELECT * from accounts"
+      _(tx.transaction_id).wont_be :nil?
+      _(tx_results.rows.count).must_equal default_account_rows.length
+    end
+  end
+
   it "modifies accounts and verifies data with reads" do
     timestamp = db.transaction do |tx|
       _(tx.transaction_id).wont_be :nil?
