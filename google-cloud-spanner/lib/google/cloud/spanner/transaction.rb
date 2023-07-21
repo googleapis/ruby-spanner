@@ -1117,15 +1117,15 @@ module Google
 
         # The TransactionSelector to be used for queries
         def tx_selector is_begin: nil
-          if is_begin
-            return V1::TransactionSelector.new(
+          if transaction_id.nil?
+            V1::TransactionSelector.new(
               begin: V1::TransactionOptions.new(
                 read_write: V1::TransactionOptions::ReadWrite.new
               )
             )
+          else
+            V1::TransactionSelector.new id: transaction_id
           end
-          return nil if transaction_id.nil?
-          V1::TransactionSelector.new id: transaction_id
         end
 
         ##

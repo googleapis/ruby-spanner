@@ -14,6 +14,7 @@
 
 require "spanner_helper"
 require "concurrent"
+require 'debug'
 
 describe "Spanner Client", :transaction, :spanner do
   let(:db) { spanner_client }
@@ -42,6 +43,24 @@ describe "Spanner Client", :transaction, :spanner do
       tx_results = tx.execute_query "SELECT * from accounts"
       _(tx.transaction_id).wont_be :nil?
       _(tx_results.rows.count).must_equal default_account_rows.length
+    end
+  end
+
+  focus
+  it "re-uses existing transaction for multiple queries" do
+    db.transaction do |tx|
+      binding.break
+      tx_results = tx.execute_query "SELECT * from accounts"
+      _(tx.transaction_id).wont_be :nil?
+      _(tx_results.rows.count).must_equal default_account_rows.length
+
+      tx_id_1 = tx.transaction_id
+
+      tx_results_2 = tx.execute_query "SELECT * from accounts WHERE active = true"
+      _(tx.transaction_id).wont_be :nil?
+      _(tx.transaction_id).must_equal tx_id_1
+
+      _(tx_results_2.rows.count).must_equal 2
     end
   end
 

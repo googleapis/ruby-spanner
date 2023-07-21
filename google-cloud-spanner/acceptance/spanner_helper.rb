@@ -122,6 +122,10 @@ $spanner_instance_id = "ruby-spanner-tests"
 $spanner_database_id = "gcruby-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
 $spanner_pg_database_id = "gcruby-pg-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
 
+puts "instance ID: #{$spanner_instance_id}"
+puts "database ID: #{$spanner_database_id}"
+puts "PG database ID: #{$spanner_pg_database_id}"
+
 # Setup main instance and database for the tests
 fixture = Object.new
 fixture.extend Acceptance::Fixtures
