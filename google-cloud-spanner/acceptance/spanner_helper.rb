@@ -115,48 +115,113 @@ module Acceptance
   end
 end
 
-# Create buckets to be shared with all the tests
-require "date"
-$spanner_instance_id = "ruby-spanner-tests"
-# $spanner_database_id is already 22 characters, can only add 7 additional characters
-$spanner_database_id = "gcruby-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
-$spanner_pg_database_id = "gcruby-pg-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
+def create_resources
+  # Create buckets to be shared with all the tests
+  require "date"
+  $spanner_instance_id = "ruby-spanner-tests"
+  # $spanner_database_id is already 22 characters, can only add 7 additional characters
+  $spanner_database_id = "gcruby-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
+  $spanner_pg_database_id = "gcruby-pg-#{Date.today.strftime '%y%m%d'}-#{SecureRandom.hex 4}"
 
-# Setup main instance and database for the tests
-fixture = Object.new
-fixture.extend Acceptance::Fixtures
+  # Setup main instance and database for the tests
+  $fixture = Object.new
+  $fixture.extend Acceptance::Fixtures
 
-instance = $spanner.instance $spanner_instance_id
+  instance = $spanner.instance $spanner_instance_id
 
-instance ||= begin
-  inst_job = $spanner.create_instance $spanner_instance_id, name: "ruby-spanner-tests",
-config: "regional-us-central1", nodes: 1
-  inst_job.wait_until_done!
-  raise GRPC::BadStatus.new(inst_job.error.code, inst_job.error.message) if inst_job.error?
-  inst_job.instance
-end
+  instance ||= begin
+    inst_job = $spanner.create_instance $spanner_instance_id, name: "ruby-spanner-tests",
+  config: "regional-us-central1", nodes: 1
+    inst_job.wait_until_done!
+    raise GRPC::BadStatus.new(inst_job.error.code, inst_job.error.message) if inst_job.error?
+    inst_job.instance
+  end
 
-db_job = instance.create_database $spanner_database_id, statements: fixture.schema_ddl_statements
-db_job.wait_until_done!
-raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-
-unless emulator_enabled?
-  instance_path = $spanner_db_admin.instance_path project: $spanner.project_id, instance: $spanner_instance_id
-  db_job = $spanner_db_admin.create_database parent: instance_path,
-                                             create_statement: "CREATE DATABASE \"#{$spanner_pg_database_id}\"",
-                                             database_dialect: :POSTGRESQL
-  db_job.wait_until_done!
-  raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-  db_path = $spanner_db_admin.database_path project: $spanner.project_id,
-                                            instance: $spanner_instance_id,
-                                            database: $spanner_pg_database_id
-
-  db_job = $spanner_db_admin.update_database_ddl database: db_path, statements: fixture.schema_pg_ddl_statements
+  db_job = instance.create_database $spanner_database_id, statements: $fixture.schema_ddl_statements
   db_job.wait_until_done!
   raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 end
+
+def create_admin_resources
+  unless emulator_enabled?
+    instance_path = $spanner_db_admin.instance_path project: $spanner.project_id, instance: $spanner_instance_id
+    db_job = $spanner_db_admin.create_database parent: instance_path,
+                                               create_statement: "CREATE DATABASE \"#{$spanner_pg_database_id}\"",
+                                               database_dialect: :POSTGRESQL
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+    db_path = $spanner_db_admin.database_path project: $spanner.project_id,
+                                              instance: $spanner_instance_id,
+                                              database: $spanner_pg_database_id
+
+    db_job = $spanner_db_admin.update_database_ddl database: db_path, statements: $fixture.schema_pg_ddl_statements
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+  end
+end
+
+def define_resources
+  # Setup main instance and database for the tests
+  $fixture = Object.new
+  $fixture.extend Acceptance::Fixtures
+
+  $spanner_instance_id = "ruby-temp-instance"
+  $spanner_database_id = "database-1"
+  $spanner_pg_database_id = "database-pg-1"
+
+end
+
+class RecordTime
+  def initialize
+    @run_times = []
+  end
+
+  def record msg
+    puts "Started \"#{msg}\""
+    start = Time.now
+    yield
+    finish = Time.now
+    diff = finish - start
+    @run_times << { msg: msg, diff: diff }
+    puts "Ended \"#{msg}\""
+  end
+
+  def report
+    total_sum = @run_times.map { |rt| rt[:diff] }.sum
+    puts "Total recorded time: #{total_sum} seconds"
+
+    @run_times.each do |rt|
+      puts "Took #{rt[:diff]} for \"#{rt[:msg]}\""
+    end
+  end
+end
+
+rt = RecordTime.new
+
+# def record_time msg
+#   start = Time.now
+#   yield
+#   finish = Time.now
+#   diff = finish - start
+#   puts "Took #{diff} seconds for \"#{msg}\""
+# end
+
+
+rt.record "get_resources" do
+  define_resources
+end
+
+# rt.record "create_resoruces" do
+#   create_resources
+# end
+
+# rt.record "create_admin_resources" do
+#   create_admin_resources
+# end
 
 # Create one client for all tests, to minimize resource usage
+puts "Instance ID: #{$spanner_instance_id}"
+puts "Database ID: #{$spanner_database_id}"
 $spanner_client = $spanner.client $spanner_instance_id, $spanner_database_id
 $spanner_pg_client = $spanner.client $spanner_instance_id, $spanner_pg_database_id unless emulator_enabled?
 
@@ -185,5 +250,9 @@ rescue StandardError => e
 end
 
 Minitest.after_run do
-  clean_up_spanner_objects
+  rt.record "clean_up_spanner_objects" do
+    # clean_up_spanner_objects
+  end
+  rt.report
 end
+
