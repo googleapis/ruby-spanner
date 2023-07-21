@@ -17,6 +17,7 @@ require "google/cloud/spanner/errors"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
+require 'debug'
 
 module Google
   module Cloud
@@ -346,7 +347,7 @@ module Google
                                                query_options: query_options,
                                                request_options: request_options,
                                                call_options: call_options
-          @grpc = results.metadata.transaction
+          @grpc = results.metadata.transaction if transaction_id.nil?
           results
         end
         alias execute execute_query
