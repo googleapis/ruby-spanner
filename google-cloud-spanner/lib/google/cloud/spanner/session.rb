@@ -502,14 +502,23 @@ module Google
                  call_options: nil, data_boost_enabled: nil
           ensure_service!
 
-          results = Results.read service, path, table, columns,
-                                 keys: keys, index: index, limit: limit,
-                                 transaction: transaction,
-                                 partition_token: partition_token,
-                                 request_options: request_options,
-                                 call_options: call_options,
-                                 data_boost_enabled: data_boost_enabled
+          read_options = {
+            keys: keys, index: index, limit: limit,
+            transaction: transaction,
+            partition_token: partition_token,
+            request_options: request_options,
+            call_options: call_options,
+            data_boost_enabled: data_boost_enabled
+          }
+          read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+
+          response = service.streaming_read_table \
+            path, table, columns, **read_options
+
+          results = Results.from_read_response response, service, path, table, columns, read_options
+
           @last_updated_at = Time.now
+
           results
         end
 
