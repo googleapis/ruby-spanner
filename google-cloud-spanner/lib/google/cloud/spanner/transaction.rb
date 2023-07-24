@@ -691,10 +691,12 @@ module Google
           columns = Array(columns).map(&:to_s)
           keys = Convert.to_key_set keys
           request_options = build_request_options request_options
-          session.read table, columns, keys: keys, index: index, limit: limit,
-                                       transaction: tx_selector,
-                                       request_options: request_options,
-                                       call_options: call_options
+          results = session.read table, columns, keys: keys, index: index, limit: limit,
+                                                 transaction: tx_selector,
+                                                 request_options: request_options,
+                                                 call_options: call_options
+          @grpc = results.metadata.transaction if no_existing_transaction?
+          results
         end
 
         ##

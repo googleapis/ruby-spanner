@@ -65,12 +65,13 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
-  # focus
+  focus
   it "modifies accounts and verifies data with reads" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.transaction_id).must_be :nil?
 
       tx_results = tx.read "accounts", columns
+      _(tx.transaction_id).wont_be :nil?
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
       _(tx_results.fields.to_h).must_equal fields_hash
       tx_results.rows.zip(default_account_rows).each do |expected, actual|
@@ -99,11 +100,13 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
+  focus
   it "can rollback a transaction without passing on using Rollback" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.transaction_id).must_be :nil?
 
       tx_results = tx.read "accounts", columns
+      _(tx.transaction_id).wont_be :nil?
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
       _(tx_results.fields.to_h).must_equal fields_hash
       tx_results.rows.zip(default_account_rows).each do |expected, actual|
@@ -129,12 +132,14 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
+  focus
   it "can rollback a transaction and pass on the error" do
     assert_raises ZeroDivisionError do
       db.transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.transaction_id).must_be :nil?
 
         tx_results = tx.read "accounts", columns
+        _(tx.transaction_id).wont_be :nil?
         _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
         _(tx_results.fields.to_h).must_equal fields_hash
         tx_results.rows.zip(default_account_rows).each do |expected, actual|
@@ -222,6 +227,7 @@ describe "Spanner Client", :transaction, :spanner do
     _(results.rows.first[:reputation]).must_equal original_val + 2
   end
 
+  focus
   it "execute transaction with tagging options" do
     timestamp = db.transaction request_options: { tag: "Tag-1" } do |tx|
       tx.execute_query "SELECT * from accounts", request_options: { tag: "Tag-1-1" }
@@ -238,6 +244,7 @@ describe "Spanner Client", :transaction, :spanner do
     _(timestamp).must_be_kind_of Time
   end
 
+  focus
   it "can execute sql with query options" do
     query_options = { optimizer_version: "3", optimizer_statistics_package: "latest" }
     db.transaction do |tx|
@@ -246,12 +253,13 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
+  focus
   it "execute transaction and return commit stats" do
     skip if emulator_enabled?
 
     commit_options = { return_commit_stats: true }
     commit_resp = db.transaction commit_options: commit_options do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.transaction_id).must_be :nil?
 
       tx.insert "accounts", additional_account
     end
@@ -260,6 +268,7 @@ describe "Spanner Client", :transaction, :spanner do
   end
 
   describe "request options" do
+    focus
     it "execute transaction with priority options" do
       timestamp = db.transaction request_options: { priority: :PRIORITY_MEDIUM } do |tx|
         tx_results = tx.read "accounts", columns
@@ -269,6 +278,7 @@ describe "Spanner Client", :transaction, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
+    focus
     it "execute query with priority options" do
       timestamp = db.transaction do |tx|
         tx_results = tx.execute_sql query_reputation,
