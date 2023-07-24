@@ -347,7 +347,7 @@ module Google
                                                query_options: query_options,
                                                request_options: request_options,
                                                call_options: call_options
-          @grpc = results.metadata.transaction if transaction_id.nil?
+          @grpc = results.metadata.transaction if no_existing_transaction?
           results
         end
         alias execute execute_query
@@ -618,9 +618,11 @@ module Google
           @seqno += 1
 
           request_options = build_request_options request_options
-          session.batch_update tx_selector, @seqno,
-                               request_options: request_options,
-                               call_options: call_options, &block
+          results = session.batch_update tx_selector, @seqno,
+                                         request_options: request_options,
+                                         call_options: call_options, &block
+          @grpc = results.result_sets.first.metadata.transaction if no_existing_transaction?
+          results.result_sets.map { |rs| rs.stats.row_count_exact }
         end
 
         ##
@@ -1118,15 +1120,12 @@ module Google
 
         # The TransactionSelector to be used for queries
         def tx_selector
-          if transaction_id.nil?
-            V1::TransactionSelector.new(
-              begin: V1::TransactionOptions.new(
-                read_write: V1::TransactionOptions::ReadWrite.new
-              )
+          return V1::TransactionSelector.new id: transaction_id if existing_transaction?
+          V1::TransactionSelector.new(
+            begin: V1::TransactionOptions.new(
+              read_write: V1::TransactionOptions::ReadWrite.new
             )
-          else
-            V1::TransactionSelector.new id: transaction_id
-          end
+          )
         end
 
         ##
@@ -1141,6 +1140,18 @@ module Google
           end
 
           options
+        end
+
+        ##
+        # @private Checks if a transaction is already created.
+        def existing_transaction?
+          !no_existing_transaction?
+        end
+
+        ##
+        # @private Checks if transaction is not already created.
+        def no_existing_transaction?
+          @grpc.nil?
         end
 
         ##

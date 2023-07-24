@@ -363,7 +363,7 @@ module Google
           results = service.execute_batch_dml request, opts
 
           if results.status.code.zero?
-            results.result_sets.map { |rs| rs.stats.row_count_exact }
+            results
           else
             begin
               raise Google::Cloud::Error.from_error results.status

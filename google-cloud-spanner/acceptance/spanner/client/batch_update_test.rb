@@ -75,18 +75,21 @@ describe "Spanner Client", :batch_update, :spanner do
   dialects.push :pg unless emulator_enabled?
 
   dialects.each do |dialect|
+    focus
     it "executes multiple DML statements in a batch for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.transaction_id).must_be :nil?
 
         row_counts = tx.batch_update do |b|
           b.batch_update insert_dml[dialect], params: insert_params[dialect]
           b.batch_update update_dml[dialect], params: update_params[dialect]
           b.batch_update delete_dml[dialect], params: delete_params[dialect]
         end
+
+        _(tx.transaction_id).wont_be :nil?
 
         _(row_counts).must_be_kind_of Array
         _(row_counts.count).must_equal 3
@@ -102,12 +105,13 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
+    focus
     it "raises InvalidArgumentError when no DML statements are executed in a batch for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.transaction_id).must_be :nil?
 
         err = expect do
           tx.batch_update { |b| } # rubocop:disable Lint/EmptyBlock
