@@ -297,13 +297,11 @@ module Google
         end
 
         # @private
-
         def self.from_execute_query_response response, service, session_path, sql, execute_query_options
-          Results.from_enum(response, service).tap do |results|
+          from_enum(response, service).tap do |results|
             results.instance_variable_set :@session_path, session_path
-            results.instance_variable_set :@sql,          sql
-            results.instance_variable_set :@execute_query_options,
-                                          execute_query_options
+            results.instance_variable_set :@sql, sql
+            results.instance_variable_set :@execute_query_options, execute_query_options
           end
         end
 
