@@ -333,8 +333,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
 
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
-    # binding.break
-    # pp results
 
     metadata = results.metadata
 
