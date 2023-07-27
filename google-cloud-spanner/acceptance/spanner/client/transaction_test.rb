@@ -39,7 +39,10 @@ describe "Spanner Client", :transaction, :spanner do
   focus
   it "runs basic inline begin transaction" do
     db.transaction do |tx|
-      _(tx.transaction_id).must_be :nil?
+      # protected methods should ideally be not called in acceptance
+      # tests. But we are doing a basic sanity check to ensure
+      # no transaction is created before a query method.
+      _(tx.send(:no_existing_transaction?)).must_equal true
       tx_results = tx.execute_query "SELECT * from accounts"
       _(tx.transaction_id).wont_be :nil?
       _(tx_results.rows.count).must_equal default_account_rows.length
@@ -49,8 +52,7 @@ describe "Spanner Client", :transaction, :spanner do
   focus
   it "re-uses existing transaction for multiple queries" do
     db.transaction do |tx|
-      # confirm there is no transaction id at the start of the block
-      _(tx.transaction_id).must_be :nil?
+      _(tx.transaction_id).wont_be :nil?
 
       tx_results = tx.execute_query "SELECT * from accounts"
       tx_id_1 = tx.transaction_id
@@ -68,7 +70,7 @@ describe "Spanner Client", :transaction, :spanner do
   focus
   it "modifies accounts and verifies data with reads" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).must_be :nil?
+      _(tx.transaction_id).wont_be :nil?
 
       tx_results = tx.read "accounts", columns
       _(tx.transaction_id).wont_be :nil?
@@ -103,7 +105,7 @@ describe "Spanner Client", :transaction, :spanner do
   focus
   it "can rollback a transaction without passing on using Rollback" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).must_be :nil?
+      _(tx.transaction_id).wont_be :nil?
 
       tx_results = tx.read "accounts", columns
       _(tx.transaction_id).wont_be :nil?
@@ -136,7 +138,7 @@ describe "Spanner Client", :transaction, :spanner do
   it "can rollback a transaction and pass on the error" do
     assert_raises ZeroDivisionError do
       db.transaction do |tx|
-        _(tx.transaction_id).must_be :nil?
+        _(tx.transaction_id).wont_be :nil?
 
         tx_results = tx.read "accounts", columns
         _(tx.transaction_id).wont_be :nil?
@@ -259,7 +261,7 @@ describe "Spanner Client", :transaction, :spanner do
 
     commit_options = { return_commit_stats: true }
     commit_resp = db.transaction commit_options: commit_options do |tx|
-      _(tx.transaction_id).must_be :nil?
+      _(tx.transaction_id).wont_be :nil?
 
       tx.insert "accounts", additional_account
     end
