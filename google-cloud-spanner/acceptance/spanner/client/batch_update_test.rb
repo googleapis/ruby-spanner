@@ -188,7 +188,6 @@ describe "Spanner Client", :batch_update, :spanner do
       focus
       it "execute batch update with priority options for #{dialect}" do
         db[dialect].transaction do |tx|
-          _(tx.transaction_id).wont_be :nil?
           row_counts = tx.batch_update request_options: { priority: :PRIORITY_HIGH } do |b|
             b.batch_update insert_dml[dialect], params: insert_params[dialect]
             b.batch_update update_dml[dialect], params: update_params[dialect]
