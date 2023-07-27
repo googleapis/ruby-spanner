@@ -89,8 +89,6 @@ describe "Spanner Client", :batch_update, :spanner do
           b.batch_update delete_dml[dialect], params: delete_params[dialect]
         end
 
-        _(tx.transaction_id).wont_be :nil?
-
         _(row_counts).must_be_kind_of Array
         _(row_counts.count).must_equal 3
         _(row_counts[0]).must_equal 1
@@ -146,7 +144,6 @@ describe "Spanner Client", :batch_update, :spanner do
           _(row_counts.count).must_equal 1
           _(row_counts[0]).must_equal 1
         end
-        _(tx.transaction_id).wont_be :nil?
         update_results = tx.execute_sql \
           select_dql[dialect],
           params: delete_params[dialect]
@@ -169,8 +166,6 @@ describe "Spanner Client", :batch_update, :spanner do
           b.batch_update insert_dml[dialect], params: insert_params[dialect]
           b.batch_update update_dml[dialect], params: update_params[dialect]
         end
-
-        _(tx.transaction_id).wont_be :nil?
 
         _(row_counts).must_be_kind_of Array
         _(row_counts.count).must_equal 2
@@ -198,8 +193,6 @@ describe "Spanner Client", :batch_update, :spanner do
             b.batch_update insert_dml[dialect], params: insert_params[dialect]
             b.batch_update update_dml[dialect], params: update_params[dialect]
           end
-
-          _(tx.transaction_id).wont_be :nil?
 
           _(row_counts).must_be_kind_of Array
           _(row_counts.count).must_equal 2

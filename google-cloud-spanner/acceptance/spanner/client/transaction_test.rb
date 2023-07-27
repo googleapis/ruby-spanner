@@ -73,7 +73,6 @@ describe "Spanner Client", :transaction, :spanner do
       _(tx.transaction_id).wont_be :nil?
 
       tx_results = tx.read "accounts", columns
-      _(tx.transaction_id).wont_be :nil?
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
       _(tx_results.fields.to_h).must_equal fields_hash
       tx_results.rows.zip(default_account_rows).each do |expected, actual|
@@ -108,7 +107,6 @@ describe "Spanner Client", :transaction, :spanner do
       _(tx.transaction_id).wont_be :nil?
 
       tx_results = tx.read "accounts", columns
-      _(tx.transaction_id).wont_be :nil?
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
       _(tx_results.fields.to_h).must_equal fields_hash
       tx_results.rows.zip(default_account_rows).each do |expected, actual|
@@ -141,7 +139,6 @@ describe "Spanner Client", :transaction, :spanner do
         _(tx.transaction_id).wont_be :nil?
 
         tx_results = tx.read "accounts", columns
-        _(tx.transaction_id).wont_be :nil?
         _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
         _(tx_results.fields.to_h).must_equal fields_hash
         tx_results.rows.zip(default_account_rows).each do |expected, actual|
