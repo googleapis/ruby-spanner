@@ -24,9 +24,8 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
-  # let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
+  let(:tx_selector_with_id) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_selector) do
-    # Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id 
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
         read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(
@@ -628,20 +627,21 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       { priority: :PRIORITY_MEDIUM }
     }
 
+    focus
     it "commits multiple mutations" do
       mock = Minitest::Mock.new
       mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      mock.expect :begin_transaction, transaction_grpc, [{
-        session: session_grpc.name, options: tx_opts, request_options: nil
-      }, default_options]
+      # mock.expect :begin_transaction, transaction_grpc, [{
+      #   session: session_grpc.name, options: tx_opts, request_options: nil
+      # }, default_options]
       mock.expect :commit, commit_resp, [{
-        session: session_grpc.name, mutations: mutations, transaction_id: transaction_id,
-        single_use_transaction: nil, request_options: request_options
+        session: session_grpc.name, mutations: mutations, transaction_id: nil,
+        single_use_transaction: tx_no_dml_options, request_options: request_options
       }, default_options]
       # transaction checkin
-      mock.expect :begin_transaction, transaction_grpc, [{
-        session: session_grpc.name, options: tx_opts, request_options: nil
-      }, default_options]
+      # mock.expect :begin_transaction, transaction_grpc, [{
+      #   session: session_grpc.name, options: tx_opts, request_options: nil
+      # }, default_options]
       spanner.service.mocked_service = mock
 
       timestamp = client.transaction request_options: request_options do |tx|
@@ -658,22 +658,23 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       mock.verify
     end
 
+    focus
     it "execute query" do
       mock = Minitest::Mock.new
       spanner.service.mocked_service = mock
       mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      mock.expect :begin_transaction, transaction_grpc, [{
-        session: session_grpc.name, options: tx_opts, request_options: nil
-      }, default_options]
+      # mock.expect :begin_transaction, transaction_grpc, [{
+      #   session: session_grpc.name, options: tx_opts, request_options: nil
+      # }, default_options]
       expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, request_options: request_options, options: default_options
       mock.expect :commit, commit_resp, [{
         session: session_grpc.name, mutations: [], transaction_id: transaction_id,
         single_use_transaction: nil, request_options: nil
       }, default_options]
       # transaction checkin
-      mock.expect :begin_transaction, transaction_grpc, [{
-        session: session_grpc.name, options: tx_opts, request_options: nil
-      }, default_options]
+      # mock.expect :begin_transaction, transaction_grpc, [{
+      #   session: session_grpc.name, options: tx_opts, request_options: nil
+      # }, default_options]
 
       timestamp = client.transaction do |tx|
         tx.execute_query "SELECT * FROM users", request_options: request_options
@@ -686,6 +687,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     end
   end
 
+  focus
   it "can execute a trasaction with transaction and request tag" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -699,16 +701,16 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
 
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users",
                                  transaction: tx_selector, seqno: 1,
                                  request_options: { transaction_tag: "Tag-1", request_tag: "Tag-1-1" },
                                  options: default_options
     expect_execute_streaming_sql update_results_enum, session_grpc.name,
-                                 "UPDATE users SET active = true", transaction: tx_selector,
+                                 "UPDATE users SET active = true", transaction: tx_selector_with_id,
                                  seqno: 2, request_options: { transaction_tag: "Tag-1", request_tag: "Tag-1-2" },
                                  options: default_options
 
@@ -718,9 +720,9 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     }, default_options]
 
     # transaction checkin
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
 
     client.transaction request_options: { tag: "Tag-1" } do |tx|
       _(tx).must_be_kind_of Google::Cloud::Spanner::Transaction
