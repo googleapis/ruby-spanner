@@ -77,9 +77,9 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     session.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
 
-    _(transaction.transaction_id).must_be :nil?
+    _(transaction.existing_transaction?).must_equal false
     results = transaction.execute_query "SELECT * FROM users"
-    _(transaction.transaction_id).wont_be :nil?
+    _(transaction.existing_transaction?).must_equal true
 
     mock.verify
 
@@ -312,7 +312,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "execute query with transaction and request tag" do
     transaction = Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session
     transaction.transaction_tag = "Tag-1"
@@ -322,7 +321,7 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users",
-                                 transaction: tx_selector_begin, seqno: 1,
+                                 transaction: tx_selector, seqno: 1,
                                  request_options: { transaction_tag: "Tag-1", request_tag: "Tag-1-1"},
                                  options: default_options
 
