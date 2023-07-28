@@ -71,7 +71,7 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   let(:results_grpc) { Google::Cloud::Spanner::V1::PartialResultSet.new results_hash }
   let(:results_enum) { Array(results_grpc).to_enum }
 
-  focus
+  # focus
   it "can execute a simple query" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
