@@ -24,6 +24,7 @@ require "google/cloud/spanner/range"
 require "google/cloud/spanner/column_value"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/commit_response"
+require 'debug'
 
 module Google
   module Cloud
@@ -1800,6 +1801,7 @@ module Google
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
+            # binding.break
             tx = session.create_empty_transaction
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
@@ -1808,9 +1810,13 @@ module Google
             begin
               Thread.current[:is_transaction_running] = true
               yield tx
+              transaction_id = nil
+              transaction_id = tx.transaction_id if tx.existing_transaction?
+              # pp "mutations begin sent"
+              # pp tx.mutations
               commit_resp = @project.service.commit \
                 tx.session.path, tx.mutations,
-                transaction_id: tx.transaction_id,
+                transaction_id: transaction_id,
                 commit_options: commit_options,
                 request_options: request_options,
                 call_options: call_options
@@ -1820,6 +1826,8 @@ module Google
                    Google::Cloud::AbortedError,
                    GRPC::Internal,
                    Google::Cloud::InternalError => e
+              # binding.break
+              # pp e
               raise e if internal_error_and_not_retryable? e
               # Re-raise if deadline has passed
               if current_time - start_time > deadline
@@ -1835,7 +1843,7 @@ module Google
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
-              tx.session.rollback tx.transaction_id
+              # tx.session.rollback tx.transaction_id
               # Return nil if raised with rollback.
               return nil if e.is_a? Rollback
               # Re-raise error.

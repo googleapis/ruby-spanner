@@ -90,6 +90,7 @@ module Google
         # Identifier of the transaction results were run in.
         # @return [String] The transaction id.
         def transaction_id
+          # binding.break
           return @grpc.id if existing_transaction?
           ensure_session!
           @grpc = service.begin_transaction session.path
@@ -1120,6 +1121,18 @@ module Google
           end
         end
 
+        ##
+        # @private Checks if a transaction is already created.
+        def existing_transaction?
+          !no_existing_transaction?
+        end
+
+        ##
+        # @private Checks if transaction is not already created.
+        def no_existing_transaction?
+          @grpc.nil?
+        end
+
         protected
 
         # The TransactionSelector to be used for queries
@@ -1144,18 +1157,6 @@ module Google
           end
 
           options
-        end
-
-        ##
-        # @private Checks if a transaction is already created.
-        def existing_transaction?
-          !no_existing_transaction?
-        end
-
-        ##
-        # @private Checks if transaction is not already created.
-        def no_existing_transaction?
-          @grpc.nil?
         end
 
         ##
