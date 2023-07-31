@@ -72,6 +72,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :mock_spanner do
     assert_results results
   end
 
+  # focus
   it "can execute a query using execute alias" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
