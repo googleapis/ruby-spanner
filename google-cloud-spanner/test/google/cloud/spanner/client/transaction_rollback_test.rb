@@ -24,6 +24,13 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
   let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
+  let(:tx_selector_begin) do
+    Google::Cloud::Spanner::V1::TransactionSelector.new(
+      begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
+        read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new
+      )
+    )
+  end
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let :results_hash do
     {
@@ -41,7 +48,8 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
             { name: "project_ids", type: { code: :ARRAY,
                                            array_element_type: { code: :INT64 } } }
           ]
-        }
+        },
+        transaction: { id: transaction_id },
       },
       values: [
         { string_value: "1" },
@@ -63,19 +71,20 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
 
+  # focus
   it "will rollback and not pass on the error when using Rollback" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
     mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
     # transaction checkin
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
 
     results = nil
     timestamp = client.transaction do |tx|
@@ -95,19 +104,20 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     assert_results results
   end
 
+  # focus
   it "will rollback and pass on the error" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
     mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
     # transaction checkin
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
 
     results = nil
     assert_raises ZeroDivisionError do
@@ -128,17 +138,18 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     assert_results results
   end
 
+  # focus
   it "does not allow nested transactions" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
+    # mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
     # transaction checkin
-    mock.expect :begin_transaction, transaction_grpc, [{
-      session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
+    # mock.expect :begin_transaction, transaction_grpc, [{
+    #   session: session_grpc.name, options: tx_opts, request_options: nil
+    # }, default_options]
     spanner.service.mocked_service = mock
 
     nested_error = assert_raises RuntimeError do

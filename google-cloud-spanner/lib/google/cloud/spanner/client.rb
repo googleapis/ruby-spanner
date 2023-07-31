@@ -1843,7 +1843,7 @@ module Google
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
-              # tx.session.rollback tx.transaction_id
+              tx.session.rollback tx.transaction_id if tx.existing_transaction?
               # Return nil if raised with rollback.
               return nil if e.is_a? Rollback
               # Re-raise error.
