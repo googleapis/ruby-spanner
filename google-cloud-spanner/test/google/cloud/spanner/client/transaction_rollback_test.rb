@@ -154,6 +154,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
 
     nested_error = assert_raises RuntimeError do
       client.transaction do |tx|
+        # These mutation will never reach rpc layer, so no mocks for them.
         tx.update "users", [{ id: 1, name: "Charlie", active: false }]
         tx.insert "users", [{ id: 2, name: "Harvey",  active: true }]
         tx.upsert "users", [{ id: 3, name: "Marley",  active: false }]
