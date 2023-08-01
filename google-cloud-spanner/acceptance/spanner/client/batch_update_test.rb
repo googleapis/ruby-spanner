@@ -179,6 +179,7 @@ describe "Spanner Client", :batch_update, :spanner do
     end
 
     describe "request options for #{dialect}" do
+      it "execute batch update with priority options for #{dialect}" do
         db[dialect].transaction do |tx|
           row_counts = tx.batch_update request_options: { priority: :PRIORITY_HIGH } do |b|
             b.batch_update insert_dml[dialect], params: insert_params[dialect]
