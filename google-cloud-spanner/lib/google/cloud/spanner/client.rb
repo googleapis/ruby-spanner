@@ -24,7 +24,6 @@ require "google/cloud/spanner/range"
 require "google/cloud/spanner/column_value"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/commit_response"
-require 'debug'
 
 module Google
   module Cloud

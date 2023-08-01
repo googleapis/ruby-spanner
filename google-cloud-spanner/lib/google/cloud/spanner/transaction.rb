@@ -17,7 +17,6 @@ require "google/cloud/spanner/errors"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
-require 'debug'
 
 module Google
   module Cloud

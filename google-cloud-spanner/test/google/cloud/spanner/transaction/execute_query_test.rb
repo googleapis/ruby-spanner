@@ -13,7 +13,6 @@
 # limitations under the License.
 
 require "helper"
-require 'debug'
 
 describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   let(:instance_id) { "my-instance-id" }

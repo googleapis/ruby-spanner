@@ -14,7 +14,6 @@
 
 require "spanner_helper"
 require "concurrent"
-require 'debug'
 
 describe "Spanner Client", :transaction, :spanner do
   let(:db) { spanner_client }
