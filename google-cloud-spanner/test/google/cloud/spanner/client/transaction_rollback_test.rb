@@ -71,7 +71,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
 
-  # focus
   it "will rollback and not pass on the error when using Rollback" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
@@ -104,7 +103,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     assert_results results
   end
 
-  # focus
   it "will rollback and pass on the error" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
@@ -138,7 +136,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     assert_results results
   end
 
-  # focus
   it "does not allow nested transactions" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]

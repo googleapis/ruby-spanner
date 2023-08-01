@@ -72,7 +72,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
 
-  # focus
   it "retries aborted transactions without retry metadata" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -133,7 +132,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "retries aborted transactions with retry metadata seconds" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -192,7 +190,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "retries aborted transactions with retry metadata seconds and nanos" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -251,7 +248,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "retries multiple aborted transactions" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -320,7 +316,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "retries with incremental backoff until deadline has passed" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -401,7 +396,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "retries internal error with rst stream error" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -460,7 +454,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "raises internal error if non retryable" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(

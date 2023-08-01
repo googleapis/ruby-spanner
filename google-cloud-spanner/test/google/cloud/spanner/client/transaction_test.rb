@@ -146,7 +146,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     ]
   }
 
-  # focus
   it "can execute a simple query" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
@@ -178,7 +177,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "updates" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -219,7 +217,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "inserts" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -255,7 +252,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "upserts" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -291,7 +287,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "upserts using save alias" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -327,7 +322,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "replaces" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -363,7 +357,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "deletes multiple rows of keys" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -402,7 +395,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "deletes multiple rows of key ranges" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -439,7 +431,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "deletes a single rows" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -478,7 +469,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "deletes all rows" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -513,7 +503,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "commits multiple mutations" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -580,7 +569,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "can execute a simple query with custom timeout and retry policy" do
     timeout = 30
     retry_policy = {
@@ -627,7 +615,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       { priority: :PRIORITY_MEDIUM }
     }
 
-    # focus
     it "commits multiple mutations" do
       mock = Minitest::Mock.new
       mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -658,7 +645,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       mock.verify
     end
 
-    # focus
     it "execute query" do
       mock = Minitest::Mock.new
       spanner.service.mocked_service = mock
@@ -687,7 +673,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     end
   end
 
-  # focus
   it "can execute a trasaction with transaction and request tag" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(

@@ -71,7 +71,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   let(:results_grpc) { Google::Cloud::Spanner::V1::PartialResultSet.new results_hash }
   let(:results_enum) { Array(results_grpc).to_enum }
 
-  # focus
   it "can execute a simple query" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -86,7 +85,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with bool param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -99,7 +97,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with int param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -112,7 +109,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with float param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -125,7 +121,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with Time param" do
     timestamp = Time.parse "2017-01-01 20:04:05.06 -0700"
 
@@ -140,7 +135,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with Date param" do
     date = Date.parse "2017-01-02"
 
@@ -155,7 +149,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with String param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -168,7 +161,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with IO-ish param" do
     file = StringIO.new "contents"
 
@@ -183,7 +175,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with an Array param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -196,7 +187,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with an empty Array param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -209,7 +199,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with a simple Hash param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -222,7 +211,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with a complex Hash param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -235,7 +223,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with an Array of Hashes" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -248,7 +235,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with an Array of STRUCTs" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -262,7 +248,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a query with an empty Hash param" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -275,7 +260,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a simple query with query options" do
     expect_query_options = { optimizer_version: "4", optimizer_statistics_package: "auto_20191128_14_47_22UTC" }
     mock = Minitest::Mock.new
@@ -289,7 +273,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  # focus
   it "can execute a simple query with custom timeout and retry policy" do
     timeout = 30
     retry_policy = {

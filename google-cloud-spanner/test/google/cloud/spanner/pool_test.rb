@@ -34,7 +34,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_client! client
   end
 
-  # focus
   it "can checkout and checkin a session" do
     _(pool.all_sessions.size).must_equal 1
     _(pool.session_stack.size).must_equal 1
@@ -52,7 +51,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     _(pool.session_stack.size).must_equal 1
   end
 
-  # focus
   it "creates new sessions when needed" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -78,7 +76,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "raises when checking out more than MAX sessions" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
@@ -114,7 +111,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.verify
   end
 
-  # focus
   it "raises when checking in a session that does not belong" do
     outside_session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service
 
