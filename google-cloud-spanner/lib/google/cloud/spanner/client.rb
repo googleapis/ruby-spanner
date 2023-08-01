@@ -1800,9 +1800,10 @@ module Google
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
+          tx = nil
           @pool.with_session do |session|
             # binding.break
-            tx = session.create_empty_transaction
+            tx ||= session.create_empty_transaction
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
             end
@@ -1839,7 +1840,7 @@ module Google
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
               # Create new transaction on the session and retry the block
-              tx = tx.session.create_transaction
+              tx = session.create_transaction
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
