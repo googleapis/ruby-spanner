@@ -41,8 +41,9 @@ module Google
       #   end
       #
       class Results
-
-        # @private
+        ##
+        # @private Object of type
+        # Google::Cloud::Spanner::V1::ResultSetMetadata
         attr_reader :metadata
 
         ##

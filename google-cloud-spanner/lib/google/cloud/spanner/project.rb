@@ -668,10 +668,7 @@ module Google
 
         def valid_session_pool_options opts = {}
           {
-            min: opts[:min],
-            max: opts[:max],
-            keepalive: opts[:keepalive],
-            fail: opts[:fail],
+            min: opts[:min], max: opts[:max], keepalive: opts[:keepalive], fail: opts[:fail],
             threads: opts[:threads]
           }.compact
         end
