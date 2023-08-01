@@ -75,15 +75,8 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    # mock.expect :begin_transaction, transaction_grpc, [{
-    #   session: session_grpc.name, options: tx_opts, request_options: nil
-    # }, default_options]
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
     mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
-    # transaction checkin
-    # mock.expect :begin_transaction, transaction_grpc, [{
-    #   session: session_grpc.name, options: tx_opts, request_options: nil
-    # }, default_options]
 
     results = nil
     timestamp = client.transaction do |tx|
@@ -107,15 +100,8 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    # mock.expect :begin_transaction, transaction_grpc, [{
-    #   session: session_grpc.name, options: tx_opts, request_options: nil
-    # }, default_options]
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
     mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
-    # transaction checkin
-    # mock.expect :begin_transaction, transaction_grpc, [{
-    #   session: session_grpc.name, options: tx_opts, request_options: nil
-    # }, default_options]
 
     results = nil
     assert_raises ZeroDivisionError do
@@ -139,14 +125,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
   it "does not allow nested transactions" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    # mock.expect :begin_transaction, transaction_grpc, [{
-    #   session: session_grpc.name, options: tx_opts, request_options: nil
-    # }, default_options]
-    # mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
-    # transaction checkin
-    # mock.expect :begin_transaction, transaction_grpc, [{
-    #   session: session_grpc.name, options: tx_opts, request_options: nil
-    # }, default_options]
     spanner.service.mocked_service = mock
 
     nested_error = assert_raises RuntimeError do
