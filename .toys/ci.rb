@@ -123,7 +123,8 @@ def setup_auth_env
     "GCLOUD_TEST_PROJECT" => final_project,
     "GOOGLE_CLOUD_PROJECT" => final_project,
     "GCLOUD_TEST_KEYFILE" => final_keyfile,
-    "GOOGLE_APPLICATION_CREDENTIALS" => ENV["GOOGLE_APPLICATION_CREDENTIALS"]
+    "GOOGLE_APPLICATION_CREDENTIALS" => ENV["GOOGLE_APPLICATION_CREDENTIALS"],
+    "MT_COMPAT" => "true"
   }
 end
 
