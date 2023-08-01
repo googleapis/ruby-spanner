@@ -1801,7 +1801,6 @@ module Google
 
           tx = nil
           @pool.with_session do |session|
-            # binding.break
             tx ||= session.create_empty_transaction
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
@@ -1812,8 +1811,6 @@ module Google
               yield tx
               transaction_id = nil
               transaction_id = tx.transaction_id if tx.existing_transaction?
-              # pp "mutations begin sent"
-              # pp tx.mutations
               commit_resp = @project.service.commit \
                 tx.session.path, tx.mutations,
                 transaction_id: transaction_id,
@@ -1826,8 +1823,6 @@ module Google
                    Google::Cloud::AbortedError,
                    GRPC::Internal,
                    Google::Cloud::InternalError => e
-              # binding.break
-              # pp e
               raise e if internal_error_and_not_retryable? e
               # Re-raise if deadline has passed
               if current_time - start_time > deadline

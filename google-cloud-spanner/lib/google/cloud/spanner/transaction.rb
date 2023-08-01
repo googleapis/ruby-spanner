@@ -89,7 +89,6 @@ module Google
         # Identifier of the transaction results were run in.
         # @return [String] The transaction id.
         def transaction_id
-          # binding.break
           return @grpc.id if existing_transaction?
           ensure_session!
           @grpc = service.begin_transaction session.path
