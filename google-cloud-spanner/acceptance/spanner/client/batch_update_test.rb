@@ -75,13 +75,12 @@ describe "Spanner Client", :batch_update, :spanner do
   dialects.push :pg unless emulator_enabled?
 
   dialects.each do |dialect|
-    # focus
     it "executes multiple DML statements in a batch for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         row_counts = tx.batch_update do |b|
           b.batch_update insert_dml[dialect], params: insert_params[dialect]
@@ -103,13 +102,12 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # focus
     it "raises InvalidArgumentError when no DML statements are executed in a batch for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         err = expect do
           tx.batch_update { |b| } # rubocop:disable Lint/EmptyBlock
@@ -121,14 +119,13 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # focus
     it "executes multiple DML statements in a batch with syntax error for #{dialect}" do
       # skip
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
         begin
           tx.batch_update do |b|
             b.batch_update insert_dml[dialect], params: insert_params[dialect]
@@ -152,15 +149,12 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # This test fails because of constraint/non-constraint error.
-    # tx.batch_update() should create transaction even after failing
-    # focus
     it "runs execute_update and batch_update in the same transaction for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         row_counts = tx.batch_update do |b|
           b.batch_update insert_dml[dialect], params: insert_params[dialect]
@@ -185,8 +179,6 @@ describe "Spanner Client", :batch_update, :spanner do
     end
 
     describe "request options for #{dialect}" do
-      # focus
-      it "execute batch update with priority options for #{dialect}" do
         db[dialect].transaction do |tx|
           row_counts = tx.batch_update request_options: { priority: :PRIORITY_HIGH } do |b|
             b.batch_update insert_dml[dialect], params: insert_params[dialect]

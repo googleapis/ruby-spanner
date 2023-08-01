@@ -35,23 +35,18 @@ describe "Spanner Client", :transaction, :spanner do
     db.delete "accounts"
   end
 
-  # focus
   it "runs basic inline begin transaction" do
     db.transaction do |tx|
-      # protected methods should ideally be not called in acceptance
-      # tests. But we are doing a basic sanity check to ensure
-      # no transaction is created before a query method.
-      _(tx.send(:no_existing_transaction?)).must_equal true
+      _(tx.no_existing_transaction?).must_equal true
       tx_results = tx.execute_query "SELECT * from accounts"
       _(tx.transaction_id).wont_be :nil?
       _(tx_results.rows.count).must_equal default_account_rows.length
     end
   end
 
-  # focus
   it "re-uses existing transaction for multiple queries" do
     db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx_results = tx.execute_query "SELECT * from accounts"
       tx_id_1 = tx.transaction_id
@@ -66,10 +61,9 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
-  # focus
   it "modifies accounts and verifies data with reads" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx_results = tx.read "accounts", columns
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -100,10 +94,9 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
-  # focus
   it "can rollback a transaction without passing on using Rollback" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx_results = tx.read "accounts", columns
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -131,11 +124,10 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
-  # focus
   it "can rollback a transaction and pass on the error" do
     assert_raises ZeroDivisionError do
       db.transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         tx_results = tx.read "accounts", columns
         _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -225,7 +217,6 @@ describe "Spanner Client", :transaction, :spanner do
     _(results.rows.first[:reputation]).must_equal original_val + 2
   end
 
-  # focus
   it "execute transaction with tagging options" do
     timestamp = db.transaction request_options: { tag: "Tag-1" } do |tx|
       tx.execute_query "SELECT * from accounts", request_options: { tag: "Tag-1-1" }
@@ -242,7 +233,6 @@ describe "Spanner Client", :transaction, :spanner do
     _(timestamp).must_be_kind_of Time
   end
 
-  # focus
   it "can execute sql with query options" do
     query_options = { optimizer_version: "3", optimizer_statistics_package: "latest" }
     db.transaction do |tx|
@@ -251,13 +241,12 @@ describe "Spanner Client", :transaction, :spanner do
     end
   end
 
-  # focus
   it "execute transaction and return commit stats" do
     skip if emulator_enabled?
 
     commit_options = { return_commit_stats: true }
     commit_resp = db.transaction commit_options: commit_options do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx.insert "accounts", additional_account
     end
@@ -266,7 +255,6 @@ describe "Spanner Client", :transaction, :spanner do
   end
 
   describe "request options" do
-    # focus
     it "execute transaction with priority options" do
       timestamp = db.transaction request_options: { priority: :PRIORITY_MEDIUM } do |tx|
         tx_results = tx.read "accounts", columns
@@ -276,7 +264,6 @@ describe "Spanner Client", :transaction, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # focus
     it "execute query with priority options" do
       timestamp = db.transaction do |tx|
         tx_results = tx.execute_sql query_reputation,
