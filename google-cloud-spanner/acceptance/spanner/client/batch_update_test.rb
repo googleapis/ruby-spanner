@@ -75,7 +75,7 @@ describe "Spanner Client", :batch_update, :spanner do
   dialects.push :pg unless emulator_enabled?
 
   dialects.each do |dialect|
-    focus
+    # focus
     it "executes multiple DML statements in a batch for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
@@ -103,7 +103,7 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    focus
+    # focus
     it "raises InvalidArgumentError when no DML statements are executed in a batch for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
@@ -121,9 +121,9 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    focus
+    # focus
     it "executes multiple DML statements in a batch with syntax error for #{dialect}" do
-      skip
+      # skip
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
@@ -154,7 +154,7 @@ describe "Spanner Client", :batch_update, :spanner do
 
     # This test fails because of constraint/non-constraint error.
     # tx.batch_update() should create transaction even after failing
-    focus
+    # focus
     it "runs execute_update and batch_update in the same transaction for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
@@ -185,7 +185,7 @@ describe "Spanner Client", :batch_update, :spanner do
     end
 
     describe "request options for #{dialect}" do
-      focus
+      # focus
       it "execute batch update with priority options for #{dialect}" do
         db[dialect].transaction do |tx|
           row_counts = tx.batch_update request_options: { priority: :PRIORITY_HIGH } do |b|
