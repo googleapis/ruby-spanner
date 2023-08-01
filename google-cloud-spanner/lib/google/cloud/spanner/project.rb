@@ -521,6 +521,8 @@ module Google
         #     becomes available. The default is `true`.
         #   * `:threads` (Integer) The number of threads in the thread pool. The
         #     default is twice the number of available CPUs.
+        #   * `:write_ratio` (Float) Deprecated. This field is no longer needed
+        #     and will be removed in a future release.
         # @param [Hash] labels The labels to be applied to all sessions
         #   created by the client. Cloud Labels are a flexible and lightweight
         #   mechanism for organizing cloud resources into groups that reflect a
@@ -668,8 +670,8 @@ module Google
 
         def valid_session_pool_options opts = {}
           {
-            min: opts[:min], max: opts[:max], keepalive: opts[:keepalive], fail: opts[:fail],
-            threads: opts[:threads]
+            min: opts[:min], max: opts[:max], keepalive: opts[:keepalive],
+            fail: opts[:fail], threads: opts[:threads]
           }.compact
         end
       end
