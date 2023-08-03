@@ -86,7 +86,7 @@ module Google
 
           @mutex = Mutex.new
           @resource = ConditionVariable.new
-          @state_of_transaction = :NO_OPERATIONS_YET
+          @state_of_inline_begin = :NO_OPERATIONS_YET
         end
 
         ##
@@ -350,15 +350,15 @@ module Google
           results = nil
           @mutex.synchronize do
             @resource.wait @mutex while inline_begin_in_progress?
-            @state_of_transaction = :INLINE_BEGIN_IN_PROGRESS
+            @state_of_inline_begin = :INLINE_BEGIN_IN_PROGRESS if no_existing_transaction?
             results = session.execute_query sql, params: params, types: types,
                                                  transaction: tx_selector, seqno: @seqno,
                                                  query_options: query_options,
                                                  request_options: request_options,
                                                  call_options: call_options
             if no_existing_transaction?
-              # When an exception happens, this should not be left in INLINE_BEGIN_IN_PROGRESS
-              @state_of_transaction = :TRANSACTION_AVAILABLE
+              # When an exception happens, this should be reset to :NO_OPERATIONS_YET
+              @state_of_inline_begin = :TRANSACTION_AVAILABLE
               @grpc = results.metadata.transaction
               @resource.signal
             end
@@ -1158,7 +1158,7 @@ module Google
         end
 
         def inline_begin_in_progress?
-          @state_of_transaction == :INLINE_BEGIN_IN_PROGRESS
+          @state_of_inline_begin == :INLINE_BEGIN_IN_PROGRESS
         end
 
         ##

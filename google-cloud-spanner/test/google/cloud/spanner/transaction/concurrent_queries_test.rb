@@ -87,13 +87,11 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     session.service.mocked_service = mock
 
     mock.expect :execute_streaming_sql, results_enum do |values|
-      pp "selector for 1st call", values[:transaction]
       sleep 3
       values[:transaction] == tx_selector_begin
     end
 
     mock.expect :execute_streaming_sql, results_enum do |values|
-      pp "selector for 2nd call", values[:transaction]
       sleep 1
       values[:transaction] == tx_selector
     end
