@@ -70,56 +70,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   let(:results_grpc) { Google::Cloud::Spanner::V1::PartialResultSet.new results_hash }
   let(:results_enum) { Array(results_grpc).to_enum }
 
-  let(:results_enum_tx_1) do
-    rh = results_hash
-    rh[:metadata][:transaction][:id] = "tx123"
-    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
-  end
-  let(:results_enum_tx_2) do
-    rh = results_hash
-    rh[:metadata][:transaction][:id] = "tx456"
-    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
-  end
-
-  focus
-  it "tests concurrent queries in a transaction" do
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
-
-    mock.expect :execute_streaming_sql, results_enum do |values|
-      pp "selector for 1st call", values[:transaction]
-      sleep 3
-      values[:transaction] == tx_selector_begin
-    end
-
-    mock.expect :execute_streaming_sql, results_enum do |values|
-      pp "selector for 2nd call", values[:transaction]
-      sleep 1
-      values[:transaction] == tx_selector
-    end
-
-    # puts "before query"
-    # results = transaction.execute_query "SELECT * FROM users"
-    # puts "after query"
-
-    results_1 = nil
-    results_2 = nil
-    begin
-      t1 = Thread.new do
-        results_1 = transaction.execute_query "SELECT * FROM users"
-      end
-      sleep 1 # Ensure t1 initiates "begin" selector instead of t2
-      t2 = Thread.new do
-        results_2 = transaction.execute_query "SELECT * FROM users"
-      end
-    ensure
-      t1.join
-      t2.join
-    end
-
-    mock.verify
-  end
-
   it "can execute a simple query" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
