@@ -83,6 +83,10 @@ module Google
         def initialize
           @commit = Commit.new
           @seqno = 0
+
+          @mutex = Mutex.new
+          @resource = ConditionVariable.new
+          @state_of_transaction = :NO_OPERATIONS_YET
         end
 
         ##
@@ -343,12 +347,22 @@ module Google
 
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
-          results = session.execute_query sql, params: params, types: types,
-                                               transaction: tx_selector, seqno: @seqno,
-                                               query_options: query_options,
-                                               request_options: request_options,
-                                               call_options: call_options
-          @grpc = results.metadata.transaction if no_existing_transaction?
+          results = nil
+          @mutex.synchronize do
+            @resource.wait @mutex while inline_begin_in_progress?
+            @state_of_transaction = :INLINE_BEGIN_IN_PROGRESS
+            results = session.execute_query sql, params: params, types: types,
+                                                 transaction: tx_selector, seqno: @seqno,
+                                                 query_options: query_options,
+                                                 request_options: request_options,
+                                                 call_options: call_options
+            if no_existing_transaction?
+              # When an exception happens, this should not be left in INLINE_BEGIN_IN_PROGRESS
+              @state_of_transaction = :TRANSACTION_AVAILABLE
+              @grpc = results.metadata.transaction
+              @resource.signal
+            end
+          end
           results
         end
         alias execute execute_query
@@ -1141,6 +1155,10 @@ module Google
               read_write: V1::TransactionOptions::ReadWrite.new
             )
           )
+        end
+
+        def inline_begin_in_progress?
+          @state_of_transaction == :INLINE_BEGIN_IN_PROGRESS
         end
 
         ##

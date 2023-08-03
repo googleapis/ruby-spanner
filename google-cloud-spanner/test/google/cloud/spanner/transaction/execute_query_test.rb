@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require "helper"
+require 'ostruct'
 
 describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
@@ -69,6 +70,157 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   end
   let(:results_grpc) { Google::Cloud::Spanner::V1::PartialResultSet.new results_hash }
   let(:results_enum) { Array(results_grpc).to_enum }
+
+  let(:results_enum_tx_1) do
+    rh = results_hash
+    rh[:metadata][:transaction][:id] = "tx123"
+    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
+  end
+  let(:results_enum_tx_2) do
+    rh = results_hash
+    rh[:metadata][:transaction][:id] = "tx456"
+    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
+  end
+
+  # focus
+  it "tests delayed mock response" do
+    class Dummy
+      def self.delay_method
+        return 20
+      end
+    end
+    # mock = Minitest::Mock.new
+    Dummy.stub :delay_method, lambda { |x| sleep(5); 10 } do
+      puts "Inside a block"
+      10
+    end
+    # mock.stub :delay_method, lambda { 10 }
+
+    _(Dummy.delay_method).must_equal 10
+  end
+
+  describe "parallel queries in inline begin transaction" do
+    class ServiceStub
+      def initialize(config)
+        @responses = config.responses
+        @delays = config.delays
+      end
+      def execute_streaming_sql request, opts
+        puts "stub is called"
+        # pp request, opts
+        sleep(@delays.shift)
+        @responses.shift
+      end
+    end
+
+    # focus
+    it "tests delayed response" do
+      # session.service.instance_variable_set :mocked_service, ServiceStub
+      stub = ServiceStub.new([Object.new], [results_enum])
+      session.service.mocked_service = stub
+
+      results = transaction.execute_query "SELECT * FROM users"
+      # puts results
+    end
+
+    # focus
+    it "tests parallel queries" do
+      Config = Struct.new(:reponses, :delays)
+      # res1 = results_enum
+      # # pp res.inspect
+      # pp res1.to_a
+      stub = ServiceStub.new([nil, nil], [results_enum_tx_2, results_enum_tx_1])
+      session.service.mocked_service = stub
+
+      results_1 = nil
+      results_2 = nil
+      begin
+        t1 = Thread.new do
+          results_1 = transaction.execute_query "SELECT * FROM users"
+        end
+        t2 = Thread.new do
+          results_2 = transaction.execute_query "SELECT * FROM users"
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      _(results_1.metadata.transaction.id).must_equal results_2.metadata.transaction.id
+    end
+
+    # focus
+    it "tests parallel queries" do
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
+
+      def mock.execute_streaming_sql *args
+        if @called == nil
+          @called = true
+          sleep 3
+          return results_enum_tx_1
+        end
+        sleep 1
+        return results_enum_tx_2
+      end
+
+      results_1 = nil
+      results_2 = nil
+      begin
+        t1 = Thread.new do
+          results_1 = transaction.execute_query "SELECT * FROM users"
+        end
+        t2 = Thread.new do
+          results_2 = transaction.execute_query "SELECT * FROM users"
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      _(results_1.metadata.transaction.id).must_equal results_2.metadata.transaction.id
+      mock.verify
+    end
+  end
+
+  focus
+  it "simple mock" do
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+
+    mock.expect :execute_streaming_sql, results_enum do |values|
+      pp "selector for 1st call", values[:transaction]
+      sleep 3
+      values[:transaction] == tx_selector_begin
+    end
+
+    mock.expect :execute_streaming_sql, results_enum do |values|
+      pp "selector for 2nd call", values[:transaction]
+      sleep 1
+      values[:transaction] == tx_selector
+    end
+
+    # puts "before query"
+    # results = transaction.execute_query "SELECT * FROM users"
+    # puts "after query"
+
+    results_1 = nil
+    results_2 = nil
+    begin
+      t1 = Thread.new do
+        results_1 = transaction.execute_query "SELECT * FROM users"
+      end
+      sleep 1 # Ensure t1 initiates "begin" selector instead of t2
+      t2 = Thread.new do
+        results_2 = transaction.execute_query "SELECT * FROM users"
+      end
+    ensure
+      t1.join
+      t2.join
+    end
+
+    mock.verify
+  end
 
   it "can execute a simple query" do
     mock = Minitest::Mock.new
