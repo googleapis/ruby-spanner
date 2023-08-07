@@ -360,17 +360,7 @@ module Google
             seqno: seqno,
             request_options: request_options
           }
-          results = service.execute_batch_dml request, opts
-
-          if results.status.code.zero?
-            results
-          else
-            begin
-              raise Google::Cloud::Error.from_error results.status
-            rescue Google::Cloud::Error
-              raise Google::Cloud::Spanner::BatchUpdateError.from_grpc results
-            end
-          end
+          service.execute_batch_dml request, opts
         end
 
         def streaming_read_table session_name, table_name, columns, keys: nil,

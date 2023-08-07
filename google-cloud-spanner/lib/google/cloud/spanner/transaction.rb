@@ -17,6 +17,7 @@ require "google/cloud/spanner/errors"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
+require "google/cloud/spanner/batch_update_results"
 
 module Google
   module Cloud
@@ -619,14 +620,16 @@ module Google
           @seqno += 1
 
           request_options = build_request_options request_options
+          batch_update_results = nil
           begin
             results = session.batch_update tx_selector, @seqno,
                                            request_options: request_options,
                                            call_options: call_options, &block
-            @grpc = results.result_sets.first.metadata.transaction if no_existing_transaction?
-            results.result_sets.map { |rs| rs.stats.row_count_exact }
-          rescue Google::Cloud::Spanner::BatchUpdateError => e
-            @grpc = e.result_sets.first.metadata.transaction if no_existing_transaction?
+            batch_update_results = BatchUpdateResults.from_grpc results
+            @grpc = batch_update_results.transaction if no_existing_transaction?
+            batch_update_results.row_counts
+          rescue Google::Cloud::Spanner::BatchUpdateError
+            @grpc = batch_update_results.transaction if no_existing_transaction?
             # Re-raise after extracting transaction
             raise
           end
