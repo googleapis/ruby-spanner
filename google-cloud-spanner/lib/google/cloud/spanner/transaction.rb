@@ -627,6 +627,7 @@ module Google
             results.result_sets.map { |rs| rs.stats.row_count_exact }
           rescue Google::Cloud::Spanner::BatchUpdateError => e
             @grpc = e.result_sets.first.metadata.transaction if no_existing_transaction?
+            # Re-raise after extracting transaction
             raise
           end
         end
