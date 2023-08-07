@@ -619,11 +619,16 @@ module Google
           @seqno += 1
 
           request_options = build_request_options request_options
-          results = session.batch_update tx_selector, @seqno,
-                                         request_options: request_options,
-                                         call_options: call_options, &block
-          @grpc = results.result_sets.first.metadata.transaction if no_existing_transaction?
-          results.result_sets.map { |rs| rs.stats.row_count_exact }
+          begin
+            results = session.batch_update tx_selector, @seqno,
+                                           request_options: request_options,
+                                           call_options: call_options, &block
+            @grpc = results.result_sets.first.metadata.transaction if no_existing_transaction?
+            results.result_sets.map { |rs| rs.stats.row_count_exact }
+          rescue Google::Cloud::Spanner::BatchUpdateError => e
+            @grpc = e.result_sets.first.metadata.transaction if no_existing_transaction?
+            raise
+          end
         end
 
         ##

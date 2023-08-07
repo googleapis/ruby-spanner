@@ -83,6 +83,9 @@ module Google
       #   rows that were modified for each successful statement.
       class BatchUpdateError < Google::Cloud::Error
         attr_reader :row_counts
+        ## @private Object of type
+        # Google::Cloud::Spanner::V1::ResultSet
+        attr_reader :result_sets
 
         ##
         # @private New Status from a Google::Rpc::Status object.
@@ -90,8 +93,9 @@ module Google
           row_counts = grpc.result_sets.map do |rs|
             rs.stats.row_count_exact
           end
-          new.tap do |result|
-            result.instance_variable_set :@row_counts, row_counts
+          new.tap do |batch_update_error|
+            batch_update_error.instance_variable_set :@result_sets, grpc.result_sets
+            batch_update_error.instance_variable_set :@row_counts, row_counts
           end
         end
       end
