@@ -349,7 +349,7 @@ module Google
                                                query_options: query_options,
                                                request_options: request_options,
                                                call_options: call_options
-          @grpc = results.metadata.transaction if no_existing_transaction?
+          @grpc = results.transaction if no_existing_transaction?
           results
         end
         alias execute execute_query
@@ -699,7 +699,7 @@ module Google
                                                  transaction: tx_selector,
                                                  request_options: request_options,
                                                  call_options: call_options
-          @grpc = results.metadata.transaction if no_existing_transaction?
+          @grpc = results.transaction if no_existing_transaction?
           results
         end
 
