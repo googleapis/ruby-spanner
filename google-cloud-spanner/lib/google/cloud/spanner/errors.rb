@@ -90,8 +90,8 @@ module Google
           row_counts = grpc.result_sets.map do |rs|
             rs.stats.row_count_exact
           end
-          new.tap do |batch_update_error|
-            batch_update_error.instance_variable_set :@row_counts, row_counts
+          new.tap do |result|
+            result.instance_variable_set :@row_counts, row_counts
           end
         end
       end
