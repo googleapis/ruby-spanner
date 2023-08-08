@@ -149,6 +149,22 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
+    # TODO: Convert to unit test if possible
+    it "raises BatchUpdateError when the first statement in Batch DML is a syntax error for #{dialect}" do
+      prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
+      _(prior_results.rows.count).must_equal 3
+      assert_raises Google::Cloud::Spanner::BatchUpdateError do
+        db[dialect].transaction do |tx|
+          _(tx.no_existing_transaction?).must_equal true
+          tx.batch_update do |b|
+            b.batch_update update_dml_syntax_error, params: update_params[dialect]
+          end
+        end
+      end
+      prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
+      _(prior_results.rows.count).must_equal 3
+    end
+
     it "runs execute_update and batch_update in the same transaction for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
