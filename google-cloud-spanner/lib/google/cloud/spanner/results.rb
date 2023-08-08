@@ -78,6 +78,13 @@ module Google
           @fields ||= Fields.from_grpc @metadata.row_type.fields
         end
 
+        ##
+        # @private
+        # Returns a transaction if available
+        def transaction
+          @metadata&.transaction
+        end
+
         # rubocop:disable all
 
         ##

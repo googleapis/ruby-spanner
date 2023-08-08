@@ -620,19 +620,13 @@ module Google
           @seqno += 1
 
           request_options = build_request_options request_options
-          batch_update_results = nil
-          begin
-            results = session.batch_update tx_selector, @seqno,
-                                           request_options: request_options,
-                                           call_options: call_options, &block
-            batch_update_results = BatchUpdateResults.from_grpc results
-            @grpc = batch_update_results.transaction if no_existing_transaction?
-            batch_update_results.row_counts
-          rescue Google::Cloud::Spanner::BatchUpdateError
-            @grpc = batch_update_results.transaction if no_existing_transaction?
-            # Re-raise after extracting transaction
-            raise
-          end
+          results = session.batch_update tx_selector, @seqno,
+                                         request_options: request_options,
+                                         call_options: call_options, &block
+          batch_update_results = BatchUpdateResults.from_grpc results
+          row_counts = batch_update_results.row_counts
+          @grpc = batch_update_results.transaction if no_existing_transaction?
+          row_counts
         end
 
         ##

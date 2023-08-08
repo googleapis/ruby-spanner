@@ -24,15 +24,10 @@ module Google
         attr_reader :grpc
 
         def row_counts
-          if @grpc.status.code.zero?
-            @grpc.result_sets.map { |rs| rs.stats.row_count_exact }
-          else
-            begin
-              raise Google::Cloud::Error.from_error @grpc.status
-            rescue Google::Cloud::Error
-              raise Google::Cloud::Spanner::BatchUpdateError.from_grpc @grpc
-            end
+          unless @grpc.status.code.zero?
+            raise Google::Cloud::Spanner::BatchUpdateError.from_grpc @grpc
           end
+          @grpc.result_sets.map { |rs| rs.stats.row_count_exact }
         end
 
         def transaction
