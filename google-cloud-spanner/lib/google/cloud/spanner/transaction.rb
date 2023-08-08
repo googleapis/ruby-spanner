@@ -87,7 +87,7 @@ module Google
 
           @mutex = Mutex.new
           @resource = ConditionVariable.new
-          @state_of_inline_begin = :NO_OPERATIONS_YET
+          @state_of_inline_begin = :NO_TRANSACTION_AVAILABLE
         end
 
         ##
@@ -350,19 +350,23 @@ module Google
           request_options = build_request_options request_options
           results = nil
           @mutex.synchronize do
-            @resource.wait @mutex while inline_begin_in_progress?
-            @state_of_inline_begin = :INLINE_BEGIN_IN_PROGRESS if no_existing_transaction?
-            results = session.execute_query sql, params: params, types: types,
-                                                 transaction: tx_selector, seqno: @seqno,
-                                                 query_options: query_options,
-                                                 request_options: request_options,
-                                                 call_options: call_options
-            if no_existing_transaction?
-              # When an exception happens, this should be reset to :NO_OPERATIONS_YET
-              @state_of_inline_begin = :TRANSACTION_AVAILABLE
-              # @grpc = results.metadata.transaction
-              @grpc = results.transaction if no_existing_transaction?
-              @resource.signal
+            begin
+              @resource.wait @mutex while inline_begin_in_progress?
+              @state_of_inline_begin = :INLINE_BEGIN_IN_PROGRESS if no_existing_transaction?
+              results = session.execute_query sql, params: params, types: types,
+                transaction: tx_selector, seqno: @seqno,
+                query_options: query_options,
+                request_options: request_options,
+                call_options: call_options
+              if no_existing_transaction?
+                # When an exception happens, this should be reset to :NO_OPERATIONS_YET
+                @state_of_inline_begin = :TRANSACTION_AVAILABLE
+                @grpc = results.transaction if no_existing_transaction?
+                @resource.signal
+              end
+            rescue StandardError
+              @state_of_inline_begin == :NO_TRANSACTION_AVAILABLE if inline_begin_in_progress?
+              raise
             end
           end
           results
@@ -1159,6 +1163,10 @@ module Google
               read_write: V1::TransactionOptions::ReadWrite.new
             )
           )
+        end
+
+        def no_operation_yet?
+          @state_of_inline_begin == :NO_TRANSACTION_AVAILABLE
         end
 
         def inline_begin_in_progress?
