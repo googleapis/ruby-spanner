@@ -88,7 +88,7 @@ module Google
           @mutex = Mutex.new
           @resource = ConditionVariable.new
           @state_of_inline_begin = :NO_TRANSACTION_AVAILABLE
-          @inline_begin_in_progress = false
+          @transaction_creation_in_progress = false
         end
 
         ##
@@ -353,11 +353,11 @@ module Google
           @mutex.synchronize do
             begin
               # Wait if another operation has initiated a request for a new transaction
-              @resource.wait @mutex while @inline_begin_in_progress
+              @resource.wait @mutex while @transaction_creation_in_progress
 
               # If transaction isn't available, let other threads know
               # not to initiate a request for a new transaction
-              @inline_begin_in_progress = true if no_existing_transaction?
+              @transaction_creation_in_progress = true if no_existing_transaction?
 
               results = session.execute_query sql, params: params, types: types,
                                               transaction: tx_selector, seqno: @seqno,
@@ -368,7 +368,7 @@ module Google
               # New transaction is fetched, so mark the state accordingly
               # and inform other concurrent operations
               if no_existing_transaction?
-                @inline_begin_in_progress = false
+                @transaction_creation_in_progress = false
                 @grpc = results.transaction
                 @resource.signal
               end
@@ -376,8 +376,8 @@ module Google
             rescue StandardError
               # In case of error during new transaction request, reset the state
               # and let other concurrent operations make an attempt
-              if @inline_begin_in_progress
-                @inline_begin_in_progress = false
+              if @transaction_creation_in_progress
+                @transaction_creation_in_progress = false
                 @resource.signal
               end
               raise
@@ -1183,14 +1183,6 @@ module Google
               read_write: V1::TransactionOptions::ReadWrite.new
             )
           )
-        end
-
-        def no_operation_yet?
-          @state_of_inline_begin == :NO_TRANSACTION_AVAILABLE
-        end
-
-        def inline_begin_in_progress?
-          @state_of_inline_begin == :INLINE_BEGIN_IN_PROGRESS
         end
 
         ##
