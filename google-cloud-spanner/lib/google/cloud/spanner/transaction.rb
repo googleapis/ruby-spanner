@@ -351,21 +351,34 @@ module Google
           results = nil
           @mutex.synchronize do
             begin
+              # Wait if another operation has initiated a request for a new transaction
               @resource.wait @mutex while inline_begin_in_progress?
+
+              # If transaction isn't available, let other threads know
+              # not to initiate a request for a new transaction
               @state_of_inline_begin = :INLINE_BEGIN_IN_PROGRESS if no_existing_transaction?
+
+              # Actual RPC call
               results = session.execute_query sql, params: params, types: types,
                 transaction: tx_selector, seqno: @seqno,
                 query_options: query_options,
                 request_options: request_options,
                 call_options: call_options
+
+              # New transaction is fetched, so mark the state accordingly
+              # and inform other concurrent operations
               if no_existing_transaction?
-                # When an exception happens, this should be reset to :NO_OPERATIONS_YET
                 @state_of_inline_begin = :TRANSACTION_AVAILABLE
-                @grpc = results.transaction if no_existing_transaction?
+                @grpc = results.transaction
                 @resource.signal
               end
             rescue StandardError
-              @state_of_inline_begin == :NO_TRANSACTION_AVAILABLE if inline_begin_in_progress?
+              # In case of error during new transaction request, reset the state
+              # and let other concurrent operations make an attempt
+              if inline_begin_in_progress?
+                @state_of_inline_begin = :NO_TRANSACTION_AVAILABLE
+                @resource.signal
+              end
               raise
             end
           end
