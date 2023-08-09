@@ -88,6 +88,7 @@ module Google
           @mutex = Mutex.new
           @resource = ConditionVariable.new
           @state_of_inline_begin = :NO_TRANSACTION_AVAILABLE
+          @inline_begin_in_progress = false
         end
 
         ##
@@ -96,6 +97,7 @@ module Google
         def transaction_id
           return @grpc.id if existing_transaction?
           ensure_session!
+          # TODO: This should be within lock too
           @grpc = service.begin_transaction session.path
           @grpc.id
         end
@@ -348,41 +350,39 @@ module Google
 
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
-          results = nil
           @mutex.synchronize do
             begin
               # Wait if another operation has initiated a request for a new transaction
-              @resource.wait @mutex while inline_begin_in_progress?
+              @resource.wait @mutex while @inline_begin_in_progress
 
               # If transaction isn't available, let other threads know
               # not to initiate a request for a new transaction
-              @state_of_inline_begin = :INLINE_BEGIN_IN_PROGRESS if no_existing_transaction?
+              @inline_begin_in_progress = true if no_existing_transaction?
 
-              # Actual RPC call
               results = session.execute_query sql, params: params, types: types,
-                transaction: tx_selector, seqno: @seqno,
-                query_options: query_options,
-                request_options: request_options,
-                call_options: call_options
+                                              transaction: tx_selector, seqno: @seqno,
+                                              query_options: query_options,
+                                              request_options: request_options,
+                                              call_options: call_options
 
               # New transaction is fetched, so mark the state accordingly
               # and inform other concurrent operations
               if no_existing_transaction?
-                @state_of_inline_begin = :TRANSACTION_AVAILABLE
+                @inline_begin_in_progress = false
                 @grpc = results.transaction
                 @resource.signal
               end
+              results
             rescue StandardError
               # In case of error during new transaction request, reset the state
               # and let other concurrent operations make an attempt
-              if inline_begin_in_progress?
-                @state_of_inline_begin = :NO_TRANSACTION_AVAILABLE
+              if @inline_begin_in_progress
+                @inline_begin_in_progress = false
                 @resource.signal
               end
               raise
             end
           end
-          results
         end
         alias execute execute_query
         alias query execute_query
