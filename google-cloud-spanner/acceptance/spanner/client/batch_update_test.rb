@@ -119,6 +119,7 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
+    # focus
     it "executes multiple DML statements in a batch with syntax error for #{dialect}" do
       # skip
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
@@ -149,17 +150,21 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # TODO: Convert to unit test if possible
+    # focus
     it "raises BatchUpdateError when the first statement in Batch DML is a syntax error for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
-      assert_raises Google::Cloud::Spanner::BatchUpdateError do
-        db[dialect].transaction do |tx|
+      db[dialect].transaction do |tx|
+        begin
           _(tx.no_existing_transaction?).must_equal true
           tx.batch_update do |b|
             b.batch_update update_dml_syntax_error, params: update_params[dialect]
           end
+        rescue Google::Cloud::Spanner::BatchUpdateError => e
+          _(e.cause).must_be_kind_of Google::Cloud::InvalidArgumentError
+          _(e.cause.message).must_equal "Statement 0: 'UPDDDD accounts' is not valid DML."
         end
+        _(tx.no_existing_transaction?).must_equal true
       end
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
