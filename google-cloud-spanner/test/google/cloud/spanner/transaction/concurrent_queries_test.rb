@@ -81,24 +81,19 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
   end
 
-  focus
+  # focus
   it "tests concurrent queries in a transaction" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
 
     mock.expect :execute_streaming_sql, results_enum do |values|
-      sleep 3
+      sleep 2 # simulate delayed response of rpc 
       values[:transaction] == tx_selector_begin
     end
 
     mock.expect :execute_streaming_sql, results_enum do |values|
-      sleep 1
       values[:transaction] == tx_selector
     end
-
-    # puts "before query"
-    # results = transaction.execute_query "SELECT * FROM users"
-    # puts "after query"
 
     results_1 = nil
     results_2 = nil
@@ -109,6 +104,44 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
       sleep 1 # Ensure t1 initiates "begin" selector instead of t2
       t2 = Thread.new do
         results_2 = transaction.execute_query "SELECT * FROM users"
+      end
+    ensure
+      t1.join
+      t2.join
+    end
+
+    mock.verify
+  end
+
+  # focus
+  it "throws exception for first operation, so second operation initiates inline" do
+
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+
+    mock.expect :execute_streaming_sql, results_enum do |values|
+      sleep 2 # simulate delayed response of rpc
+      values[:transaction] == tx_selector_begin
+      raise Google::Cloud::InvalidArgumentError
+    end
+
+    mock.expect :execute_streaming_sql, results_enum do |values|
+      values[:transaction] == tx_selector_begin
+    end
+
+    results_1 = nil
+    results_2 = nil
+    begin
+      t1 = Thread.new do
+        assert_raises Google::Cloud::InvalidArgumentError do
+          results_1 = transaction.execute_query "SELECT * FROM users"
+        end
+        _(transaction.no_existing_transaction?).must_equal true
+      end
+      sleep 1 # Ensure t1 initiates "begin" selector before t2
+      t2 = Thread.new do
+        results_2 = transaction.execute_query "SELECT * FROM users"
+        _(transaction.transaction_id).must_equal transaction_id
       end
     ensure
       t1.join

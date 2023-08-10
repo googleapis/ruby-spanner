@@ -346,41 +346,39 @@ module Google
                           request_options: nil, call_options: nil
           ensure_session!
 
+          # TODO: should this part of lock too?
           @seqno += 1
 
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
-          @mutex.synchronize do
-            begin
-              # Wait if another operation has initiated a request for a new transaction
-              @resource.wait @mutex while @transaction_creation_in_progress
 
-              # If transaction isn't available, let other threads know
-              # not to initiate a request for a new transaction
-              @transaction_creation_in_progress = true if no_existing_transaction?
-
-              results = session.execute_query sql, params: params, types: types,
-                                              transaction: tx_selector, seqno: @seqno,
-                                              query_options: query_options,
-                                              request_options: request_options,
-                                              call_options: call_options
-
-              # New transaction is fetched, so mark the state accordingly
-              # and inform other concurrent operations
-              if no_existing_transaction?
-                @transaction_creation_in_progress = false
-                @grpc = results.transaction
-                @resource.signal
-              end
-              results
-            rescue StandardError
-              # In case of error during new transaction request, reset the state
-              # and let other concurrent operations make an attempt
+          loop do
+            if existing_transaction?
+              return session.execute_query sql, params: params, types: types,
+                                           transaction: tx_selector, seqno: @seqno,
+                                           query_options: query_options,
+                                           request_options: request_options,
+                                           call_options: call_options
+            end
+            @mutex.synchronize do
               if @transaction_creation_in_progress
-                @transaction_creation_in_progress = false
-                @resource.signal
+                @resource.wait @mutex while @transaction_creation_in_progress
+                next
+              else
+                @transaction_creation_in_progress = true
+                begin
+                  results = session.execute_query sql, params: params, types: types,
+                                                  transaction: tx_selector, seqno: @seqno,
+                                                  query_options: query_options,
+                                                  request_options: request_options,
+                                                  call_options: call_options
+                  @grpc = results.transaction
+                  return results
+                ensure
+                  @transaction_creation_in_progress = false
+                  @resource.signal
+                end
               end
-              raise
             end
           end
         end
