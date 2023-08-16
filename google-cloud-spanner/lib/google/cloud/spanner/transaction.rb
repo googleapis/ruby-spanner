@@ -97,8 +97,9 @@ module Google
         def transaction_id
           return @grpc.id if existing_transaction?
           ensure_session!
-          # TODO: This should be within lock too
-          @grpc = service.begin_transaction session.path
+          safe_execute do
+            @grpc = service.begin_transaction session.path
+          end
           @grpc.id
         end
 
@@ -634,10 +635,10 @@ module Google
                                              call_options: call_options, &block
               batch_update_results = BatchUpdateResults.from_grpc results
               row_counts = batch_update_results.row_counts
-              @grpc = batch_update_results.transaction if no_existing_transaction?
+              @grpc ||= batch_update_results.transaction
               return row_counts
             rescue Google::Cloud::Spanner::BatchUpdateError
-              @grpc = batch_update_results.transaction if no_existing_transaction?
+              @grpc ||= batch_update_results.transaction
               # Re-raise after extracting transaction
               raise
             end
