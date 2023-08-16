@@ -1823,7 +1823,7 @@ module Google
                    Google::Cloud::AbortedError,
                    GRPC::Internal,
                    Google::Cloud::InternalError => e
-              propagate_err! e, (current_time - start_time > deadline)
+              check_and_propagate_err! e, (current_time - start_time > deadline)
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
               # Create new transaction on the session and retry the block
@@ -2269,9 +2269,7 @@ module Google
           nil
         end
 
-        ##
-        # Determines if a transaction error needs to be propagated
-        def propagate_err! err, deadline_passed
+        def check_and_propagate_err! err, deadline_passed
           raise err if internal_error_and_not_retryable? err
           return unless deadline_passed
           if err.is_a? GRPC::BadStatus
