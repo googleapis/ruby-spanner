@@ -346,40 +346,17 @@ module Google
                           request_options: nil, call_options: nil
           ensure_session!
 
-          # TODO: should this part of lock too?
-          @seqno += 1
-
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
 
-          loop do
-            if existing_transaction?
-              return session.execute_query sql, params: params, types: types,
-                                           transaction: tx_selector, seqno: @seqno,
-                                           query_options: query_options,
-                                           request_options: request_options,
-                                           call_options: call_options
-            end
-            @mutex.synchronize do
-              if @transaction_creation_in_progress
-                @resource.wait @mutex while @transaction_creation_in_progress
-                next
-              else
-                @transaction_creation_in_progress = true
-                begin
-                  results = session.execute_query sql, params: params, types: types,
-                                                  transaction: tx_selector, seqno: @seqno,
-                                                  query_options: query_options,
-                                                  request_options: request_options,
-                                                  call_options: call_options
-                  @grpc = results.transaction
-                  return results
-                ensure
-                  @transaction_creation_in_progress = false
-                  @resource.signal
-                end
-              end
-            end
+          safe_execute do |seqno|
+            results = session.execute_query sql, params: params, types: types,
+                                            transaction: tx_selector, seqno: seqno,
+                                            query_options: query_options,
+                                            request_options: request_options,
+                                            call_options: call_options
+            @grpc ||= results.transaction
+            results
           end
         end
         alias execute execute_query
@@ -647,22 +624,23 @@ module Google
         #
         def batch_update request_options: nil, call_options: nil, &block
           ensure_session!
-          @seqno += 1
 
           request_options = build_request_options request_options
-          batch_update_results = nil
-          begin
-            results = session.batch_update tx_selector, @seqno,
-                                           request_options: request_options,
-                                           call_options: call_options, &block
-            batch_update_results = BatchUpdateResults.from_grpc results
-            row_counts = batch_update_results.row_counts
-            @grpc = batch_update_results.transaction if no_existing_transaction?
-            row_counts
-          rescue Google::Cloud::Spanner::BatchUpdateError
-            @grpc = batch_update_results.transaction if no_existing_transaction?
-            # Re-raise after extracting transaction
-            raise
+          safe_execute do |seqno|
+            batch_update_results = nil
+            begin
+              results = session.batch_update tx_selector, seqno,
+                                             request_options: request_options,
+                                             call_options: call_options, &block
+              batch_update_results = BatchUpdateResults.from_grpc results
+              row_counts = batch_update_results.row_counts
+              @grpc = batch_update_results.transaction if no_existing_transaction?
+              return row_counts
+            rescue Google::Cloud::Spanner::BatchUpdateError
+              @grpc = batch_update_results.transaction if no_existing_transaction?
+              # Re-raise after extracting transaction
+              raise
+            end
           end
         end
 
@@ -732,32 +710,14 @@ module Google
           columns = Array(columns).map(&:to_s)
           keys = Convert.to_key_set keys
           request_options = build_request_options request_options
-          loop do
-            if existing_transaction?
-              return session.read table, columns, keys: keys, index: index, limit: limit,
-                                  transaction: tx_selector,
-                                  request_options: request_options,
-                                  call_options: call_options
-            end
-            @mutex.synchronize do
-              if @transaction_creation_in_progress
-                @resource.wait @mutex while @transaction_creation_in_progress
-                next
-              else
-                @transaction_creation_in_progress = true
-                begin
-                  results = session.read table, columns, keys: keys, index: index, limit: limit,
-                                         transaction: tx_selector,
-                                         request_options: request_options,
-                                         call_options: call_options
-                  @grpc = results.transaction
-                  return results
-                ensure
-                  @transaction_creation_in_progress = false
-                  @resource.signal
-                end
-              end
-            end
+
+          safe_execute do
+            results = session.read table, columns, keys: keys, index: index, limit: limit,
+                                   transaction: tx_selector,
+                                   request_options: request_options,
+                                   call_options: call_options
+            @grpc ||= results.transaction
+            results
           end
         end
 
@@ -1193,6 +1153,44 @@ module Google
         end
 
         protected
+
+        ##
+        # @private Executes a query rpc for inline-begin transaction
+        # in a thread-safe manner. This method is optimised to
+        # use mutexes only when necessary, while still acheiving thread-safety.
+        # Note: Do not use @seqno directly while using this method. Instead, use
+        # the seqno variable passed to the block.
+        def safe_execute
+          loop do
+            if existing_transaction?
+              local_seqno = nil
+              # Create a copy of @seqno to avoid concurrent
+              # operations overriding the incremented value.
+              @mutex.synchronize do
+                @seqno += 1
+                local_seqno = @seqno
+              end
+              # If a transaction already exists, execute rpc without mutex
+              return yield local_seqno
+            end
+
+            @mutex.synchronize do
+              if @transaction_creation_in_progress
+                @resource.wait @mutex while @transaction_creation_in_progress
+                next
+              else
+                @transaction_creation_in_progress = true
+                begin
+                  @seqno += 1
+                  return yield @seqno
+                ensure
+                  @transaction_creation_in_progress = false
+                  @resource.signal
+                end
+              end
+            end
+          end
+        end
 
         # The TransactionSelector to be used for queries
         def tx_selector
