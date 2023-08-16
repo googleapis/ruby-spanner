@@ -1156,9 +1156,10 @@ module Google
         protected
 
         ##
-        # @private Executes a query rpc for inline-begin transaction
-        # in a thread-safe manner. This method is optimised to
+        # @private Facilitates a thread-safe execution of an rpc
+        # for inline-begin of a transaction. This method is optimised to
         # use mutexes only when necessary, while still acheiving thread-safety.
+        #
         # Note: Do not use @seqno directly while using this method. Instead, use
         # the seqno variable passed to the block.
         def safe_execute
