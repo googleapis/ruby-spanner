@@ -1217,12 +1217,10 @@ module Google
         ##
         # @private Generates the next seqno in a thread-safe manner.
         def next_seqno
-          local_seqno = nil
           @mutex.synchronize do
             @seqno += 1
-            local_seqno = @seqno
+            return @seqno
           end
-          local_seqno
         end
 
         ##
