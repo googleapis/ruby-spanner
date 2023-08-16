@@ -87,7 +87,6 @@ module Google
 
           @mutex = Mutex.new
           @resource = ConditionVariable.new
-          @state_of_inline_begin = :NO_TRANSACTION_AVAILABLE
           @transaction_creation_in_progress = false
         end
 
