@@ -732,12 +732,33 @@ module Google
           columns = Array(columns).map(&:to_s)
           keys = Convert.to_key_set keys
           request_options = build_request_options request_options
-          results = session.read table, columns, keys: keys, index: index, limit: limit,
-                                                 transaction: tx_selector,
-                                                 request_options: request_options,
-                                                 call_options: call_options
-          @grpc = results.transaction if no_existing_transaction?
-          results
+          loop do
+            if existing_transaction?
+              return session.read table, columns, keys: keys, index: index, limit: limit,
+                                  transaction: tx_selector,
+                                  request_options: request_options,
+                                  call_options: call_options
+            end
+            @mutex.synchronize do
+              if @transaction_creation_in_progress
+                @resource.wait @mutex while @transaction_creation_in_progress
+                next
+              else
+                @transaction_creation_in_progress = true
+                begin
+                  results = session.read table, columns, keys: keys, index: index, limit: limit,
+                                         transaction: tx_selector,
+                                         request_options: request_options,
+                                         call_options: call_options
+                  @grpc = results.transaction
+                  return results
+                ensure
+                  @transaction_creation_in_progress = false
+                  @resource.signal
+                end
+              end
+            end
+          end
         end
 
         ##

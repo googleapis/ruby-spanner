@@ -151,4 +151,39 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     mock.verify
   end
 
+  # focus
+  it "tests concurrent read queries in a transaction" do
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+
+    mock.expect :streaming_read, results_enum do |values|
+      sleep 2 # simulate delayed response of rpc 
+      values[:transaction] == tx_selector_begin
+    end
+
+    mock.expect :streaming_read, results_enum do |values|
+      values[:transaction] == tx_selector
+    end
+
+    results_1 = nil
+    results_2 = nil
+    begin
+      t1 = Thread.new do
+        results_1 = transaction.read "my-table", columns,
+                               request_options: { tag: "Tag-1-1" }
+      end
+      sleep 1 # Ensure t1 initiates "begin" selector instead of t2
+      t2 = Thread.new do
+        results_2 = transaction.read "my-table", columns,
+                               request_options: { tag: "Tag-1-1" }
+      end
+    ensure
+      t1.join
+      t2.join
+    end
+
+    mock.verify
+  end
 end
