@@ -1165,15 +1165,11 @@ module Google
         def safe_execute
           loop do
             if existing_transaction?
-              local_seqno = nil
-              # Create a copy of @seqno to avoid concurrent
+              # Create a local copy of @seqno to avoid concurrent
               # operations overriding the incremented value.
-              @mutex.synchronize do
-                @seqno += 1
-                local_seqno = @seqno
-              end
+              seqno = next_seqno
               # If a transaction already exists, execute rpc without mutex
-              return yield local_seqno
+              return yield seqno
             end
 
             @mutex.synchronize do
@@ -1216,6 +1212,17 @@ module Google
           end
 
           options
+        end
+
+        ##
+        # @private Generates the next seqno in a thread-safe manner.
+        def next_seqno
+          local_seqno = nil
+          @mutex.synchronize do
+            @seqno += 1
+            local_seqno = @seqno
+          end
+          local_seqno
         end
 
         ##
