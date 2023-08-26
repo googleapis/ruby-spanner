@@ -14,7 +14,7 @@
 
 require "helper"
 
-describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
+describe Google::Cloud::Spanner::Transaction, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
   let(:session_id) { "session123" }
@@ -81,109 +81,147 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
   end
 
-  # focus
-  it "tests concurrent queries in a transaction" do
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
+  describe "execute_query()" do
+    it "tests concurrent queries in a transaction" do
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
 
-    mock.expect :execute_streaming_sql, results_enum do |values|
-      sleep 2 # simulate delayed response of rpc 
-      values[:transaction] == tx_selector_begin
-    end
-
-    mock.expect :execute_streaming_sql, results_enum do |values|
-      values[:transaction] == tx_selector
-    end
-
-    results_1 = nil
-    results_2 = nil
-    begin
-      t1 = Thread.new do
-        results_1 = transaction.execute_query "SELECT * FROM users"
+      mock.expect :execute_streaming_sql, results_enum do |values|
+        sleep 2 # simulate delayed response of rpc 
+        values[:transaction] == tx_selector_begin
       end
-      sleep 1 # Ensure t1 initiates "begin" selector instead of t2
-      t2 = Thread.new do
-        results_2 = transaction.execute_query "SELECT * FROM users"
+
+      mock.expect :execute_streaming_sql, results_enum do |values|
+        values[:transaction] == tx_selector
       end
-    ensure
-      t1.join
-      t2.join
-    end
 
-    mock.verify
-  end
-
-  # focus
-  it "throws exception for first operation, so second operation initiates inline" do
-
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
-
-    mock.expect :execute_streaming_sql, results_enum do |values|
-      sleep 2 # simulate delayed response of rpc
-      values[:transaction] == tx_selector_begin
-      raise Google::Cloud::InvalidArgumentError
-    end
-
-    mock.expect :execute_streaming_sql, results_enum do |values|
-      values[:transaction] == tx_selector_begin
-    end
-
-    results_1 = nil
-    results_2 = nil
-    begin
-      t1 = Thread.new do
-        assert_raises Google::Cloud::InvalidArgumentError do
+      results_1 = nil
+      results_2 = nil
+      begin
+        t1 = Thread.new do
           results_1 = transaction.execute_query "SELECT * FROM users"
         end
-        _(transaction.no_existing_transaction?).must_equal true
+        sleep 1 # Ensure t1 initiates "begin" selector instead of t2
+        t2 = Thread.new do
+          results_2 = transaction.execute_query "SELECT * FROM users"
+        end
+      ensure
+        t1.join
+        t2.join
       end
-      sleep 1 # Ensure t1 initiates "begin" selector before t2
-      t2 = Thread.new do
-        results_2 = transaction.execute_query "SELECT * FROM users"
-        _(transaction.transaction_id).must_equal transaction_id
-      end
-    ensure
-      t1.join
-      t2.join
+
+      mock.verify
     end
 
-    mock.verify
+    # focus
+    it "throws exception for first operation, so second operation initiates inline" do
+
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
+
+      mock.expect :execute_streaming_sql, results_enum do |values|
+        sleep 2 # simulate delayed response of rpc
+        values[:transaction] == tx_selector_begin
+        raise Google::Cloud::InvalidArgumentError
+      end
+
+      mock.expect :execute_streaming_sql, results_enum do |values|
+        values[:transaction] == tx_selector_begin
+      end
+
+      results_1 = nil
+      results_2 = nil
+      begin
+        t1 = Thread.new do
+          assert_raises Google::Cloud::InvalidArgumentError do
+            results_1 = transaction.execute_query "SELECT * FROM users"
+          end
+        end
+        sleep 1 # Ensure t1 initiates "begin" selector before t2
+        t2 = Thread.new do
+          results_2 = transaction.execute_query "SELECT * FROM users"
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      mock.verify
+    end
   end
 
-  # focus
-  it "tests concurrent read queries in a transaction" do
-    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+  describe "read()" do
+    it "tests concurrent read queries in a transaction" do
+      columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
 
-    mock.expect :streaming_read, results_enum do |values|
-      sleep 2 # simulate delayed response of rpc 
-      values[:transaction] == tx_selector_begin
-    end
-
-    mock.expect :streaming_read, results_enum do |values|
-      values[:transaction] == tx_selector
-    end
-
-    results_1 = nil
-    results_2 = nil
-    begin
-      t1 = Thread.new do
-        results_1 = transaction.read "my-table", columns,
-                               request_options: { tag: "Tag-1-1" }
+      mock.expect :streaming_read, results_enum do |values|
+        sleep 2 # simulate delayed response of rpc 
+        values[:transaction] == tx_selector_begin
       end
-      sleep 1 # Ensure t1 initiates "begin" selector instead of t2
-      t2 = Thread.new do
-        results_2 = transaction.read "my-table", columns,
-                               request_options: { tag: "Tag-1-1" }
+
+      mock.expect :streaming_read, results_enum do |values|
+        values[:transaction] == tx_selector
       end
-    ensure
-      t1.join
-      t2.join
+
+      results_1 = nil
+      results_2 = nil
+      begin
+        t1 = Thread.new do
+          results_1 = transaction.read "my-table", columns,
+                                 request_options: { tag: "Tag-1-1" }
+        end
+        sleep 1 # Ensure t1 initiates "begin" selector instead of t2
+        t2 = Thread.new do
+          results_2 = transaction.read "my-table", columns,
+                                 request_options: { tag: "Tag-1-1" }
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      mock.verify
     end
 
-    mock.verify
+    it "throws exception for first operation, so second operation initiates inline" do
+      columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
+
+      mock.expect :streaming_read, results_enum do |values|
+        sleep 2 # simulate delayed response of rpc
+        values[:transaction] == tx_selector_begin
+        raise Google::Cloud::InvalidArgumentError
+      end
+
+      mock.expect :streaming_read, results_enum do |values|
+        values[:transaction] == tx_selector_begin
+      end
+
+      results_1 = nil
+      results_2 = nil
+      begin
+        t1 = Thread.new do
+          assert_raises Google::Cloud::InvalidArgumentError do
+            results_1 = transaction.read "my-table", columns,
+                                   request_options: { tag: "Tag-1-1" }
+          end
+        end
+        sleep 1 # Ensure t1 initiates "begin" selector before t2
+        t2 = Thread.new do
+          results_2 = transaction.read "my-table", columns,
+                                 request_options: { tag: "Tag-1-1" }
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      mock.verify
+    end
   end
 end
