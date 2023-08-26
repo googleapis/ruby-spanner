@@ -622,10 +622,10 @@ module Google
           request_options = build_request_options request_options
           batch_update_results = nil
           begin
-            results = session.batch_update tx_selector, @seqno,
-                                           request_options: request_options,
-                                           call_options: call_options, &block
-            batch_update_results = BatchUpdateResults.from_grpc results
+            response = session.batch_update tx_selector, @seqno,
+                                            request_options: request_options,
+                                            call_options: call_options, &block
+            batch_update_results = BatchUpdateResults.new response
             row_counts = batch_update_results.row_counts
             @grpc = batch_update_results.transaction if no_existing_transaction?
             row_counts

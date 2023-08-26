@@ -23,6 +23,10 @@ module Google
         # Google::Cloud::Spanner::V1::ExecuteBatchDmlResponse
         attr_reader :grpc
 
+        def initialize grpc
+          @grpc = grpc
+        end
+
         def row_counts
           if @grpc.status.code.zero?
             @grpc.result_sets.map { |rs| rs.stats.row_count_exact }
@@ -39,12 +43,6 @@ module Google
         # Returns transaction if available. Otherwise returns nil
         def transaction
           @grpc&.result_sets&.first&.metadata&.transaction
-        end
-
-        def self.from_grpc grpc
-          new.tap do |b|
-            b.instance_variable_set :@grpc, grpc
-          end
         end
       end
     end
