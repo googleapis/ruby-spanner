@@ -29,9 +29,8 @@ module Google
       # {Google::Cloud::Spanner::Session} instances.
       #
       class Pool
-        attr_accessor :all_sessions
-        attr_accessor :session_stack
-        attr_accessor :checked_out_sessions
+        attr_accessor :sessions_available
+        attr_accessor :sessions_in_use
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
                        fail: true, threads: nil
@@ -66,8 +65,11 @@ module Google
 
               # Use LIFO to ensure sessions are used from backend caches, which
               # will reduce the read / write latencies on user requests.
-              read_session = session_stack.pop # LIFO
-              return read_session if read_session
+              read_session = sessions_available.pop # LIFO
+              if read_session
+                @sessions_in_use << read_session
+                return read_session
+              end
 
               if can_allocate_more_sessions?
                 action = :new
@@ -80,16 +82,21 @@ module Google
             end
           end
 
-          return new_session! if action == :new
+          if action == :new
+            session = new_session!
+            @sessions_in_use << session
+            return session
+          end
         end
 
         def checkin_session session
           @mutex.synchronize do
-            unless all_sessions.include? session
+            unless @sessions_in_use.include? session
               raise ArgumentError, "Cannot checkin session"
             end
 
-            session_stack.push session
+            sessions_available.push session
+            @sessions_in_use.delete_if { |s| s.session_id == session.session_id }
 
             @resource.signal
           end
@@ -120,11 +127,11 @@ module Google
           to_release = []
 
           @mutex.synchronize do
-            available_count = session_stack.count
+            available_count = sessions_available.count
             release_count = @min - available_count
             release_count = 0 if release_count.negative?
 
-            to_keepalive += session_stack.select do |x|
+            to_keepalive += sessions_available.select do |x|
               x.idle_since? @keepalive
             end
 
@@ -133,8 +140,7 @@ module Google
             to_keepalive -= to_release
 
             # Remove those to be released from circulation
-            @all_sessions -= to_release.map(&:session)
-            @session_stack -= to_release
+            @sessions_available -= to_release
           end
 
           to_release.each { |x| future { x.release! } }
@@ -152,9 +158,8 @@ module Google
           # init the keepalive task
           create_keepalive_task!
           # init session stack
-          @all_sessions = @client.batch_create_new_sessions @min
-          sessions = @all_sessions.dup
-          @session_stack = sessions
+          @sessions_available = @client.batch_create_new_sessions @min
+          @sessions_in_use = []
         end
 
         def shutdown
@@ -166,9 +171,10 @@ module Google
           @resource.broadcast
           # Delete all sessions
           @mutex.synchronize do
-            @all_sessions.each { |s| future { s.release! } }
-            @all_sessions = []
-            @session_stack = []
+            @sessions_available.each { |s| future { s.release! } }
+            @sessions_in_use.each { |s| future { s.release! } }
+            @sessions_available = []
+            @sessions_in_use = []
           end
           # shutdown existing thread pool
           @thread_pool.shutdown
@@ -190,7 +196,6 @@ module Google
 
           @mutex.synchronize do
             @new_sessions_in_process -= 1
-            all_sessions << session
           end
 
           session
@@ -198,7 +203,7 @@ module Google
 
         def can_allocate_more_sessions?
           # This is expected to be called from within a synchronize block
-          all_sessions.size + @new_sessions_in_process < @max
+          @sessions_available.size + @sessions_in_use.size + @new_sessions_in_process < @max
         end
 
         def create_keepalive_task!
