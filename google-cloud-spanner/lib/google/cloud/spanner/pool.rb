@@ -29,7 +29,6 @@ module Google
       # {Google::Cloud::Spanner::Session} instances.
       #
       class Pool
-        # attr_accessor :all_sessions
         attr_accessor :sessions_available
         attr_accessor :sessions_in_use
 
@@ -141,7 +140,6 @@ module Google
             to_keepalive -= to_release
 
             # Remove those to be released from circulation
-            # @all_sessions -= to_release.map(&:session)
             @sessions_available -= to_release
           end
 
@@ -160,8 +158,6 @@ module Google
           # init the keepalive task
           create_keepalive_task!
           # init session stack
-          # @all_sessions = @client.batch_create_new_sessions @min
-          # sessions = @all_sessions.dup
           @sessions_available = @client.batch_create_new_sessions @min
           @sessions_in_use = []
         end
@@ -175,10 +171,8 @@ module Google
           @resource.broadcast
           # Delete all sessions
           @mutex.synchronize do
-            # @all_sessions.each { |s| future { s.release! } }
             @sessions_available.each { |s| future { s.release! } }
             @sessions_in_use.each { |s| future { s.release! } }
-            # @all_sessions = []
             @sessions_available = []
             @sessions_in_use = []
           end
@@ -202,7 +196,6 @@ module Google
 
           @mutex.synchronize do
             @new_sessions_in_process -= 1
-            # all_sessions << session
           end
 
           session
@@ -210,7 +203,6 @@ module Google
 
         def can_allocate_more_sessions?
           # This is expected to be called from within a synchronize block
-          # all_sessions.size + @new_sessions_in_process < @max
           @sessions_available.size + @sessions_in_use.size + @new_sessions_in_process < @max
         end
 

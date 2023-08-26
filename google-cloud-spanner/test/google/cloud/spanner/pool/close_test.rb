@@ -27,8 +27,6 @@ describe Google::Cloud::Spanner::Pool, :close, :mock_spanner do
     p = client.instance_variable_get :@pool
     p.sessions_available = [session]
     p.sessions_in_use = []
-    # p.all_sessions = [session]
-    # p.session_stack = [session]
     p
   end
 

@@ -31,8 +31,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   let(:pool) do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
-    # p.all_sessions = [session]
-    # p.session_stack = [session]
     p.sessions_available = [session]
     p.sessions_in_use = []
     p
@@ -43,15 +41,11 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   end
 
   it "can checkout and checkin a session" do
-    # _(pool.all_sessions.size).must_equal 1
-    # _(pool.session_stack.size).must_equal 1
     _(pool.sessions_available.size).must_equal 1
     _(pool.sessions_in_use.size).must_equal 0
 
     s = pool.checkout_session
 
-    # _(pool.all_sessions.size).must_equal 1
-    # _(pool.session_stack.size).must_equal 0
     _(pool.sessions_available.size).must_equal 0
     _(pool.sessions_in_use.size).must_equal 1
 
@@ -59,8 +53,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
     shutdown_pool! pool
 
-    # _(pool.all_sessions.size).must_equal 1
-    # _(pool.session_stack.size).must_equal 1
     _(pool.sessions_available.size).must_equal 1
     _(pool.sessions_in_use.size).must_equal 0
   end
@@ -70,16 +62,12 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.expect :create_session, session_grpc_2, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     spanner.service.mocked_service = mock
 
-    # _(pool.all_sessions.size).must_equal 1
-    # _(pool.session_stack.size).must_equal 1
     _(pool.sessions_available.size).must_equal 1
     _(pool.sessions_in_use.size).must_equal 0
 
     s1 = pool.checkout_session
     s2 = pool.checkout_session
 
-    # _(pool.all_sessions.size).must_equal 2
-    # _(pool.session_stack.size).must_equal 0
     _(pool.sessions_available.size).must_equal 0
     _(pool.sessions_in_use.size).must_equal 2
 
@@ -88,8 +76,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
     shutdown_pool! pool
 
-    # _(pool.all_sessions.size).must_equal 2
-    # _(pool.session_stack.size).must_equal 2
     _(pool.sessions_available.size).must_equal 2
     _(pool.sessions_in_use.size).must_equal 0
 
@@ -103,8 +89,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.expect :create_session, session_grpc_4, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     spanner.service.mocked_service = mock
 
-    # _(pool.all_sessions.size).must_equal 1
-    # _(pool.session_stack.size).must_equal 1
     _(pool.sessions_available.size).must_equal 1
     _(pool.sessions_in_use.size).must_equal 0
 
@@ -117,8 +101,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
       pool.checkout_session
     end
 
-    # _(pool.all_sessions.size).must_equal 4
-    # _(pool.session_stack.size).must_equal 0
     _(pool.sessions_available.size).must_equal 0
     _(pool.sessions_in_use.size).must_equal 4
 
@@ -129,8 +111,6 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
     shutdown_pool! pool
 
-    # _(pool.all_sessions.size).must_equal 4
-    # _(pool.session_stack.size).must_equal 4
     _(pool.sessions_available.size).must_equal 4
     _(pool.sessions_in_use.size).must_equal 0
 
