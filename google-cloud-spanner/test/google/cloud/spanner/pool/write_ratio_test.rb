@@ -23,8 +23,10 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
   let(:client_pool) do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
-    p.all_sessions = [session]
-    p.session_stack = [session]
+    # p.all_sessions = [session]
+    # p.session_stack = [session]
+    p.sessions_available = [session]
+    p.sessions_in_use = []
     p
   end
 
@@ -53,8 +55,10 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
 
     shutdown_pool! pool
 
-    _(pool.all_sessions.size).must_equal 2
-    _(pool.session_stack.size).must_equal 2
+    _(pool.sessions_available.size).must_equal 2
+    _(pool.sessions_in_use.size).must_equal 0
+    # _(pool.all_sessions.size).must_equal 2
+    # _(pool.session_stack.size).must_equal 2
 
     mock.verify
   end
