@@ -31,8 +31,6 @@ module Google
       class Pool
         attr_accessor :all_sessions
         attr_accessor :session_stack
-        ##
-        # Object of type Set<string>
         attr_accessor :checked_out_sessions
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
@@ -69,10 +67,7 @@ module Google
               # Use LIFO to ensure sessions are used from backend caches, which
               # will reduce the read / write latencies on user requests.
               read_session = session_stack.pop # LIFO
-              if read_session
-                @checked_out_sessions << read_session.session_id
-                return read_session
-              end
+              return read_session if read_session
 
               if can_allocate_more_sessions?
                 action = :new
@@ -85,21 +80,16 @@ module Google
             end
           end
 
-          if action == :new
-            session = new_session!
-            @checked_out_sessions << session.session_id
-            return session
-          end
+          return new_session! if action == :new
         end
 
         def checkin_session session
           @mutex.synchronize do
-            unless @checked_out_sessions.include? session.session_id
+            unless all_sessions.include? session
               raise ArgumentError, "Cannot checkin session"
             end
 
             session_stack.push session
-            @checked_out_sessions.delete session.session_id
 
             @resource.signal
           end
@@ -165,7 +155,6 @@ module Google
           @all_sessions = @client.batch_create_new_sessions @min
           sessions = @all_sessions.dup
           @session_stack = sessions
-          @checked_out_sessions = Set.new
         end
 
         def shutdown
