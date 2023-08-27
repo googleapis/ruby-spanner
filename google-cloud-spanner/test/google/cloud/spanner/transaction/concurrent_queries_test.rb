@@ -113,7 +113,6 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
       mock.verify
     end
 
-    # focus
     it "throws exception for first operation, so second operation initiates inline" do
 
       mock = Minitest::Mock.new

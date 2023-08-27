@@ -119,9 +119,7 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # focus
     it "executes multiple DML statements in a batch with syntax error for #{dialect}" do
-      # skip
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
@@ -150,7 +148,6 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
-    # focus
     it "raises BatchUpdateError when the first statement in Batch DML is a syntax error for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
