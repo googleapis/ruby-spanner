@@ -84,9 +84,14 @@ module Google
 
           if action == :new
             session = new_session!
-            @sessions_in_use << session
+            @mutex.synchronize do
+              @sessions_in_use << session
+            end
             return session
           end
+
+          # unreachable code
+          nil
         end
 
         def checkin_session session
