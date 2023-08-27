@@ -90,7 +90,6 @@ module Google
             return session
           end
 
-          # unreachable code
           nil
         end
 

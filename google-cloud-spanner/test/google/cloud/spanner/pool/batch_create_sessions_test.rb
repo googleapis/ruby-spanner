@@ -14,7 +14,7 @@
 
 require "helper"
 
-describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
+describe Google::Cloud::Spanner::Pool, :batch_create_sessions, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
@@ -32,7 +32,6 @@ describe Google::Cloud::Spanner::Pool, :write_ratio, :mock_spanner do
     shutdown_client! client
   end
 
-  # TODO: Need to move this test elsewhere and refactor it
   it "calls batch_create_sessions until min number of sessions are returned" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock

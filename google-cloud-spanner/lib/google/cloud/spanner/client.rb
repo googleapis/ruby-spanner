@@ -2269,6 +2269,9 @@ module Google
           nil
         end
 
+        ##
+        # Determines if a transaction error should be propagated to the user.
+        # And re-raises the error accordingly
         def check_and_propagate_err! err, deadline_passed
           raise err if internal_error_and_not_retryable? err
           return unless deadline_passed
