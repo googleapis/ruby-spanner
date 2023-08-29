@@ -85,6 +85,8 @@ module Google
           @commit = Commit.new
           @seqno = 0
 
+          # Mutex to enfore thread safety for transaction creation
+          # and query executions.
           @mutex = Mutex.new
         end
 
