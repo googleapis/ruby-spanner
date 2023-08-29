@@ -33,6 +33,14 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
     )
   end
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
+  let(:begin_transaction_params) do
+    {
+      session: session.path,
+      options: tx_opts,
+      request_options: nil
+    }
+  end
   let :results_hash do
     {
       metadata: {
@@ -73,12 +81,68 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
   let(:results_enum_tx_1) do
     rh = results_hash
     rh[:metadata][:transaction][:id] = "tx123"
-    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
+    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum
   end
   let(:results_enum_tx_2) do
     rh = results_hash
     rh[:metadata][:transaction][:id] = "tx456"
-    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum 
+    Array( Google::Cloud::Spanner::V1::PartialResultSet.new rh ).to_enum
+  end
+
+  describe "transaction_id()" do
+    it "waits on other operations when transaction_id() initiates creation" do
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
+
+      mock.expect :begin_transaction, transaction_grpc do |received_params|
+        sleep 2 # simulate delayed response of rpc
+        received_params == begin_transaction_params
+      end
+
+      mock.expect :execute_streaming_sql, results_enum do |received_params|
+        received_params[:transaction] == tx_selector
+      end
+
+      begin
+        t1 = Thread.new do
+          tx_id = transaction.transaction_id
+        end
+        sleep 1 # Ensure t1 initiates begin_transaction before t2 initiates inline_begin
+        t2 = Thread.new do
+          results_2 = transaction.execute_query "SELECT * FROM users"
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      mock.verify
+    end
+
+    it "does not initiate begin_transaction when inline begin is executed first" do
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
+
+      mock.expect :execute_streaming_sql, results_enum do |received_params|
+        sleep 2 # simulate delayed response of rpc
+        received_params[:transaction] == tx_selector_begin
+      end
+
+      begin
+        t1 = Thread.new do
+          transaction.execute_query "SELECT * FROM users"
+        end
+        sleep 1 # Ensure t1 initiates "inline begin" before t2 initiates begin_transaction
+        t2 = Thread.new do
+          transaction.transaction_id
+        end
+      ensure
+        t1.join
+        t2.join
+      end
+
+      mock.verify
+    end
   end
 
   describe "execute_query()" do

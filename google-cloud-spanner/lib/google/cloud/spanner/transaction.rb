@@ -93,10 +93,7 @@ module Google
         # @return [String] The transaction id.
         def transaction_id
           return @grpc.id if existing_transaction?
-          ensure_session!
-          safe_execute do
-            @grpc = service.begin_transaction session.path
-          end
+          safe_begin_transaction
           @grpc.id
         end
 
@@ -1174,6 +1171,16 @@ module Google
               @seqno += 1
               return yield @seqno
             end
+          end
+        end
+
+        ##
+        # Create a new transaction in a thread-safe manner,
+        def safe_begin_transaction
+          @mutex.synchronize do
+            return if existing_transaction?
+            ensure_session!
+            @grpc = service.begin_transaction session.path
           end
         end
 
