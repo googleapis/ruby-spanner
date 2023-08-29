@@ -67,7 +67,7 @@ module Google
               # will reduce the read / write latencies on user requests.
               read_session = sessions_available.pop # LIFO
               if read_session
-                @sessions_in_use << read_session
+                sessions_in_use << read_session
                 return read_session
               end
 
@@ -85,7 +85,7 @@ module Google
           if action == :new
             session = new_session!
             @mutex.synchronize do
-              @sessions_in_use << session
+              sessions_in_use << session
             end
             return session
           end
@@ -95,12 +95,12 @@ module Google
 
         def checkin_session session
           @mutex.synchronize do
-            unless @sessions_in_use.include? session
+            unless sessions_in_use.include? session
               raise ArgumentError, "Cannot checkin session"
             end
 
             sessions_available.push session
-            @sessions_in_use.delete_if { |s| s.session_id == session.session_id }
+            sessions_in_use.delete_if { |s| s.session_id == session.session_id }
 
             @resource.signal
           end
@@ -175,8 +175,8 @@ module Google
           @resource.broadcast
           # Delete all sessions
           @mutex.synchronize do
-            @sessions_available.each { |s| future { s.release! } }
-            @sessions_in_use.each { |s| future { s.release! } }
+            sessions_available.each { |s| future { s.release! } }
+            sessions_in_use.each { |s| future { s.release! } }
             @sessions_available = []
             @sessions_in_use = []
           end
@@ -207,7 +207,7 @@ module Google
 
         def can_allocate_more_sessions?
           # This is expected to be called from within a synchronize block
-          @sessions_available.size + @sessions_in_use.size + @new_sessions_in_process < @max
+          sessions_available.size + sessions_in_use.size + @new_sessions_in_process < @max
         end
 
         def create_keepalive_task!
