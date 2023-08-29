@@ -86,8 +86,6 @@ module Google
           @seqno = 0
 
           @mutex = Mutex.new
-          @resource = ConditionVariable.new
-          @transaction_creation_in_progress = false
         end
 
         ##
@@ -1172,19 +1170,9 @@ module Google
             end
 
             @mutex.synchronize do
-              if @transaction_creation_in_progress
-                @resource.wait @mutex while @transaction_creation_in_progress
-                next
-              else
-                @transaction_creation_in_progress = true
-                begin
-                  @seqno += 1
-                  return yield @seqno
-                ensure
-                  @transaction_creation_in_progress = false
-                  @resource.signal
-                end
-              end
+              next if existing_transaction?
+              @seqno += 1
+              return yield @seqno
             end
           end
         end
