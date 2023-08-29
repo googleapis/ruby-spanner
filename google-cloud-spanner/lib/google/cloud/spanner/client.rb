@@ -50,6 +50,10 @@ module Google
       #
       class Client
         ##
+        # @private
+        IS_TRANSACTION_RUNNING_KEY = "ruby_spanner_is_transaction_running".freeze
+
+        ##
         # @private Creates a new Spanner Client instance.
         def initialize project, instance_id, database_id, session_labels: nil,
                        pool_opts: {}, query_options: nil, database_role: nil
@@ -1789,7 +1793,7 @@ module Google
         def transaction deadline: 120, commit_options: nil,
                         request_options: nil, call_options: nil
           ensure_service!
-          unless Thread.current[:is_transaction_running].nil?
+          unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested transactions are not allowed"
           end
 
@@ -1807,7 +1811,7 @@ module Google
             end
 
             begin
-              Thread.current[:is_transaction_running] = true
+              Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
               yield tx
               transaction_id = nil
               transaction_id = tx.transaction_id if tx.existing_transaction?
@@ -1837,7 +1841,7 @@ module Google
               # Re-raise error.
               raise e
             ensure
-              Thread.current[:is_transaction_running] = nil
+              Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
             end
           end
         end
@@ -1920,7 +1924,7 @@ module Google
                                   exact_staleness: exact_staleness
 
           ensure_service!
-          unless Thread.current[:is_transaction_running].nil?
+          unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested snapshots are not allowed"
           end
 
@@ -1930,11 +1934,11 @@ module Google
                             timestamp: (timestamp || read_timestamp),
                             staleness: (staleness || exact_staleness),
                             call_options: call_options
-            Thread.current[:is_transaction_running] = true
+            Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
             snp = Snapshot.from_grpc snp_grpc, session
             yield snp if block_given?
           ensure
-            Thread.current[:is_transaction_running] = nil
+            Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
           end
           nil
         end
