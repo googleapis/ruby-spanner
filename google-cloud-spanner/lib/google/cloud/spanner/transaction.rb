@@ -75,6 +75,9 @@ module Google
       #   end
       #
       class Transaction
+        # @private The `Google::Cloud::Spanner::V1::Transaction` object.
+        attr_reader :grpc
+
         # @private The Session object.
         attr_accessor :session
 
@@ -85,8 +88,21 @@ module Google
           @commit = Commit.new
           @seqno = 0
 
-          # Mutex to enfore thread safety for transaction creation
-          # and query executions.
+          # Mutex to enfore thread safety for transaction creation and query executions.
+          #
+          # This mutex protects two things:
+          # (1) the generation of sequence numbers
+          # (2) the creation of transactions.
+          #
+          # Specifically, @seqno is protected so it always reflects the last sequence number
+          # generated and provided to an operation in any thread. Any acquisition of a
+          # sequence number must be synchronized.
+          #
+          # Furthermore, @grpc is protected such that it either is nil if the
+          # transaction has not yet been created, or references the transaction
+          # resource if the transaction has been created. Any operation that could
+          # create a transaction must be synchronized, and any logic that depends on
+          # the state of transaction creation must also be synchronized.
           @mutex = Mutex.new
         end
 
@@ -1177,7 +1193,7 @@ module Google
         end
 
         ##
-        # Create a new transaction in a thread-safe manner,
+        # Create a new transaction in a thread-safe manner.
         def safe_begin_transaction
           @mutex.synchronize do
             return if existing_transaction?
@@ -1186,7 +1202,13 @@ module Google
           end
         end
 
-        # The TransactionSelector to be used for queries
+        ##
+        # @private The TransactionSelector to be used for queries. This method must
+        #   be called from within a synchronized block, since the value returned
+        #   depends on the state of @grpc field.
+        #
+        #   This method is expected to be called from within `safe_execute()` method's block,
+        #   since it provides synchronization and gurantees thread safety.
         def tx_selector
           return V1::TransactionSelector.new id: transaction_id if existing_transaction?
           V1::TransactionSelector.new(
