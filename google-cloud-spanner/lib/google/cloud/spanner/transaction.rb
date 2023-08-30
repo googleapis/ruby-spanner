@@ -1163,7 +1163,7 @@ module Google
             if existing_transaction?
               # Create a local copy of @seqno to avoid concurrent
               # operations overriding the incremented value.
-              seqno = next_seqno
+              seqno = safe_next_seqno
               # If a transaction already exists, execute rpc without mutex
               return yield seqno
             end
@@ -1212,7 +1212,7 @@ module Google
 
         ##
         # @private Generates the next seqno in a thread-safe manner.
-        def next_seqno
+        def safe_next_seqno
           @mutex.synchronize do
             @seqno += 1
             return @seqno
