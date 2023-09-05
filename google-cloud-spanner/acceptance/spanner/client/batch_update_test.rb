@@ -80,7 +80,7 @@ describe "Spanner Client", :batch_update, :spanner do
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         row_counts = tx.batch_update do |b|
           b.batch_update insert_dml[dialect], params: insert_params[dialect]
@@ -107,7 +107,7 @@ describe "Spanner Client", :batch_update, :spanner do
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         err = expect do
           tx.batch_update { |b| } # rubocop:disable Lint/EmptyBlock
@@ -124,7 +124,7 @@ describe "Spanner Client", :batch_update, :spanner do
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
         begin
           tx.batch_update do |b|
             b.batch_update insert_dml[dialect], params: insert_params[dialect]
@@ -148,12 +148,31 @@ describe "Spanner Client", :batch_update, :spanner do
       _(timestamp).must_be_kind_of Time
     end
 
+    it "raises BatchUpdateError when the first statement in Batch DML is a syntax error for #{dialect}" do
+      prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
+      _(prior_results.rows.count).must_equal 3
+      db[dialect].transaction do |tx|
+        begin
+          _(tx.no_existing_transaction?).must_equal true
+          tx.batch_update do |b|
+            b.batch_update update_dml_syntax_error, params: update_params[dialect]
+          end
+        rescue Google::Cloud::Spanner::BatchUpdateError => e
+          _(e.cause).must_be_kind_of Google::Cloud::InvalidArgumentError
+          _(e.cause.message).must_equal "Statement 0: 'UPDDDD accounts' is not valid DML."
+        end
+        _(tx.no_existing_transaction?).must_equal true
+      end
+      prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
+      _(prior_results.rows.count).must_equal 3
+    end
+
     it "runs execute_update and batch_update in the same transaction for #{dialect}" do
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         row_counts = tx.batch_update do |b|
           b.batch_update insert_dml[dialect], params: insert_params[dialect]

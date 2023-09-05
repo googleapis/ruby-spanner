@@ -71,7 +71,7 @@ describe "Spanner Client", :dml, :spanner do
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         # Execute a DML using execute_update and make sure data is updated and correct count is returned.
         insert_row_count = tx.execute_update \
@@ -112,7 +112,7 @@ describe "Spanner Client", :dml, :spanner do
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         # Execute a DML using execute_update and make sure data is updated and correct count is returned.
         insert_row_count = tx.execute_update \
@@ -141,7 +141,7 @@ describe "Spanner Client", :dml, :spanner do
       _(prior_results.rows.count).must_equal 3
 
       timestamp = db[dialect].transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         # Execute a DML statement, followed by calling existing insert method,
         # commit the transaction and assert that both the updates are present.

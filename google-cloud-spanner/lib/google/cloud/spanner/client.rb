@@ -50,6 +50,10 @@ module Google
       #
       class Client
         ##
+        # @private
+        IS_TRANSACTION_RUNNING_KEY = "ruby_spanner_is_transaction_running".freeze
+
+        ##
         # @private Creates a new Spanner Client instance.
         def initialize project, instance_id, database_id, session_labels: nil,
                        pool_opts: {}, query_options: nil, database_role: nil
@@ -1634,6 +1638,7 @@ module Google
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/BlockLength
 
+
         ##
         # Creates a transaction for reads and writes that execute atomically at
         # a single logical point in time across columns, rows, and tables in a
@@ -1788,7 +1793,7 @@ module Google
         def transaction deadline: 120, commit_options: nil,
                         request_options: nil, call_options: nil
           ensure_service!
-          unless Thread.current[:transaction_id].nil?
+          unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested transactions are not allowed"
           end
 
@@ -1799,17 +1804,20 @@ module Google
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
-          @pool.with_transaction do |tx|
+          @pool.with_session do |session|
+            tx = session.create_empty_transaction
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
             end
 
             begin
-              Thread.current[:transaction_id] = tx.transaction_id
+              Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
               yield tx
+              transaction_id = nil
+              transaction_id = tx.transaction_id if tx.existing_transaction?
               commit_resp = @project.service.commit \
                 tx.session.path, tx.mutations,
-                transaction_id: tx.transaction_id,
+                transaction_id: transaction_id,
                 commit_options: commit_options,
                 request_options: request_options,
                 call_options: call_options
@@ -1819,28 +1827,21 @@ module Google
                    Google::Cloud::AbortedError,
                    GRPC::Internal,
                    Google::Cloud::InternalError => e
-              raise e if internal_error_and_not_retryable? e
-              # Re-raise if deadline has passed
-              if current_time - start_time > deadline
-                if e.is_a? GRPC::BadStatus
-                  e = Google::Cloud::Error.from_error e
-                end
-                raise e
-              end
+              check_and_propagate_err! e, (current_time - start_time > deadline)
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
               # Create new transaction on the session and retry the block
-              tx = tx.session.create_transaction
+              tx = session.create_transaction
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
-              tx.session.rollback tx.transaction_id
+              tx.session.rollback tx.transaction_id if tx.existing_transaction?
               # Return nil if raised with rollback.
               return nil if e.is_a? Rollback
               # Re-raise error.
               raise e
             ensure
-              Thread.current[:transaction_id] = nil
+              Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
             end
           end
         end
@@ -1923,7 +1924,7 @@ module Google
                                   exact_staleness: exact_staleness
 
           ensure_service!
-          unless Thread.current[:transaction_id].nil?
+          unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested snapshots are not allowed"
           end
 
@@ -1933,11 +1934,11 @@ module Google
                             timestamp: (timestamp || read_timestamp),
                             staleness: (staleness || exact_staleness),
                             call_options: call_options
-            Thread.current[:transaction_id] = snp_grpc.id
+            Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
             snp = Snapshot.from_grpc snp_grpc, session
             yield snp if block_given?
           ensure
-            Thread.current[:transaction_id] = nil
+            Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
           end
           nil
         end
@@ -2270,6 +2271,18 @@ module Google
         rescue StandardError
           # Any error indicates the backoff should be handled elsewhere
           nil
+        end
+
+        ##
+        # Determines if a transaction error should be propagated to the user.
+        # And re-raises the error accordingly
+        def check_and_propagate_err! err, deadline_passed
+          raise err if internal_error_and_not_retryable? err
+          return unless deadline_passed
+          if err.is_a? GRPC::BadStatus
+            raise Google::Cloud::Error.from_error err
+          end
+          raise err
         end
 
         def internal_error_and_not_retryable? error

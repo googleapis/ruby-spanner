@@ -1185,6 +1185,14 @@ module Google
         end
 
         ##
+        # @private
+        # Creates a new transaction object without the grpc object
+        # within it. Use it for inline-begin of a transaction.
+        def create_empty_transaction
+          Transaction.from_grpc nil, self
+        end
+
+        ##
         # Reloads the session resource. Useful for determining if the session is
         # still valid on the Spanner API.
         def reload!
