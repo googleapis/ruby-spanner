@@ -1,5 +1,11 @@
 # Release History
 
+### 2.18.0 (2023-09-05)
+
+#### Features
+
+* Implement "Inline Begin Transaction" ([#54](https://github.com/googleapis/ruby-spanner/issues/54)) 
+
 ### 2.17.0 (2023-06-23)
 
 #### Features
