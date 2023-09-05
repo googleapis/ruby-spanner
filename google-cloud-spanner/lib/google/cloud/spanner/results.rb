@@ -309,49 +309,20 @@ module Google
         end
 
         # @private
-
-        def self.execute_query service, session_path, sql, params: nil,
-                               types: nil, transaction: nil,
-                               partition_token: nil, seqno: nil,
-                               query_options: nil, request_options: nil,
-                               call_options: nil, data_boost_enabled: nil
-          execute_query_options = {
-            transaction: transaction, params: params, types: types,
-            partition_token: partition_token, seqno: seqno,
-            query_options: query_options, request_options: request_options,
-            call_options: call_options
-          }
-          execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
-          enum = service.execute_streaming_sql session_path, sql,
-                                               **execute_query_options
-          from_enum(enum, service).tap do |results|
+        def self.from_execute_query_response response, service, session_path, sql, execute_query_options
+          from_enum(response, service).tap do |results|
             results.instance_variable_set :@session_path, session_path
-            results.instance_variable_set :@sql,          sql
-            results.instance_variable_set :@execute_query_options,
-                                          execute_query_options
+            results.instance_variable_set :@sql, sql
+            results.instance_variable_set :@execute_query_options, execute_query_options
           end
         end
 
         # @private
-        def self.read service, session_path, table, columns, keys: nil,
-                      index: nil, limit: nil, transaction: nil,
-                      partition_token: nil, request_options: nil,
-                      call_options: nil, data_boost_enabled: nil
-          read_options = {
-            keys: keys, index: index, limit: limit,
-            transaction: transaction,
-            partition_token: partition_token,
-            request_options: request_options,
-            call_options: call_options,
-            data_boost_enabled: data_boost_enabled
-          }
-          read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
-          enum = service.streaming_read_table \
-            session_path, table, columns, **read_options
-          from_enum(enum, service).tap do |results|
+        def self.from_read_response response, service, session_path, table, columns, read_options
+          from_enum(response, service).tap do |results|
             results.instance_variable_set :@session_path, session_path
-            results.instance_variable_set :@table,        table
-            results.instance_variable_set :@columns,      columns
+            results.instance_variable_set :@table, table
+            results.instance_variable_set :@columns, columns
             results.instance_variable_set :@read_options, read_options
           end
         end

@@ -345,16 +345,18 @@ module Google
           else
             query_options = @query_options.merge query_options unless @query_options.nil?
           end
-          results = Results.execute_query service, path, sql,
-                                          params: params,
-                                          types: types,
-                                          transaction: transaction,
-                                          partition_token: partition_token,
-                                          seqno: seqno,
-                                          query_options: query_options,
-                                          request_options: request_options,
-                                          call_options: call_options,
-                                          data_boost_enabled: data_boost_enabled
+
+          execute_query_options = {
+            transaction: transaction, params: params, types: types,
+            partition_token: partition_token, seqno: seqno,
+            query_options: query_options, request_options: request_options,
+            call_options: call_options
+          }
+          execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+
+          response = service.execute_streaming_sql path, sql, **execute_query_options
+
+          results = Results.from_execute_query_response response, service, path, sql, execute_query_options
           @last_updated_at = Time.now
           results
         end
@@ -500,14 +502,23 @@ module Google
                  call_options: nil, data_boost_enabled: nil
           ensure_service!
 
-          results = Results.read service, path, table, columns,
-                                 keys: keys, index: index, limit: limit,
-                                 transaction: transaction,
-                                 partition_token: partition_token,
-                                 request_options: request_options,
-                                 call_options: call_options,
-                                 data_boost_enabled: data_boost_enabled
+          read_options = {
+            keys: keys, index: index, limit: limit,
+            transaction: transaction,
+            partition_token: partition_token,
+            request_options: request_options,
+            call_options: call_options,
+            data_boost_enabled: data_boost_enabled
+          }
+          read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+
+          response = service.streaming_read_table \
+            path, table, columns, **read_options
+
+          results = Results.from_read_response response, service, path, table, columns, read_options
+
           @last_updated_at = Time.now
+
           results
         end
 
