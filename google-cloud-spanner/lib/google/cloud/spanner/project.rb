@@ -515,17 +515,14 @@ module Google
         #     before an attempt is made to prevent the idle sessions from being
         #     closed by the Cloud Spanner service. The default is 1800 (30
         #     minutes).
-        #   * `:write_ratio` (Float) The ratio of sessions with pre-allocated
-        #     transactions to those without. Pre-allocating transactions
-        #     improves the performance of writes made by the client. The higher
-        #     the value, the more transactions are pre-allocated. The value must
-        #     be >= 0 and <= 1. The default is 0.3.
         #   * `:fail` (true/false) When `true` the client raises a
         #     {SessionLimitError} when the client has allocated the `max` number
         #     of sessions. When `false` the client blocks until a session
         #     becomes available. The default is `true`.
         #   * `:threads` (Integer) The number of threads in the thread pool. The
         #     default is twice the number of available CPUs.
+        #   * `:write_ratio` (Float) Deprecated. This field is no longer needed
+        #     and will be removed in a future release.
         # @param [Hash] labels The labels to be applied to all sessions
         #   created by the client. Cloud Labels are a flexible and lightweight
         #   mechanism for organizing cloud resources into groups that reflect a
@@ -674,8 +671,7 @@ module Google
         def valid_session_pool_options opts = {}
           {
             min: opts[:min], max: opts[:max], keepalive: opts[:keepalive],
-            write_ratio: opts[:write_ratio], fail: opts[:fail],
-            threads: opts[:threads]
+            fail: opts[:fail], threads: opts[:threads]
           }.compact
         end
       end

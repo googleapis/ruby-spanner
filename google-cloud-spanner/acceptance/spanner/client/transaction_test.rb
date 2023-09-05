@@ -35,9 +35,35 @@ describe "Spanner Client", :transaction, :spanner do
     db.delete "accounts"
   end
 
+  it "runs basic inline begin transaction" do
+    db.transaction do |tx|
+      _(tx.no_existing_transaction?).must_equal true
+      tx_results = tx.execute_query "SELECT * from accounts"
+      _(tx.transaction_id).wont_be :nil?
+      _(tx_results.rows.count).must_equal default_account_rows.length
+    end
+  end
+
+  it "re-uses existing transaction for multiple queries" do
+    db.transaction do |tx|
+      _(tx.no_existing_transaction?).must_equal true
+
+      tx_results = tx.execute_query "SELECT * from accounts"
+      tx_id_1 = tx.transaction_id
+      _(tx_id_1).wont_be :nil?
+      _(tx_results.rows.count).must_equal default_account_rows.length
+
+      tx_results_2 = tx.execute_query "SELECT * from accounts WHERE active = true"
+      tx_id_2 = tx.transaction_id
+      _(tx_id_2).wont_be :nil?
+      _(tx_id_1).must_equal tx_id_2
+      _(tx_results_2.rows.count).must_equal 2
+    end
+  end
+
   it "modifies accounts and verifies data with reads" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx_results = tx.read "accounts", columns
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -70,7 +96,7 @@ describe "Spanner Client", :transaction, :spanner do
 
   it "can rollback a transaction without passing on using Rollback" do
     timestamp = db.transaction do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx_results = tx.read "accounts", columns
       _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -101,7 +127,7 @@ describe "Spanner Client", :transaction, :spanner do
   it "can rollback a transaction and pass on the error" do
     assert_raises ZeroDivisionError do
       db.transaction do |tx|
-        _(tx.transaction_id).wont_be :nil?
+        _(tx.no_existing_transaction?).must_equal true
 
         tx_results = tx.read "accounts", columns
         _(tx_results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -220,7 +246,7 @@ describe "Spanner Client", :transaction, :spanner do
 
     commit_options = { return_commit_stats: true }
     commit_resp = db.transaction commit_options: commit_options do |tx|
-      _(tx.transaction_id).wont_be :nil?
+      _(tx.no_existing_transaction?).must_equal true
 
       tx.insert "accounts", additional_account
     end

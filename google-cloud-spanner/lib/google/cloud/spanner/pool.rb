@@ -29,19 +29,15 @@ module Google
       # {Google::Cloud::Spanner::Session} instances.
       #
       class Pool
-        attr_accessor :all_sessions
-        attr_accessor :session_stack
-        attr_accessor :transaction_stack
+        attr_accessor :sessions_available
+        attr_accessor :sessions_in_use
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
-                       write_ratio: 0.3, fail: true, threads: nil
+                       fail: true, threads: nil
           @client = client
           @min = min
           @max = max
           @keepalive = keepalive
-          @write_ratio = write_ratio
-          @write_ratio = 0 if write_ratio.negative?
-          @write_ratio = 1 if write_ratio > 1
           @fail = fail
           @threads = threads || [2, Concurrent.processor_count * 2].max
 
@@ -69,10 +65,11 @@ module Google
 
               # Use LIFO to ensure sessions are used from backend caches, which
               # will reduce the read / write latencies on user requests.
-              read_session = session_stack.pop # LIFO
-              return read_session if read_session
-              write_transaction = transaction_stack.pop # LIFO
-              return write_transaction.session if write_transaction
+              read_session = sessions_available.pop # LIFO
+              if read_session
+                sessions_in_use << read_session
+                return read_session
+              end
 
               if can_allocate_more_sessions?
                 action = :new
@@ -85,73 +82,25 @@ module Google
             end
           end
 
-          return new_session! if action == :new
-        end
-
-        def checkin_session session
-          @mutex.synchronize do
-            unless all_sessions.include? session
-              raise ArgumentError, "Cannot checkin session"
+          if action == :new
+            session = new_session!
+            @mutex.synchronize do
+              sessions_in_use << session
             end
-
-            session_stack.push session
-
-            @resource.signal
+            return session
           end
 
           nil
         end
 
-        def with_transaction
-          tx = checkout_transaction
-          begin
-            yield tx
-          ensure
-            future do
-              # Create and checkin a new transaction
-              tx = tx.session.create_transaction
-              checkin_transaction tx
-            end
-          end
-        end
-
-        def checkout_transaction
-          action = nil
+        def checkin_session session
           @mutex.synchronize do
-            loop do
-              raise ClientClosedError if @closed
-
-              write_transaction = transaction_stack.pop # LIFO
-              return write_transaction if write_transaction
-              read_session = session_stack.pop
-              if read_session
-                action = read_session
-                break
-              end
-
-              if can_allocate_more_sessions?
-                action = :new
-                break
-              end
-
-              raise SessionLimitError if @fail
-
-              @resource.wait @mutex
-            end
-          end
-          if action.is_a? Google::Cloud::Spanner::Session
-            return action.create_transaction
-          end
-          return new_transaction! if action == :new
-        end
-
-        def checkin_transaction txn
-          @mutex.synchronize do
-            unless all_sessions.include? txn.session
+            unless sessions_in_use.include? session
               raise ArgumentError, "Cannot checkin session"
             end
 
-            transaction_stack.push txn
+            sessions_available.push session
+            sessions_in_use.delete_if { |s| s.session_id == session.session_id }
 
             @resource.signal
           end
@@ -182,22 +131,20 @@ module Google
           to_release = []
 
           @mutex.synchronize do
-            available_count = session_stack.count + transaction_stack.count
+            available_count = sessions_available.count
             release_count = @min - available_count
             release_count = 0 if release_count.negative?
 
-            to_keepalive += (session_stack + transaction_stack).select do |x|
+            to_keepalive += sessions_available.select do |x|
               x.idle_since? @keepalive
             end
 
-            # Remove a random portion of the sessions and transactions
+            # Remove a random portion of the sessions
             to_release = to_keepalive.sample release_count
             to_keepalive -= to_release
 
             # Remove those to be released from circulation
-            @all_sessions -= to_release.map(&:session)
-            @session_stack -= to_release
-            @transaction_stack -= to_release
+            @sessions_available -= to_release
           end
 
           to_release.each { |x| future { x.release! } }
@@ -212,19 +159,11 @@ module Google
             max_threads: @threads
           # init the stacks
           @new_sessions_in_process = 0
-          @transaction_stack = []
           # init the keepalive task
           create_keepalive_task!
           # init session stack
-          @all_sessions = @client.batch_create_new_sessions @min
-          sessions = @all_sessions.dup
-          num_transactions = (@min * @write_ratio).round
-          pending_transactions = sessions.shift num_transactions
-          # init transaction stack
-          pending_transactions.each do |transaction|
-            future { checkin_transaction transaction.create_transaction }
-          end
-          @session_stack = sessions
+          @sessions_available = @client.batch_create_new_sessions @min
+          @sessions_in_use = []
         end
 
         def shutdown
@@ -236,10 +175,10 @@ module Google
           @resource.broadcast
           # Delete all sessions
           @mutex.synchronize do
-            @all_sessions.each { |s| future { s.release! } }
-            @all_sessions = []
-            @session_stack = []
-            @transaction_stack = []
+            sessions_available.each { |s| future { s.release! } }
+            sessions_in_use.each { |s| future { s.release! } }
+            @sessions_available = []
+            @sessions_in_use = []
           end
           # shutdown existing thread pool
           @thread_pool.shutdown
@@ -261,19 +200,14 @@ module Google
 
           @mutex.synchronize do
             @new_sessions_in_process -= 1
-            all_sessions << session
           end
 
           session
         end
 
-        def new_transaction!
-          new_session!.create_transaction
-        end
-
         def can_allocate_more_sessions?
           # This is expected to be called from within a synchronize block
-          all_sessions.size + @new_sessions_in_process < @max
+          sessions_available.size + sessions_in_use.size + @new_sessions_in_process < @max
         end
 
         def create_keepalive_task!

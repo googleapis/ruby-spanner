@@ -17,6 +17,7 @@ require "google/cloud/spanner/errors"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
+require "google/cloud/spanner/batch_update_results"
 
 module Google
   module Cloud
@@ -74,6 +75,9 @@ module Google
       #   end
       #
       class Transaction
+        # @private The `Google::Cloud::Spanner::V1::Transaction` object.
+        attr_reader :grpc
+
         # @private The Session object.
         attr_accessor :session
 
@@ -83,13 +87,31 @@ module Google
         def initialize
           @commit = Commit.new
           @seqno = 0
+
+          # Mutex to enfore thread safety for transaction creation and query executions.
+          #
+          # This mutex protects two things:
+          # (1) the generation of sequence numbers
+          # (2) the creation of transactions.
+          #
+          # Specifically, @seqno is protected so it always reflects the last sequence number
+          # generated and provided to an operation in any thread. Any acquisition of a
+          # sequence number must be synchronized.
+          #
+          # Furthermore, @grpc is protected such that it either is nil if the
+          # transaction has not yet been created, or references the transaction
+          # resource if the transaction has been created. Any operation that could
+          # create a transaction must be synchronized, and any logic that depends on
+          # the state of transaction creation must also be synchronized.
+          @mutex = Mutex.new
         end
 
         ##
         # Identifier of the transaction results were run in.
         # @return [String] The transaction id.
         def transaction_id
-          return nil if @grpc.nil?
+          return @grpc.id if existing_transaction?
+          safe_begin_transaction
           @grpc.id
         end
 
@@ -337,15 +359,18 @@ module Google
                           request_options: nil, call_options: nil
           ensure_session!
 
-          @seqno += 1
-
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
-          session.execute_query sql, params: params, types: types,
-                                     transaction: tx_selector, seqno: @seqno,
-                                     query_options: query_options,
-                                     request_options: request_options,
-                                     call_options: call_options
+
+          safe_execute do |seqno|
+            results = session.execute_query sql, params: params, types: types,
+                                            transaction: tx_selector, seqno: seqno,
+                                            query_options: query_options,
+                                            request_options: request_options,
+                                            call_options: call_options
+            @grpc ||= results.transaction
+            results
+          end
         end
         alias execute execute_query
         alias query execute_query
@@ -612,12 +637,24 @@ module Google
         #
         def batch_update request_options: nil, call_options: nil, &block
           ensure_session!
-          @seqno += 1
 
           request_options = build_request_options request_options
-          session.batch_update tx_selector, @seqno,
-                               request_options: request_options,
-                               call_options: call_options, &block
+          safe_execute do |seqno|
+            batch_update_results = nil
+            begin
+              response = session.batch_update tx_selector, seqno,
+                                              request_options: request_options,
+                                              call_options: call_options, &block
+              batch_update_results = BatchUpdateResults.new response
+              row_counts = batch_update_results.row_counts
+              @grpc ||= batch_update_results.transaction
+              return row_counts
+            rescue Google::Cloud::Spanner::BatchUpdateError
+              @grpc ||= batch_update_results.transaction
+              # Re-raise after extracting transaction
+              raise
+            end
+          end
         end
 
         ##
@@ -686,10 +723,15 @@ module Google
           columns = Array(columns).map(&:to_s)
           keys = Convert.to_key_set keys
           request_options = build_request_options request_options
-          session.read table, columns, keys: keys, index: index, limit: limit,
-                                       transaction: tx_selector,
-                                       request_options: request_options,
-                                       call_options: call_options
+
+          safe_execute do
+            results = session.read table, columns, keys: keys, index: index, limit: limit,
+                                   transaction: tx_selector,
+                                   request_options: request_options,
+                                   call_options: call_options
+            @grpc ||= results.transaction
+            results
+          end
         end
 
         ##
@@ -1111,12 +1153,69 @@ module Google
           end
         end
 
+        ##
+        # @private Checks if a transaction is already created.
+        def existing_transaction?
+          !no_existing_transaction?
+        end
+
+        ##
+        # @private Checks if transaction is not already created.
+        def no_existing_transaction?
+          @grpc.nil?
+        end
+
         protected
 
-        # The TransactionSelector to be used for queries
+        ##
+        # @private Facilitates a thread-safe execution of an rpc
+        # for inline-begin of a transaction. This method is optimised to
+        # use mutexes only when necessary, while still acheiving thread-safety.
+        #
+        # Note: Do not use @seqno directly while using this method. Instead, use
+        # the seqno variable passed to the block.
+        def safe_execute
+          loop do
+            if existing_transaction?
+              # Create a local copy of @seqno to avoid concurrent
+              # operations overriding the incremented value.
+              seqno = safe_next_seqno
+              # If a transaction already exists, execute rpc without mutex
+              return yield seqno
+            end
+
+            @mutex.synchronize do
+              next if existing_transaction?
+              @seqno += 1
+              return yield @seqno
+            end
+          end
+        end
+
+        ##
+        # Create a new transaction in a thread-safe manner.
+        def safe_begin_transaction
+          @mutex.synchronize do
+            return if existing_transaction?
+            ensure_session!
+            @grpc = service.begin_transaction session.path
+          end
+        end
+
+        ##
+        # @private The TransactionSelector to be used for queries. This method must
+        #   be called from within a synchronized block, since the value returned
+        #   depends on the state of @grpc field.
+        #
+        #   This method is expected to be called from within `safe_execute()` method's block,
+        #   since it provides synchronization and gurantees thread safety.
         def tx_selector
-          return nil if transaction_id.nil?
-          V1::TransactionSelector.new id: transaction_id
+          return V1::TransactionSelector.new id: transaction_id if existing_transaction?
+          V1::TransactionSelector.new(
+            begin: V1::TransactionOptions.new(
+              read_write: V1::TransactionOptions::ReadWrite.new
+            )
+          )
         end
 
         ##
@@ -1131,6 +1230,15 @@ module Google
           end
 
           options
+        end
+
+        ##
+        # @private Generates the next seqno in a thread-safe manner.
+        def safe_next_seqno
+          @mutex.synchronize do
+            @seqno += 1
+            return @seqno
+          end
         end
 
         ##

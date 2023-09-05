@@ -42,6 +42,11 @@ module Google
       #
       class Results
         ##
+        # @private Object of type
+        # Google::Cloud::Spanner::V1::ResultSetMetadata
+        attr_reader :metadata
+
+        ##
         # The read timestamp chosen for single-use snapshots (read-only
         # transactions).
         # @return [Time] The chosen timestamp.
@@ -71,6 +76,13 @@ module Google
         #
         def fields
           @fields ||= Fields.from_grpc @metadata.row_type.fields
+        end
+
+        ##
+        # @private
+        # Returns a transaction if available
+        def transaction
+          @metadata&.transaction
         end
 
         # rubocop:disable all
