@@ -34,3 +34,4 @@ jobs:
         env:
           SPANNER_EMULATOR_HOST: localhost:9010
           SPANNER_TEST_PROJECT: emulator-test-project
+          MT_COMPAT: true
