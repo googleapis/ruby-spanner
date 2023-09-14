@@ -191,7 +191,7 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
     end
   end
 
-  it "can execute a barch DML with transaction and request tag" do
+  it "can execute a batch DML with transaction and request tag" do
     transaction = Google::Cloud::Spanner::Transaction.from_grpc nil, session
     transaction.transaction_tag = "Tag-1"
 

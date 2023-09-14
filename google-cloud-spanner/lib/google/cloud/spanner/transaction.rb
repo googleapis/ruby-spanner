@@ -640,20 +640,12 @@ module Google
 
           request_options = build_request_options request_options
           safe_execute do |seqno|
-            batch_update_results = nil
-            begin
-              response = session.batch_update tx_selector, seqno,
-                                              request_options: request_options,
-                                              call_options: call_options, &block
-              batch_update_results = BatchUpdateResults.new response
-              row_counts = batch_update_results.row_counts
-              @grpc ||= batch_update_results.transaction
-              return row_counts
-            rescue Google::Cloud::Spanner::BatchUpdateError
-              @grpc ||= batch_update_results.transaction
-              # Re-raise after extracting transaction
-              raise
-            end
+            response = session.batch_update tx_selector, seqno,
+                                            request_options: request_options,
+                                            call_options: call_options, &block
+            batch_update_results = BatchUpdateResults.new response
+            @grpc ||= batch_update_results.transaction
+            batch_update_results.row_counts
           end
         end
 
