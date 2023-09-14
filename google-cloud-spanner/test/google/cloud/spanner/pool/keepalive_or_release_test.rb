@@ -56,7 +56,7 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now - 60*60
     # set the session in the pool
     pool.sessions_available = [session]
-    pool.sessions_in_use = []
+    pool.sessions_in_use = {}
 
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -74,7 +74,7 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now
     # set the session in the pool
     pool.sessions_available = [session]
-    pool.sessions_in_use = []
+    pool.sessions_in_use = {}
 
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
