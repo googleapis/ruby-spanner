@@ -32,7 +32,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     session.instance_variable_set :@last_updated_at, Time.now
     p = client.instance_variable_get :@pool
     p.sessions_available = [session]
-    p.sessions_in_use = []
+    p.sessions_in_use = {}
     p
   end
 

@@ -20,13 +20,6 @@ describe Google::Cloud::Spanner::Pool, :batch_create_sessions, :mock_spanner do
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-  let(:client_pool) do
-    session.instance_variable_set :@last_updated_at, Time.now
-    p = client.instance_variable_get :@pool
-    p.sessions_available = [session]
-    p.sessions_in_use = []
-    p
-  end
 
   after do
     shutdown_client! client

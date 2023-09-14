@@ -29,7 +29,11 @@ module Google
       # {Google::Cloud::Spanner::Session} instances.
       #
       class Pool
+        # @return [Array<Session>] A stack of `Session` objects.
         attr_accessor :sessions_available
+
+        # @return [Hash{String => Session}] A hash with session_id as keys,
+        # and `Session` objects as values.
         attr_accessor :sessions_in_use
 
         def initialize client, min: 10, max: 100, keepalive: 1800,
@@ -67,7 +71,7 @@ module Google
               # will reduce the read / write latencies on user requests.
               read_session = sessions_available.pop # LIFO
               if read_session
-                sessions_in_use << read_session
+                sessions_in_use[read_session.session_id] = read_session
                 return read_session
               end
 
@@ -85,7 +89,7 @@ module Google
           if action == :new
             session = new_session!
             @mutex.synchronize do
-              sessions_in_use << session
+              sessions_in_use[session.session_id] = session
             end
             return session
           end
@@ -95,12 +99,12 @@ module Google
 
         def checkin_session session
           @mutex.synchronize do
-            unless sessions_in_use.include? session
+            unless sessions_in_use.key? session.session_id
               raise ArgumentError, "Cannot checkin session"
             end
 
             sessions_available.push session
-            sessions_in_use.delete_if { |s| s.session_id == session.session_id }
+            sessions_in_use.delete session.session_id
 
             @resource.signal
           end
@@ -163,7 +167,7 @@ module Google
           create_keepalive_task!
           # init session stack
           @sessions_available = @client.batch_create_new_sessions @min
-          @sessions_in_use = []
+          @sessions_in_use = {}
         end
 
         def shutdown
@@ -176,9 +180,9 @@ module Google
           # Delete all sessions
           @mutex.synchronize do
             sessions_available.each { |s| future { s.release! } }
-            sessions_in_use.each { |s| future { s.release! } }
+            sessions_in_use.each_value { |s| future { s.release! } }
             @sessions_available = []
-            @sessions_in_use = []
+            @sessions_in_use = {}
           end
           # shutdown existing thread pool
           @thread_pool.shutdown

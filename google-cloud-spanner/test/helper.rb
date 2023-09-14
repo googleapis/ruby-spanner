@@ -39,7 +39,7 @@ class MockSpanner < Minitest::Spec
     pool = client.instance_variable_get :@pool
     # remove all sessions so we don't have to handle the calls to session_delete
     pool.sessions_available = []
-    pool.sessions_in_use = []
+    pool.sessions_in_use = {}
 
     # close the client
     client.close
