@@ -69,10 +69,10 @@ module Google
 
               # Use LIFO to ensure sessions are used from backend caches, which
               # will reduce the read / write latencies on user requests.
-              read_session = sessions_available.pop # LIFO
-              if read_session
-                sessions_in_use[read_session.session_id] = read_session
-                return read_session
+              session = sessions_available.pop # LIFO
+              if session
+                sessions_in_use[session.session_id] = session
+                return session
               end
 
               if can_allocate_more_sessions?
