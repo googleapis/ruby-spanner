@@ -1,5 +1,11 @@
 # Release History
 
+### 2.18.1 (2023-09-19)
+
+#### Bug Fixes
+
+* Use hash to track the sessions in use ([#60](https://github.com/googleapis/ruby-spanner/issues/60)) 
+
 ### 2.18.0 (2023-09-05)
 
 #### Features
