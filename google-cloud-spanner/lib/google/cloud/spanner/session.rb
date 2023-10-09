@@ -338,7 +338,8 @@ module Google
         #
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
-                          request_options: nil, call_options: nil, data_boost_enabled: nil
+                          request_options: nil, call_options: nil, data_boost_enabled: nil,
+                          route_to_leader: nil
           ensure_service!
           if query_options.nil?
             query_options = @query_options
@@ -350,7 +351,8 @@ module Google
             transaction: transaction, params: params, types: types,
             partition_token: partition_token, seqno: seqno,
             query_options: query_options, request_options: request_options,
-            call_options: call_options
+            call_options: call_options,
+            route_to_leader: route_to_leader
           }
           execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
 
@@ -499,7 +501,7 @@ module Google
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
-                 call_options: nil, data_boost_enabled: nil
+                 call_options: nil, data_boost_enabled: nil, route_to_leader: nil
           ensure_service!
 
           read_options = {
@@ -508,7 +510,8 @@ module Google
             partition_token: partition_token,
             request_options: request_options,
             call_options: call_options,
-            data_boost_enabled: data_boost_enabled
+            data_boost_enabled: data_boost_enabled,
+            route_to_leader: route_to_leader
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
 
@@ -1180,7 +1183,7 @@ module Google
         # @private
         # Creates a new transaction object every time.
         def create_transaction
-          tx_grpc = service.begin_transaction path
+          tx_grpc = service.begin_transaction path, route_to_leader: true
           Transaction.from_grpc tx_grpc, self
         end
 

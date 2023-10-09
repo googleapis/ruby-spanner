@@ -367,7 +367,8 @@ module Google
                                             transaction: tx_selector, seqno: seqno,
                                             query_options: query_options,
                                             request_options: request_options,
-                                            call_options: call_options
+                                            call_options: call_options,
+                                            route_to_leader: true
             @grpc ||= results.transaction
             results
           end
@@ -642,7 +643,8 @@ module Google
           safe_execute do |seqno|
             response = session.batch_update tx_selector, seqno,
                                             request_options: request_options,
-                                            call_options: call_options, &block
+                                            call_options: call_options, route_to_leader: true,
+                                            &block
             batch_update_results = BatchUpdateResults.new response
             @grpc ||= batch_update_results.transaction
             batch_update_results.row_counts
@@ -720,7 +722,8 @@ module Google
             results = session.read table, columns, keys: keys, index: index, limit: limit,
                                    transaction: tx_selector,
                                    request_options: request_options,
-                                   call_options: call_options
+                                   call_options: call_options,
+                                   route_to_leader: true
             @grpc ||= results.transaction
             results
           end
@@ -1190,7 +1193,7 @@ module Google
           @mutex.synchronize do
             return if existing_transaction?
             ensure_session!
-            @grpc = service.begin_transaction session.path
+            @grpc = service.begin_transaction session.path, route_to_leader: true
           end
         end
 

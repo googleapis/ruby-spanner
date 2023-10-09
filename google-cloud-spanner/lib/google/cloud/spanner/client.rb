@@ -448,7 +448,7 @@ module Google
             results = session.execute_query \
               sql, params: params, types: types, transaction: single_use_tx,
               query_options: query_options, request_options: request_options,
-              call_options: call_options
+              call_options: call_options, route_to_leader: true
           end
           results
         end
@@ -719,7 +719,7 @@ module Google
               sql, params: params, types: types,
               transaction: pdml_transaction(session),
               query_options: query_options, request_options: request_options,
-              call_options: call_options
+              call_options: call_options, route_to_leader: true
           end
           # Stream all PartialResultSet to get ResultSetStats
           results.rows.to_a
@@ -927,7 +927,7 @@ module Google
               table, columns, keys: keys, index: index, limit: limit,
                               transaction: single_use_tx,
                               request_options: request_options,
-                              call_options: call_options
+                              call_options: call_options, route_to_leader: false
           end
           results
         end
