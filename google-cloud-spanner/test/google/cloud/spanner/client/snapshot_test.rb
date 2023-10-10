@@ -24,7 +24,23 @@ describe Google::Cloud::Spanner::Client, :snapshot, :mock_spanner do
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session }
   let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_execute_query) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+    }
+  end
+  let(:default_options_create_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_begin_transaction) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => false
+    }
+  end
   let :results_hash do
     {
       metadata: {
@@ -66,10 +82,10 @@ describe Google::Cloud::Spanner::Client, :snapshot, :mock_spanner do
 
   def mock_builder
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :begin_transaction, transaction_grpc, [{ session: session_grpc.name, options: tx_opts }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    mock.expect :begin_transaction, transaction_grpc, [{ session: session_grpc.name, options: tx_opts }, default_options_begin_transaction]
     spanner.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, options: default_options
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, options: default_options_execute_query
     mock
   end
 
@@ -268,14 +284,14 @@ describe Google::Cloud::Spanner::Client, :snapshot, :mock_spanner do
       multiplier:    1.3,
       retry_codes:   ["UNAVAILABLE"]
     }
-    expect_options = default_options.merge timeout: timeout, retry_policy: retry_policy
+    expect_begin_transaction_options = default_options_begin_transaction.merge timeout: timeout, retry_policy: retry_policy
     call_options = { timeout: timeout, retry_policy: retry_policy }
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :begin_transaction, transaction_grpc, [{ session: session_grpc.name, options: tx_opts }, expect_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    mock.expect :begin_transaction, transaction_grpc, [{ session: session_grpc.name, options: tx_opts }, expect_begin_transaction_options]
     spanner.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, options: default_options
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, options: default_options_execute_query
 
     results = nil
     client.snapshot call_options: call_options do |snp|
