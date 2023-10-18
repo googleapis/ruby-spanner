@@ -32,7 +32,13 @@ describe Google::Cloud::Spanner::Transaction, :read, :mock_spanner do
       )
     )
   end
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+
+    }
+  end
   let :results_hash1 do
     {
       metadata: {
