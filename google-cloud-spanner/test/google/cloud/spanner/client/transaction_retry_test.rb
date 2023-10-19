@@ -32,7 +32,24 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
       )
     )
   end
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_create_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_begin_transaction) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_execute_query) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let :results_hash do
     {
       metadata: {
@@ -84,13 +101,13 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     def mock.commit *args
       # first time called this will raise
@@ -136,13 +153,13 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     def mock.commit *args
       # first time called this will raise
@@ -186,13 +203,13 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     def mock.commit *args
       # first time called this will raise
@@ -236,18 +253,18 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     def mock.commit *args
       # first time called this will raise
@@ -296,28 +313,28 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     def mock.commit *args
       raise GRPC::Aborted.new "aborted"
@@ -368,13 +385,13 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options_execute_query
 
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options
+    }, default_options_begin_transaction]
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector, seqno: 1, options: default_options_execute_query
 
     def mock.commit *args
       # first time called this will raise
@@ -418,7 +435,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
 
     def mock.commit *args
       # first time called this will raise
