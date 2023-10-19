@@ -643,8 +643,7 @@ module Google
           safe_execute do |seqno|
             response = session.batch_update tx_selector, seqno,
                                             request_options: request_options,
-                                            call_options: call_options, route_to_leader: true,
-                                            &block
+                                            call_options: call_options, &block
             batch_update_results = BatchUpdateResults.new response
             @grpc ||= batch_update_results.transaction
             batch_update_results.row_counts
