@@ -19,7 +19,18 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
   let(:database_id) { "my-database-id" }
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_create_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_execute_query) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let :metadata_result do
     {
       metadata: {
@@ -128,9 +139,9 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
         Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_4),
         Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_5)
       ].to_enum
-      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", resume_token: "abc123", options: default_options
+      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", resume_token: "abc123", options: default_options_execute_query
 
       results = client.execute_query "SELECT * FROM users"
 
@@ -151,10 +162,10 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
       resulting_stream_3 = [
         Google::Cloud::Spanner::V1::PartialResultSet.new(full_row)
       ].to_enum
-      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_3), session_grpc.name, "SELECT * FROM users", options: default_options
+      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_3), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
 
       results = client.execute_query "SELECT * FROM users"
 
@@ -173,10 +184,10 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
       resulting_stream_3 = [
         Google::Cloud::Spanner::V1::PartialResultSet.new(full_row)
       ].to_enum
-      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_3), session_grpc.name, "SELECT * FROM users", options: default_options
+      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_3), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
 
       results = client.execute_query "SELECT * FROM users"
 
@@ -196,10 +207,10 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
       resulting_stream_3 = [
         Google::Cloud::Spanner::V1::PartialResultSet.new(full_row)
       ].to_enum
-      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", options: default_options
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_3), session_grpc.name, "SELECT * FROM users", options: default_options
+      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_2), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_3), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
 
       results = client.execute_query "SELECT * FROM users"
 
@@ -212,8 +223,8 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
         Google::Cloud::Spanner::V1::PartialResultSet.new(metadata_result),
         GRPC::Internal.new("INTERNAL: Generic (Internal server error)"),
       ].to_enum
-      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options
+      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
 
       assert_raises Google::Cloud::Error do
         results = client.execute_query "SELECT * FROM users"
@@ -226,8 +237,8 @@ describe Google::Cloud::Spanner::Client, :execute_query, :resume, :mock_spanner 
         Google::Cloud::Spanner::V1::PartialResultSet.new(metadata_result),
         Google::Cloud::InternalError.new("INTERNAL: Generic (Internal server error)"),
       ].to_enum
-      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options
+      service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+      expect_execute_streaming_sql RaiseableEnumerator.new(resulting_stream_1), session_grpc.name, "SELECT * FROM users", options: default_options_execute_query
 
       assert_raises Google::Cloud::Error do
         results = client.execute_query "SELECT * FROM users"
