@@ -26,7 +26,12 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   let(:session_grpc_3) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id_3) }
   let(:session_grpc_4) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id_4) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_create_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
   let(:pool) do
     session.instance_variable_set :@last_updated_at, Time.now
@@ -59,7 +64,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
   it "creates new sessions when needed" do
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc_2, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc_2, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
     spanner.service.mocked_service = mock
 
     _(pool.sessions_available.size).must_equal 1
@@ -84,9 +89,9 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
   it "raises when checking out more than MAX sessions" do
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc_2, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :create_session, session_grpc_3, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    mock.expect :create_session, session_grpc_4, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc_2, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    mock.expect :create_session, session_grpc_3, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
+    mock.expect :create_session, session_grpc_4, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
     spanner.service.mocked_service = mock
 
     _(pool.sessions_available.size).must_equal 1
