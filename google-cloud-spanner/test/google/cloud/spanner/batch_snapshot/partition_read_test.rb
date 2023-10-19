@@ -24,7 +24,12 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:batch_snapshot) { Google::Cloud::Spanner::BatchSnapshot.from_grpc transaction_grpc, session }
   let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_partition_read) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let(:columns) { [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids] }
   let(:columns_arg) { ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"] }
   let(:partitions_resp) { Google::Cloud::Spanner::V1::PartitionResponse.new partitions: [Google::Cloud::Spanner::V1::Partition.new(partition_token: "partition-token")] }
@@ -36,7 +41,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: nil, columns: columns_arg, partition_options: nil
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     partitions = batch_snapshot.partition_read "my-table", columns
@@ -59,7 +64,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: nil, columns: columns_arg, partition_options: nil
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     partitions = batch_snapshot.partition_read "my-table", columns, data_boost_enabled: true
@@ -81,7 +86,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: nil, columns: columns_arg, partition_options: nil
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     partitions = batch_snapshot.partition_read "my-table", columns, keys: [1, 2, 3]
@@ -104,7 +109,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: "MyTableCompositeKey", columns: columns_arg, partition_options: nil
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     partitions = batch_snapshot.partition_read "my-table", columns, keys: [[1,1], [2,2], [3,3]], index: "MyTableCompositeKey"
@@ -127,7 +132,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: "MyTableCompositeKey", columns: columns_arg, partition_options: nil
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     lookup_range = Google::Cloud::Spanner::Range.new [1,1], [3,3]
@@ -152,7 +157,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: nil, columns: columns_arg, partition_options: partition_options
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     partitions = batch_snapshot.partition_read "my-table", columns, partition_size_bytes: partition_size_bytes
@@ -176,7 +181,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
     mock.expect :partition_read, partitions_resp, [{
       session: session.path, table: "my-table", key_set: key_set,
       transaction: tx_selector, index: nil, columns: columns_arg, partition_options: partition_options
-    }, default_options]
+    }, default_options_partition_read]
     batch_snapshot.session.service.mocked_service = mock
 
     partitions = batch_snapshot.partition_read "my-table", columns, max_partitions: max_partitions
@@ -200,7 +205,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :partition_read, :mock_spanner d
       multiplier:    1.3,
       retry_codes:   ["UNAVAILABLE"]
     }
-    expect_options = default_options.merge timeout: timeout, retry_policy: retry_policy
+    expect_options = default_options_partition_read.merge timeout: timeout, retry_policy: retry_policy
     call_options = { timeout: timeout, retry_policy: retry_policy }
 
     mock = Minitest::Mock.new
