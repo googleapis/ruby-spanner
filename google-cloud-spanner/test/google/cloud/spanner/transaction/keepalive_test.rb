@@ -23,14 +23,19 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_begin_transaction) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
 
   it "creates new transaction when calling keepalive" do
     mock = Minitest::Mock.new
     mock.expect :begin_transaction, transaction_grpc, [{
       session: session_grpc.name, options: tx_opts, request_options: nil
-    }, default_options]
+    }, default_options_begin_transaction]
     spanner.service.mocked_service = mock
 
     transaction.keepalive!
