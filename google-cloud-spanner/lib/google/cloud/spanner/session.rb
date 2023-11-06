@@ -1219,7 +1219,7 @@ module Google
         # Keeps the session alive by executing `"SELECT 1"`.
         def keepalive!
           ensure_service!
-          execute_query "SELECT 1"
+          execute_query "SELECT 1", route_to_leader: false
           true
         rescue Google::Cloud::NotFoundError
           labels = @grpc.labels.to_h unless @grpc.labels.to_h.empty?

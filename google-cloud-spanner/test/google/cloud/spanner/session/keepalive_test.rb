@@ -20,7 +20,18 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_create_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_execute_query) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => false
+    }
+  end
   let :results_hash do
     {
       metadata: {
@@ -45,7 +56,7 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
   it "can call keepalive" do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT 1", options: default_options
+    expect_execute_streaming_sql results_enum, session.path, "SELECT 1", options: default_options_execute_query
 
     session.keepalive!
 
@@ -58,8 +69,8 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
       raise GRPC::NotFound.new 5, "not found"
     end
     session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT 1", options: default_options
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    expect_execute_streaming_sql results_enum, session.path, "SELECT 1", options: default_options_execute_query
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
 
     result = session.keepalive!
     _(result).must_equal false
@@ -72,8 +83,8 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
       raise GRPC::NotFound.new 5, "not found"
     end
     session_labels.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session_labels.path, "SELECT 1", options: default_options
-    mock.expect :create_session, session_grpc_labels, [{ database: database_path(instance_id, database_id), session: Google::Cloud::Spanner::V1::Session.new(labels: labels) }, default_options]
+    expect_execute_streaming_sql results_enum, session_labels.path, "SELECT 1", options: default_options_execute_query
+    mock.expect :create_session, session_grpc_labels, [{ database: database_path(instance_id, database_id), session: Google::Cloud::Spanner::V1::Session.new(labels: labels) }, default_options_create_session]
 
     result = session_labels.keepalive!
     _(result).must_equal false
