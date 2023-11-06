@@ -20,15 +20,25 @@ describe Google::Cloud::Spanner::Session, :reload, :mock_spanner do
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-
+  let(:default_options_create_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_get_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let(:labels) { { "env" => "production" } }
   let(:session_grpc_labels) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id), labels: labels }
   let(:session_labels) { Google::Cloud::Spanner::Session.from_grpc session_grpc_labels, spanner.service }
 
   it "can reload itself" do
     mock = Minitest::Mock.new
-    mock.expect :get_session, session_grpc, [{ name: session_grpc.name }, default_options]
+    mock.expect :get_session, session_grpc, [{ name: session_grpc.name }, default_options_get_session]
     session.service.mocked_service = mock
 
     _(session).must_be_kind_of Google::Cloud::Spanner::Session
@@ -51,7 +61,7 @@ describe Google::Cloud::Spanner::Session, :reload, :mock_spanner do
       grpc_error = GRPC::NotFound.new 5, "not found"
       raise Google::Cloud::Error.from_error grpc_error
     end
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
     session.service.mocked_service = mock
 
     _(session).must_be_kind_of Google::Cloud::Spanner::Session
@@ -74,7 +84,7 @@ describe Google::Cloud::Spanner::Session, :reload, :mock_spanner do
       grpc_error = GRPC::NotFound.new 5, "not found"
       raise Google::Cloud::Error.from_error grpc_error
     end
-    mock.expect :create_session, session_grpc_labels, [{ database: database_path(instance_id, database_id), session: Google::Cloud::Spanner::V1::Session.new(labels: labels) }, default_options]
+    mock.expect :create_session, session_grpc_labels, [{ database: database_path(instance_id, database_id), session: Google::Cloud::Spanner::V1::Session.new(labels: labels) }, default_options_create_session]
     session_labels.service.mocked_service = mock
 
     _(session_labels).must_be_kind_of Google::Cloud::Spanner::Session
