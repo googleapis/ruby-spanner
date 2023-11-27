@@ -183,7 +183,7 @@ module Google
       end
 
       ##
-      # @private checks if string is not nil or empty string 
+      # @private checks if string is not nil or empty string
       # returns the string if present else nil
       def self.present_or_nil str
         str.to_s.strip.empty? ? nil : str
