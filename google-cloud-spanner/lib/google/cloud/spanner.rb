@@ -96,7 +96,7 @@ module Google
         project_id    ||= project || default_project_id
         scope         ||= configure.scope
         timeout       ||= configure.timeout
-        emulator_host ||= configure.emulator_host
+        emulator_host = present_or_nil(emulator_host) || present_or_nil(configure.emulator_host)
         endpoint      ||= emulator_host || configure.endpoint
         credentials   ||= keyfile
         lib_name      ||= configure.lib_name
@@ -180,6 +180,13 @@ module Google
         Google::Cloud.configure.spanner.credentials ||
           Google::Cloud.configure.credentials ||
           Spanner::Credentials.default(scope: scope)
+      end
+
+      ##
+      # @private checks if string is not nil or empty string 
+      # returns the string if present else nil
+      def self.present_or_nil str
+        str.to_s.strip.empty? ? nil : str
       end
     end
   end
