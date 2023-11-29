@@ -435,7 +435,7 @@ module Google
         #
         def execute_query sql, params: nil, types: nil, single_use: nil,
                           query_options: nil, request_options: nil,
-                          call_options: nil
+                          call_options: nil, directed_read_options: nil
           validate_single_use_args! single_use
           ensure_service!
 
@@ -448,7 +448,7 @@ module Google
             results = session.execute_query \
               sql, params: params, types: types, transaction: single_use_tx,
               query_options: query_options, request_options: request_options,
-              call_options: call_options
+              call_options: call_options, directed_read_options: directed_read_options
           end
           results
         end

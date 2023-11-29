@@ -338,7 +338,8 @@ module Google
         #
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
-                          request_options: nil, call_options: nil, data_boost_enabled: nil
+                          request_options: nil, call_options: nil, data_boost_enabled: nil,
+                          directed_read_options: nil
           ensure_service!
           if query_options.nil?
             query_options = @query_options
@@ -350,7 +351,7 @@ module Google
             transaction: transaction, params: params, types: types,
             partition_token: partition_token, seqno: seqno,
             query_options: query_options, request_options: request_options,
-            call_options: call_options
+            call_options: call_options, directed_read_options: directed_read_options
           }
           execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
 

@@ -356,7 +356,8 @@ module Google
         #   end
         #
         def execute_query sql, params: nil, types: nil, query_options: nil,
-                          request_options: nil, call_options: nil
+                          request_options: nil, call_options: nil, 
+                          directed_read_options: nil
           ensure_session!
 
           params, types = Convert.to_input_params_and_types params, types
@@ -367,7 +368,8 @@ module Google
                                             transaction: tx_selector, seqno: seqno,
                                             query_options: query_options,
                                             request_options: request_options,
-                                            call_options: call_options
+                                            call_options: call_options,
+                                            directed_read_options: directed_read_options
             @grpc ||= results.transaction
             results
           end
