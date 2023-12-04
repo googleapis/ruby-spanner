@@ -261,6 +261,47 @@ describe Google::Cloud::Spanner::Snapshot, :execute_query, :mock_spanner do
     assert_results results
   end
 
+  it "can execute a simple query with directed read options" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
+
+    results = snapshot.execute_query "SELECT * FROM users", directed_read_options: expect_directed_read_options
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "can execute a simple query with query options (session-level)" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service, directed_read_options: expect_directed_read_options
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
+    shapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session  
+    results = snapshot.execute_query "SELECT * FROM users"
+
+    mock.verify
+
+    assert_results results
+  end
+
   it "can execute a query with custom timeout and retry policy" do
     timeout = 30
     retry_policy = {
