@@ -424,6 +424,53 @@ describe Google::Cloud::Spanner::Client, :execute_query, :mock_spanner do
     assert_results results
   end
 
+  it "can execute a simple query with directed read options" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    spanner.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
+
+    results = client.execute_query "SELECT * FROM users", directed_read_options: expect_directed_read_options
+
+    shutdown_client! client
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "can execute a simple query with directed read options (session-level)" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    new_client = spanner.client instance_id, database_id, pool: { min: 0 }, directed_read_options: expect_directed_read_options
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    spanner.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
+
+    results = new_client.execute_query "SELECT * FROM users"
+
+    shutdown_client! client
+
+    mock.verify
+
+    assert_results results
+  end
+
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 
