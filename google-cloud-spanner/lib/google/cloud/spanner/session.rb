@@ -353,9 +353,10 @@ module Google
             transaction: transaction, params: params, types: types,
             partition_token: partition_token, seqno: seqno,
             query_options: query_options, request_options: request_options,
-            call_options: call_options, directed_read_options: directed_read_options
+            call_options: call_options
           }
           execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+          execute_query_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
 
           response = service.execute_streaming_sql path, sql, **execute_query_options
 
@@ -511,10 +512,10 @@ module Google
             transaction: transaction,
             partition_token: partition_token,
             request_options: request_options,
-            call_options: call_options,
-            directed_read_options: directed_read_options
+            call_options: call_options
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+          read_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
 
           response = service.streaming_read_table \
             path, table, columns, **read_options
@@ -1274,8 +1275,9 @@ module Google
           if hash.nil?
             hash = hash_to_merge
           else
-            hash = hash.merge hash_to_merge unless hash_to_merge.nil?
+            hash = hash_to_merge.merge hash unless hash_to_merge.nil?
           end
+          hash
         end
       end
     end
