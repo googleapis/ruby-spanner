@@ -54,11 +54,16 @@ module Google
         # @private The hash of query options.
         attr_accessor :query_options
 
+         ##
+        # @private The hash of directed read options.
+        attr_accessor :directed_read_options
+
         # @private Creates a new Session instance.
-        def initialize grpc, service, query_options: nil
+        def initialize grpc, service, query_options: nil, directed_read_options: nil
           @grpc = grpc
           @service = service
           @query_options = query_options
+          @directed_read_options = directed_read_options
         end
 
         # The unique identifier for the project.
@@ -341,11 +346,8 @@ module Google
                           request_options: nil, call_options: nil, data_boost_enabled: nil,
                           directed_read_options: nil
           ensure_service!
-          if query_options.nil?
-            query_options = @query_options
-          else
-            query_options = @query_options.merge query_options unless @query_options.nil?
-          end
+          query_options = merge_if_present query_options, @query_options
+          directed_read_options = merge_if_present directed_read_options, @directed_read_options
 
           execute_query_options = {
             transaction: transaction, params: params, types: types,
@@ -500,16 +502,17 @@ module Google
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
-                 call_options: nil, data_boost_enabled: nil
+                 call_options: nil, data_boost_enabled: nil, directed_read_options: nil
           ensure_service!
 
+          directed_read_options = merge_if_present directed_read_options, @directed_read_options
           read_options = {
             keys: keys, index: index, limit: limit,
             transaction: transaction,
             partition_token: partition_token,
             request_options: request_options,
             call_options: call_options,
-            data_boost_enabled: data_boost_enabled
+            directed_read_options: directed_read_options
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
 
@@ -1248,8 +1251,8 @@ module Google
         ##
         # @private Creates a new Session instance from a
         # `Google::Cloud::Spanner::V1::Session`.
-        def self.from_grpc grpc, service, query_options: nil
-          new grpc, service, query_options: query_options
+        def self.from_grpc grpc, service, query_options: nil, directed_read_options: nil
+          new grpc, service, query_options: query_options, directed_read_options: directed_read_options
         end
 
         ##
@@ -1265,6 +1268,14 @@ module Google
         # available.
         def ensure_service!
           raise "Must have active connection to service" unless service
+        end
+
+        def merge_if_present hash, hash_to_merge
+          if hash.nil?
+            hash = hash_to_merge
+          else
+            hash = hash.merge hash_to_merge unless hash_to_merge.nil?
+          end
         end
       end
     end

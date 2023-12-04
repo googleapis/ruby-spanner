@@ -566,7 +566,7 @@ module Google
         #   end
         #
         def client instance_id, database_id, pool: {}, labels: nil,
-                   query_options: nil, database_role: nil
+                   query_options: nil, database_role: nil, directed_read_options: nil
           # Convert from possible Google::Protobuf::Map
           labels = labels.to_h { |k, v| [String(k), String(v)] } if labels
           # Configs set by environment variables take over client-level configs.
@@ -579,7 +579,8 @@ module Google
                      session_labels: labels,
                      pool_opts: valid_session_pool_options(pool),
                      query_options: query_options,
-                     database_role: database_role
+                     database_role: database_role,
+                     directed_read_options: directed_read_options
         end
 
         ##
@@ -673,6 +674,14 @@ module Google
             min: opts[:min], max: opts[:max], keepalive: opts[:keepalive],
             fail: opts[:fail], threads: opts[:threads]
           }.compact
+        end
+
+        def merge_if_present hash, hash_to_merge
+          if hash.nil?
+            hash = hash_to_merge
+          else
+            hash = hash.merge hash_to_merge unless hash_to_merge.nil?
+          end
         end
       end
     end

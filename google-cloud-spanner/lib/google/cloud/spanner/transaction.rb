@@ -711,7 +711,7 @@ module Google
         #   end
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
-                 request_options: nil, call_options: nil
+                 request_options: nil, call_options: nil, directed_read_options: nil
           ensure_session!
 
           columns = Array(columns).map(&:to_s)
@@ -722,7 +722,8 @@ module Google
             results = session.read table, columns, keys: keys, index: index, limit: limit,
                                    transaction: tx_selector,
                                    request_options: request_options,
-                                   call_options: call_options
+                                   call_options: call_options,
+                                   directed_read_options: directed_read_options
             @grpc ||= results.transaction
             results
           end

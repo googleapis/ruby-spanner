@@ -350,7 +350,7 @@ module Google
         #   end
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
-                 call_options: nil
+                 call_options: nil, directed_read_options: nil
           ensure_session!
 
           columns = Array(columns).map(&:to_s)
@@ -358,7 +358,8 @@ module Google
 
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
-                                       call_options: call_options
+                                       call_options: call_options,
+                                       directed_read_options: directed_read_options
         end
 
         ##

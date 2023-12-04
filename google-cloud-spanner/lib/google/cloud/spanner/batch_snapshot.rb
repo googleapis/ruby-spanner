@@ -645,7 +645,7 @@ module Google
         #   end
         #
         def execute_query sql, params: nil, types: nil, query_options: nil,
-                          call_options: nil, directed_read_options: nil
+                          call_options: nil
           ensure_session!
 
           params, types = Convert.to_input_params_and_types params, types

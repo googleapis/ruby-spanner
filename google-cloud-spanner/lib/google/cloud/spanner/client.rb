@@ -56,7 +56,8 @@ module Google
         ##
         # @private Creates a new Spanner Client instance.
         def initialize project, instance_id, database_id, session_labels: nil,
-                       pool_opts: {}, query_options: nil, database_role: nil
+                       pool_opts: {}, query_options: nil, database_role: nil,
+                       directed_read_options: nil
           @project = project
           @instance_id = instance_id
           @database_id = database_id
@@ -64,6 +65,7 @@ module Google
           @session_labels = session_labels
           @pool = Pool.new self, **pool_opts
           @query_options = query_options
+          @directed_read_options = directed_read_options
         end
 
         # The unique identifier for the project.
@@ -113,6 +115,13 @@ module Google
         # @return [Hash]
         def query_options
           @query_options
+        end
+
+        # A hash of values to specify the custom directed read options for executing
+        # SQL query.
+        # @return [Hash]
+        def directed_read_options
+          @directed_read_options
         end
 
         ##
@@ -911,7 +920,8 @@ module Google
         #   end
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
-                 single_use: nil, request_options: nil, call_options: nil
+                 single_use: nil, request_options: nil, call_options: nil,
+                 directed_read_options: nil
           validate_single_use_args! single_use
           ensure_service!
 
@@ -927,7 +937,8 @@ module Google
               table, columns, keys: keys, index: index, limit: limit,
                               transaction: single_use_tx,
                               request_options: request_options,
-                              call_options: call_options
+                              call_options: call_options,
+                              directed_read_options: directed_read_options
           end
           results
         end
@@ -2129,7 +2140,7 @@ module Google
             ),
             labels: @session_labels,
             database_role: @database_role
-          Session.from_grpc grpc, @project.service, query_options: @query_options
+          Session.from_grpc grpc, @project.service, query_options: @query_options, directed_read_options: @directed_read_options
         end
 
         ##
@@ -2159,7 +2170,9 @@ module Google
             session_count,
             labels: @session_labels,
             database_role: @database_role
-          resp.session.map { |grpc| Session.from_grpc grpc, @project.service, query_options: @query_options }
+          resp.session.map do |grpc| 
+            Session.from_grpc grpc, @project.service, query_options: @query_options, directed_read_options: @directed_read_options
+          end
         end
 
         # @private
