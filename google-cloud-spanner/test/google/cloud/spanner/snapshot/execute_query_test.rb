@@ -294,7 +294,7 @@ describe Google::Cloud::Spanner::Snapshot, :execute_query, :mock_spanner do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
-    shapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session  
+    snapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session  
     results = snapshot.execute_query "SELECT * FROM users"
 
     mock.verify

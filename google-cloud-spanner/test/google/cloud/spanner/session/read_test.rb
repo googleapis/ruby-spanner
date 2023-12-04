@@ -200,7 +200,7 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
     assert_results results
   end
 
-  it "can execute a simple read with query options (session-level)" do
+  it "can execute a simple read with directed read options (session-level)" do
     expect_directed_read_options = { include_replicas: { replica_selections: [
           {
               location: "us-west1",
