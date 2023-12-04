@@ -343,10 +343,10 @@ module Google
             partition_token: partition_token,
             seqno: seqno,
             query_options: query_options,
-            request_options: request_options
+            request_options: request_options,
+            directed_read_options: directed_read_options
           }
           request[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
-          request[:directed_read_options] = directed_read_options unless directed_read_options.nil?
           service.execute_streaming_sql request, opts
         end
 
