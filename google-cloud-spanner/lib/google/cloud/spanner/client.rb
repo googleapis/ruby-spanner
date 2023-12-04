@@ -2140,7 +2140,8 @@ module Google
             ),
             labels: @session_labels,
             database_role: @database_role
-          Session.from_grpc grpc, @project.service, query_options: @query_options, directed_read_options: @directed_read_options
+          Session.from_grpc grpc, @project.service, query_options: @query_options,
+directed_read_options: @directed_read_options
         end
 
         ##
@@ -2170,8 +2171,9 @@ module Google
             session_count,
             labels: @session_labels,
             database_role: @database_role
-          resp.session.map do |grpc| 
-            Session.from_grpc grpc, @project.service, query_options: @query_options, directed_read_options: @directed_read_options
+          resp.session.map do |grpc|
+            Session.from_grpc grpc, @project.service, query_options: @query_options,
+directed_read_options: @directed_read_options
           end
         end
 

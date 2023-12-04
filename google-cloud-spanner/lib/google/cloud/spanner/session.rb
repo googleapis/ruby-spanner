@@ -54,7 +54,7 @@ module Google
         # @private The hash of query options.
         attr_accessor :query_options
 
-         ##
+        ##
         # @private The hash of directed read options.
         attr_accessor :directed_read_options
 

@@ -356,7 +356,7 @@ module Google
         #   end
         #
         def execute_query sql, params: nil, types: nil, query_options: nil,
-                          request_options: nil, call_options: nil, 
+                          request_options: nil, call_options: nil,
                           directed_read_options: nil
           ensure_session!
 

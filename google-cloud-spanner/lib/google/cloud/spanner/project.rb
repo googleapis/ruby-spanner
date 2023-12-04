@@ -678,9 +678,9 @@ module Google
 
         def merge_if_present hash, hash_to_merge
           if hash.nil?
-            hash = hash_to_merge
+            hash_to_merge
           else
-            hash = hash.merge hash_to_merge unless hash_to_merge.nil?
+            hash.merge hash_to_merge unless hash_to_merge.nil?
           end
         end
       end

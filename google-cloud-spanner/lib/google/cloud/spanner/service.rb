@@ -376,7 +376,7 @@ module Google
             session: session_name, table: table_name, columns: columns,
             key_set: keys, transaction: transaction, index: index,
             limit: limit, resume_token: resume_token,
-            partition_token: partition_token, request_options: request_options,
+            partition_token: partition_token, request_options: request_options
           }
           request[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           request[:directed_read_options] = directed_read_options unless directed_read_options.nil?
