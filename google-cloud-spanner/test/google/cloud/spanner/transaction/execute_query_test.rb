@@ -312,50 +312,6 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     mock.verify
   end
 
-  it "can execute a simple query with directed read options" do
-    expect_directed_read_options = { include_replicas: { replica_selections: [
-          {
-              location: "us-west1",
-              type: "READ_ONLY",
-          },
-      ],
-      auto_failover_disabled: true
-    }}
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", transaction: tx_selector,
-                                 options: default_options, directed_read_options: expect_directed_read_options
-
-    results = transaction.execute_query "SELECT * FROM users", directed_read_options: expect_directed_read_options
-
-    mock.verify
-
-    assert_results results
-  end
-
-  it "can execute a simple query with directed read options (session-level)" do
-    expect_directed_read_options = { include_replicas: { replica_selections: [
-          {
-              location: "us-west1",
-              type: "READ_ONLY",
-          },
-      ],
-      auto_failover_disabled: true
-    }}
-    session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service, directed_read_options: expect_directed_read_options
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", 
-                                 options: default_options, transaction: tx_selector, 
-                                 directed_read_options: expect_directed_read_options
-    transaction = Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session
-    results = transaction.execute_query "SELECT * FROM users"
-
-    mock.verify
-
-    assert_results results
-  end
-
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 

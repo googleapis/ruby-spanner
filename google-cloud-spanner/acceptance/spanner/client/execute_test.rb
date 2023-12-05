@@ -153,13 +153,12 @@ describe "Spanner Client", :execute_sql, :spanner do
 
     it "runs a simple query with directed read options for #{dialect}" do
       directed_read_options = { include_replicas: { replica_selections: [
-        {
-            location: "us-west1",
-            type: "READ_ONLY",
-        },
-      ],
-      auto_failover_disabled: true
-      }}
+                                                      {
+                                                        location: "us-west1",
+                                                          type: "READ_ONLY"
+                                                      }
+                                                    ],
+                                                    auto_failover_disabled: true } }
       results = db[dialect].execute_sql "SELECT 42 AS num", directed_read_options: directed_read_options
       _(results).must_be_kind_of Google::Cloud::Spanner::Results
 
