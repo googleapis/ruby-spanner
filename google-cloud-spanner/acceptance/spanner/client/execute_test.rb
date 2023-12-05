@@ -151,6 +151,30 @@ describe "Spanner Client", :execute_sql, :spanner do
       _(row[:num]).must_equal 42
     end
 
+    it "runs a simple query with directed read options for #{dialect}" do
+      directed_read_options = { include_replicas: { replica_selections: [
+        {
+            location: "us-west1",
+            type: "READ_ONLY",
+        },
+      ],
+      auto_failover_disabled: true
+      }}
+      results = db[dialect].execute_sql "SELECT 42 AS num", directed_read_options: directed_read_options
+      _(results).must_be_kind_of Google::Cloud::Spanner::Results
+
+      _(results.fields).must_be_kind_of Google::Cloud::Spanner::Fields
+      _(results.fields.keys.count).must_equal 1
+      _(results.fields[:num]).must_equal :INT64
+
+      rows = results.rows.to_a # grab all from the enumerator
+      _(rows.count).must_equal 1
+      row = rows.first
+      _(row).must_be_kind_of Google::Cloud::Spanner::Data
+      _(row.keys).must_equal [:num]
+      _(row[:num]).must_equal 42
+    end
+
     it "runs a simple query when the client-level config of query options is set for #{dialect}" do
       query_options = { optimizer_version: "3", optimizer_statistics_package: "latest" }
       new_spanner = Google::Cloud::Spanner.new
