@@ -446,6 +446,36 @@ describe Google::Cloud do
       end
     end
 
+    it 'ignores emulator_host if empty string' do
+      emulator_host = ""
+      project_id = "arbitrary-string"
+      ENV.stub :[], nil do
+        Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+          spanner = Google::Cloud::Spanner.new project_id: project_id, emulator_host: emulator_host
+          _(spanner).must_be_kind_of Google::Cloud::Spanner::Project
+          _(spanner.project).must_equal project_id
+          _(spanner.service.host).must_equal "spanner.googleapis.com"
+        end
+      end
+    end
+
+    it "ignores SPANNER_EMULATOR_HOST environment variable if empty" do
+      emulator_host = " "
+      emulator_check = ->(name) { (name == "SPANNER_EMULATOR_HOST") ? emulator_host : nil }
+      # Clear all environment variables, except SPANNER_EMULATOR_HOST
+      ENV.stub :[], emulator_check do
+        # Get project_id from Google Compute Engine
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+            spanner = Google::Cloud::Spanner.new
+            _(spanner).must_be_kind_of Google::Cloud::Spanner::Project
+            _(spanner.project).must_equal "project-id"
+            _(spanner.service.host).must_equal "spanner.googleapis.com"
+          end
+        end
+      end
+    end
+
     it "uses provided lib name and lib version" do
       lib_name = "spanner-ruby"
       lib_version = "1.0.0"
