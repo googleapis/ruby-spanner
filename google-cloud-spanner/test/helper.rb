@@ -198,7 +198,7 @@ class MockSpanner < Minitest::Spec
       request[:seqno] == seqno &&
       request[:query_options] == query_options &&
       request[:request_options] == request_options &&
-      request[:directed_read_options] == directed_read_options
+      request[:directed_read_options] == directed_read_options &&
       gapic_options == options
     end
   end
