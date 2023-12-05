@@ -272,7 +272,7 @@ describe Google::Cloud::Spanner::Snapshot, :execute_query, :mock_spanner do
     }}
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
+    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", transaction: tx_selector, options: default_options, directed_read_options: expect_directed_read_options
 
     results = snapshot.execute_query "SELECT * FROM users", directed_read_options: expect_directed_read_options
 
@@ -293,7 +293,7 @@ describe Google::Cloud::Spanner::Snapshot, :execute_query, :mock_spanner do
     session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service, directed_read_options: expect_directed_read_options
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", options: default_options, directed_read_options: expect_directed_read_options
+    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users", transaction: tx_selector, options: default_options, directed_read_options: expect_directed_read_options
     snapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session  
     results = snapshot.execute_query "SELECT * FROM users"
 
