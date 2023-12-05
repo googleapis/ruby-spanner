@@ -675,14 +675,6 @@ module Google
             fail: opts[:fail], threads: opts[:threads]
           }.compact
         end
-
-        def merge_if_present hash, hash_to_merge
-          if hash.nil?
-            hash_to_merge
-          else
-            hash.merge hash_to_merge unless hash_to_merge.nil?
-          end
-        end
       end
     end
   end
