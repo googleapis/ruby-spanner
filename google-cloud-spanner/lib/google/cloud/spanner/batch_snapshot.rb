@@ -356,6 +356,18 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
+        # @param [Hash]  Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates that should be excluded from serving requests. 
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request. 
+        #      If auto_failover_disabled is set to true and all replicas are exhausted without finding a healthy replica, 
+        #      Spanner will wait for a replica in the list to become available, 
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @example
         #   require "google/cloud/spanner"
@@ -372,7 +384,7 @@ module Google
         #
         #   batch_snapshot.close
         #
-        def execute_partition partition, call_options: nil
+        def execute_partition partition, call_options: nil, directed_read_options: nil
           ensure_session!
 
           partition = Partition.load partition unless partition.is_a? Partition
@@ -381,7 +393,7 @@ module Google
           # TODO: raise if session.path != partition.session
           # TODO: raise if grpc.transaction != partition.transaction
 
-          opts = { call_options: call_options }
+          opts = { call_options: call_options, directed_read_options: directed_read_options }
           if partition.execute?
             execute_partition_query partition, **opts
           elsif partition.read?
@@ -802,7 +814,7 @@ module Google
           raise "Must have active connection to service" unless session
         end
 
-        def execute_partition_query partition, call_options: nil
+        def execute_partition_query partition, call_options: nil, directed_read_options: nil
           query_options = partition.execute.query_options
           query_options = query_options.to_h unless query_options.nil?
           session.execute_query \
@@ -813,10 +825,11 @@ module Google
             partition_token: partition.execute.partition_token,
             query_options: query_options,
             call_options: call_options,
-            data_boost_enabled: partition.execute.data_boost_enabled
+            data_boost_enabled: partition.execute.data_boost_enabled,
+            directed_read_options: directed_read_options
         end
 
-        def execute_partition_read partition, call_options: nil
+        def execute_partition_read partition, call_options: nil, directed_read_options: nil
           session.read partition.read.table,
                        partition.read.columns.to_a,
                        keys: partition.read.key_set,
@@ -824,7 +837,8 @@ module Google
                        transaction: partition.read.transaction,
                        partition_token: partition.read.partition_token,
                        call_options: call_options,
-                       data_boost_enabled: partition.read.data_boost_enabled
+                       data_boost_enabled: partition.read.data_boost_enabled,
+                       directed_read_options: directed_read_options
         end
       end
     end

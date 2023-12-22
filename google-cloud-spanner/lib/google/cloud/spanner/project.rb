@@ -547,6 +547,18 @@ module Google
         #     available optimizer version.
         #   * `:optimizer_statistics_package` (String) Statistics package to
         #     use. Empty to use the database default.
+        # @param [Hash]  Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates that should be excluded from serving requests. 
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request. 
+        #      If auto_failover_disabled is set to true and all replicas are exhausted without finding a healthy replica, 
+        #      Spanner will wait for a replica in the list to become available, 
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @return [Client] The newly created client.
         #
@@ -615,6 +627,18 @@ module Google
         #     available optimizer version.
         #   * `:optimizer_statistics_package` (String) Statistics package to
         #     use. Empty to use the database default.
+        # @param [Hash]  Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates that should be excluded from serving requests. 
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request. 
+        #      If auto_failover_disabled is set to true and all replicas are exhausted without finding a healthy replica, 
+        #      Spanner will wait for a replica in the list to become available, 
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @return [Client] The newly created client.
         #
@@ -644,11 +668,11 @@ module Google
         #     new_partition
         #
         def batch_client instance_id, database_id, labels: nil,
-                         query_options: nil
+                         query_options: nil, directed_read_options: nil
           # Convert from possible Google::Protobuf::Map
           labels = labels.to_h { |k, v| [String(k), String(v)] } if labels
           BatchClient.new self, instance_id, database_id, session_labels: labels,
-                          query_options: query_options
+                          query_options: query_options, directed_read_options: directed_read_options
         end
 
         protected

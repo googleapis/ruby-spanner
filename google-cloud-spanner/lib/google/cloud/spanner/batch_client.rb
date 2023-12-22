@@ -66,12 +66,13 @@ module Google
         ##
         # @private Creates a new Spanner BatchClient instance.
         def initialize project, instance_id, database_id, session_labels: nil,
-                       query_options: nil
+                       query_options: nil, directed_read_options: nil
           @project = project
           @instance_id = instance_id
           @database_id = database_id
           @session_labels = session_labels
           @query_options = query_options
+          @directed_read_options = directed_read_options
         end
 
         # The unique identifier for the project.
@@ -108,6 +109,13 @@ module Google
         # @return [Database]
         def database
           @project.database instance_id, database_id
+        end
+
+        # A hash of values to specify the custom directed read options for executing
+        # SQL query.
+        # @return [Hash]
+        def directed_read_options
+          @directed_read_options
         end
 
         ##
@@ -411,7 +419,7 @@ module Google
               project: project_id, instance: instance_id, database: database_id
             ),
             labels: @session_labels
-          Session.from_grpc grpc, @project.service, query_options: @query_options
+          Session.from_grpc grpc, @project.service, query_options: @query_options,  directed_read_options: @directed_read_options
         end
 
         ##
