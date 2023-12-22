@@ -419,7 +419,8 @@ module Google
               project: project_id, instance: instance_id, database: database_id
             ),
             labels: @session_labels
-          Session.from_grpc grpc, @project.service, query_options: @query_options,  directed_read_options: @directed_read_options
+          Session.from_grpc grpc, @project.service, query_options: @query_options,
+directed_read_options: @directed_read_options
         end
 
         ##
