@@ -511,6 +511,19 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
+        # @param [Hash]  Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates that should be excluded from serving requests.
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
+        #      If auto_failover_disabled is set to true and
+        #      all replicas are exhausted without finding a healthy replica,
+        #      Spanner will wait for a replica in the list to become available,
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @return [Google::Cloud::Spanner::Results] The results of the query
         #   execution.
@@ -658,7 +671,7 @@ module Google
         #   end
         #
         def execute_query sql, params: nil, types: nil, query_options: nil,
-                          call_options: nil
+                          call_options: nil, directed_read_options: nil
           ensure_session!
 
           params, types = Convert.to_input_params_and_types params, types
@@ -666,7 +679,8 @@ module Google
           session.execute_query sql, params: params, types: types,
                                 transaction: tx_selector,
                                 query_options: query_options,
-                                call_options: call_options
+                                call_options: call_options,
+                                directed_read_options: directed_read_options
         end
         alias execute execute_query
         alias query execute_query
@@ -701,6 +715,19 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
+        # @param [Hash]  Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates that should be excluded from serving requests.
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
+        #      If auto_failover_disabled is set to true and
+        #      all replicas are exhausted without finding a healthy replica,
+        #      Spanner will wait for a replica in the list to become available,
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @return [Google::Cloud::Spanner::Results] The results of the read
         #   operation.
@@ -719,7 +746,7 @@ module Google
         #   end
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
-                 call_options: nil
+                 call_options: nil, directed_read_options: nil
           ensure_session!
 
           columns = Array(columns).map(&:to_s)
@@ -727,7 +754,8 @@ module Google
 
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
-                                       call_options: call_options
+                                       call_options: call_options,
+                                       directed_read_options: directed_read_options
         end
 
         ##
