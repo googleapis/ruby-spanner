@@ -1273,11 +1273,10 @@ module Google
 
         def merge_if_present hash, hash_to_merge
           if hash.nil?
-            hash = hash_to_merge
+            hash_to_merge
           else
-            hash = hash_to_merge.merge hash unless hash_to_merge.nil?
+            hash_to_merge.nil? ? hash : hash_to_merge.merge(hash)
           end
-          hash
         end
       end
     end

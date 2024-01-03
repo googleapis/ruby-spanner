@@ -547,7 +547,7 @@ module Google
         #     available optimizer version.
         #   * `:optimizer_statistics_package` (String) Statistics package to
         #     use. Empty to use the database default.
-        # @param [Hash]  Client options used to set the directed_read_options
+        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
         #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
         #    or regions should be used for non-transactional reads or queries.
         #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
@@ -628,7 +628,7 @@ module Google
         #     available optimizer version.
         #   * `:optimizer_statistics_package` (String) Statistics package to
         #     use. Empty to use the database default.
-        # @param [Hash]  Client options used to set the directed_read_options
+        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
         #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
         #    or regions should be used for non-transactional reads or queries.
         #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)

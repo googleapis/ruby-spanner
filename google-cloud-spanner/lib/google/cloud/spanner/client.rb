@@ -273,7 +273,7 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
-        # @param [Hash]  Client options used to set the directed_read_options
+        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
         #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
         #    or regions should be used for non-transactional reads or queries.
         #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
@@ -850,7 +850,7 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
-        # @param [Hash]  Client options used to set the directed_read_options
+        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
         #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
         #    or regions should be used for non-transactional reads or queries.
         #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
