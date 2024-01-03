@@ -148,7 +148,8 @@ module Google
         #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
         #   The following settings can be provided:
         #
-        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates what replicas should be excluded from serving requests.
+        #   * `:exclude_replicas` (Hash)
+        #      Exclude_replicas indicates what replicas should be excluded from serving requests.
         #      Spanner will not route requests to the replicas in this list.
         #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
         #      If auto_failover_disabled is set to true
@@ -350,7 +351,8 @@ module Google
         #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
         #   The following settings can be provided:
         #
-        #   * `:exclude_replicas` (Hash)  Exclude_replicas indicates what replicas should be excluded from serving requests.
+        #   * `:exclude_replicas` (Hash)
+        #      Exclude_replicas indicates what replicas should be excluded from serving requests.
         #      Spanner will not route requests to the replicas in this list.
         #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
         #      If auto_failover_disabled is set to true
