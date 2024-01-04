@@ -54,16 +54,11 @@ module Google
         # @private The hash of query options.
         attr_accessor :query_options
 
-        ##
-        # @private The hash of directed read options.
-        attr_accessor :directed_read_options
-
         # @private Creates a new Session instance.
         def initialize grpc, service, query_options: nil
           @grpc = grpc
           @service = service
           @query_options = query_options
-          @directed_read_options = directed_read_options
         end
 
         # The unique identifier for the project.
