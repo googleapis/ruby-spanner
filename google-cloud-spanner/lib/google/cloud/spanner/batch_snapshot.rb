@@ -65,11 +65,15 @@ module Google
         # @private The Session object.
         attr_reader :session
 
+        # @private Directed Read Options
+        attr_reader :directed_read_options
+
         ##
         # @private Creates a BatchSnapshot object.
-        def initialize grpc, session
+        def initialize grpc, session, directed_read_options: nil
           @grpc = grpc
           @session = session
+          @directed_read_options = directed_read_options
         end
 
         ##
@@ -191,6 +195,20 @@ module Google
         # @param [Boolean] data_boost_enabled  If this field is
         #   set `true`, the request will be executed via offline access.
         #   Defaults to `false`.
+        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)
+        #      Exclude_replicas indicates what replicas should be excluded from serving requests.
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
+        #      If auto_failover_disabled is set to true and
+        #      all replicas are exhausted without finding a healthy replica,
+        #      Spanner will wait for a replica in the list to become available,
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @return [Array<Google::Cloud::Spanner::Partition>] The partitions
         #   created by the query partition.
@@ -214,7 +232,8 @@ module Google
         #
         def partition_query sql, params: nil, types: nil,
                             partition_size_bytes: nil, max_partitions: nil,
-                            query_options: nil, call_options: nil, data_boost_enabled: false
+                            query_options: nil, call_options: nil, data_boost_enabled: false,
+                            directed_read_options: nil
           ensure_session!
 
           params, types = Convert.to_input_params_and_types params, types
@@ -235,7 +254,8 @@ module Google
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
                 query_options: query_options,
-                data_boost_enabled: data_boost_enabled
+                data_boost_enabled: data_boost_enabled,
+                directed_read_options: (directed_read_options || @directed_read_options)
               }.compact
             )
             Partition.from_execute_sql_grpc execute_sql_grpc
@@ -284,6 +304,20 @@ module Google
         # @param [Boolean] data_boost_enabled  If this field is
         #   set `true`, the request will be executed via offline access.
         #   Defaults to `false`.
+        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
+        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
+        #    or regions should be used for non-transactional reads or queries.
+        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
+        #   The following settings can be provided:
+        #
+        #   * `:exclude_replicas` (Hash)
+        #      Exclude_replicas indicates what replicas should be excluded from serving requests.
+        #      Spanner will not route requests to the replicas in this list.
+        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
+        #      If auto_failover_disabled is set to true and
+        #      all replicas are exhausted without finding a healthy replica,
+        #      Spanner will wait for a replica in the list to become available,
+        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @return [Array<Google::Cloud::Spanner::Partition>] The partitions
         #   created by the read partition.
@@ -305,7 +339,8 @@ module Google
         #
         def partition_read table, columns, keys: nil, index: nil,
                            partition_size_bytes: nil, max_partitions: nil,
-                           call_options: nil, data_boost_enabled: false
+                           call_options: nil, data_boost_enabled: false,
+                           directed_read_options: nil
           ensure_session!
 
           columns = Array(columns).map(&:to_s)
@@ -329,7 +364,8 @@ module Google
                 index: index,
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
-                data_boost_enabled: data_boost_enabled
+                data_boost_enabled: data_boost_enabled,
+                directed_read_options: (directed_read_options || @directed_read_options)
               }.compact
             )
             Partition.from_read_grpc read_grpc
@@ -356,20 +392,6 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
-        # @param [Hash]  directed_read_options Client options used to set the directed_read_options
-        #    for all ReadRequests and ExecuteSqlRequests that indicates which replicas
-        #    or regions should be used for non-transactional reads or queries.
-        #    Will represent [`Google::Cloud::Spanner::V1::DirectedReadOptions`](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-DirectedReadOptions)
-        #   The following settings can be provided:
-        #
-        #   * `:exclude_replicas` (Hash)
-        #      Exclude_replicas indicates what replicas should be excluded from serving requests.
-        #      Spanner will not route requests to the replicas in this list.
-        #   * `:include_replicas` (Hash) Include_replicas indicates the order of replicas to process the request.
-        #      If auto_failover_disabled is set to true and
-        #      all replicas are exhausted without finding a healthy replica,
-        #      Spanner will wait for a replica in the list to become available,
-        #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
         # @example
         #   require "google/cloud/spanner"
@@ -386,7 +408,7 @@ module Google
         #
         #   batch_snapshot.close
         #
-        def execute_partition partition, call_options: nil, directed_read_options: nil
+        def execute_partition partition, call_options: nil
           ensure_session!
 
           partition = Partition.load partition unless partition.is_a? Partition
@@ -395,7 +417,7 @@ module Google
           # TODO: raise if session.path != partition.session
           # TODO: raise if grpc.transaction != partition.transaction
 
-          opts = { call_options: call_options, directed_read_options: directed_read_options }
+          opts = { call_options: call_options }
           if partition.execute?
             execute_partition_query partition, **opts
           elsif partition.read?
@@ -682,7 +704,7 @@ module Google
                                 transaction: tx_selector,
                                 query_options: query_options,
                                 call_options: call_options,
-                                directed_read_options: directed_read_options
+                                directed_read_options: (directed_read_options || @directed_read_options)
         end
         alias execute execute_query
         alias query execute_query
@@ -758,7 +780,7 @@ module Google
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
                                        call_options: call_options,
-                                       directed_read_options: directed_read_options
+                                       directed_read_options: (directed_read_options || @directed_read_options)
         end
 
         ##
@@ -828,8 +850,8 @@ module Google
         ##
         # @private Creates a new BatchSnapshot instance from a
         # `Google::Cloud::Spanner::V1::Transaction`.
-        def self.from_grpc grpc, session
-          new grpc, session
+        def self.from_grpc grpc, session, directed_read_options: nil
+          new grpc, session, directed_read_options: directed_read_options
         end
 
         protected
@@ -846,7 +868,7 @@ module Google
           raise "Must have active connection to service" unless session
         end
 
-        def execute_partition_query partition, call_options: nil, directed_read_options: nil
+        def execute_partition_query partition, call_options: nil
           query_options = partition.execute.query_options
           query_options = query_options.to_h unless query_options.nil?
           session.execute_query \
@@ -858,10 +880,10 @@ module Google
             query_options: query_options,
             call_options: call_options,
             data_boost_enabled: partition.execute.data_boost_enabled,
-            directed_read_options: directed_read_options
+            directed_read_options: partition.execute.directed_read_options
         end
 
-        def execute_partition_read partition, call_options: nil, directed_read_options: nil
+        def execute_partition_read partition, call_options: nil
           session.read partition.read.table,
                        partition.read.columns.to_a,
                        keys: partition.read.key_set,
@@ -870,7 +892,7 @@ module Google
                        partition_token: partition.read.partition_token,
                        call_options: call_options,
                        data_boost_enabled: partition.read.data_boost_enabled,
-                       directed_read_options: directed_read_options
+                       directed_read_options: partition.read.directed_read_options
         end
       end
     end

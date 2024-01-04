@@ -59,7 +59,7 @@ module Google
         attr_accessor :directed_read_options
 
         # @private Creates a new Session instance.
-        def initialize grpc, service, query_options: nil, directed_read_options: nil
+        def initialize grpc, service, query_options: nil
           @grpc = grpc
           @service = service
           @query_options = query_options
@@ -347,7 +347,6 @@ module Google
                           directed_read_options: nil
           ensure_service!
           query_options = merge_if_present query_options, @query_options
-          directed_read_options = merge_if_present directed_read_options, @directed_read_options
 
           execute_query_options = {
             transaction: transaction, params: params, types: types,
@@ -506,7 +505,6 @@ module Google
                  call_options: nil, data_boost_enabled: nil, directed_read_options: nil
           ensure_service!
 
-          directed_read_options = merge_if_present directed_read_options, @directed_read_options
           read_options = {
             keys: keys, index: index, limit: limit,
             transaction: transaction,
@@ -1252,8 +1250,8 @@ module Google
         ##
         # @private Creates a new Session instance from a
         # `Google::Cloud::Spanner::V1::Session`.
-        def self.from_grpc grpc, service, query_options: nil, directed_read_options: nil
-          new grpc, service, query_options: query_options, directed_read_options: directed_read_options
+        def self.from_grpc grpc, service, query_options: nil
+          new grpc, service, query_options: query_options
         end
 
         ##

@@ -63,9 +63,9 @@ module Google
           @database_id = database_id
           @database_role = database_role
           @session_labels = session_labels
+          @directed_read_options = directed_read_options
           @pool = Pool.new self, **pool_opts
           @query_options = query_options
-          @directed_read_options = directed_read_options
         end
 
         # The unique identifier for the project.
@@ -471,7 +471,7 @@ module Google
             results = session.execute_query \
               sql, params: params, types: types, transaction: single_use_tx,
               query_options: query_options, request_options: request_options,
-              call_options: call_options, directed_read_options: directed_read_options
+              call_options: call_options, directed_read_options: (directed_read_options || @directed_read_options)
           end
           results
         end
@@ -966,7 +966,7 @@ module Google
                               transaction: single_use_tx,
                               request_options: request_options,
                               call_options: call_options,
-                              directed_read_options: directed_read_options
+                              directed_read_options: (directed_read_options || @directed_read_options)
           end
           results
         end
@@ -1974,7 +1974,7 @@ module Google
                             staleness: (staleness || exact_staleness),
                             call_options: call_options
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
-            snp = Snapshot.from_grpc snp_grpc, session
+            snp = Snapshot.from_grpc snp_grpc, session, @directed_read_options
             yield snp if block_given?
           ensure
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
@@ -2168,8 +2168,7 @@ module Google
             ),
             labels: @session_labels,
             database_role: @database_role
-          Session.from_grpc grpc, @project.service, query_options: @query_options,
-directed_read_options: @directed_read_options
+          Session.from_grpc grpc, @project.service, query_options: @query_options
         end
 
         ##
@@ -2200,8 +2199,7 @@ directed_read_options: @directed_read_options
             labels: @session_labels,
             database_role: @database_role
           resp.session.map do |grpc|
-            Session.from_grpc grpc, @project.service, query_options: @query_options,
-directed_read_options: @directed_read_options
+            Session.from_grpc grpc, @project.service, query_options: @query_options
           end
         end
 

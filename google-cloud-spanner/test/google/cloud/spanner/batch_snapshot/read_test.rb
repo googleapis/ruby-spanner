@@ -254,7 +254,7 @@ describe Google::Cloud::Spanner::BatchSnapshot, :read, :mock_spanner do
     assert_results results
   end
 
-  it "can execute a simple read with directed read options (session-level)" do
+  it "can execute a simple read with directed read options (client-level)" do
     expect_directed_read_options = { include_replicas: { replica_selections: [
           {
               location: "us-west1",
@@ -263,8 +263,8 @@ describe Google::Cloud::Spanner::BatchSnapshot, :read, :mock_spanner do
       ],
       auto_failover_disabled: true
     }}
-    session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service, directed_read_options: expect_directed_read_options
-    batch_snapshot =  Google::Cloud::Spanner::BatchSnapshot.from_grpc transaction_grpc, session
+    session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service
+    batch_snapshot =  Google::Cloud::Spanner::BatchSnapshot.from_grpc transaction_grpc, session, directed_read_options: expect_directed_read_options
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new

@@ -198,7 +198,7 @@ module Google
             snp_session.path, strong: strong,
                               timestamp: (timestamp || read_timestamp),
                               staleness: (staleness || exact_staleness)
-          BatchSnapshot.from_grpc snp_grpc, snp_session
+          BatchSnapshot.from_grpc snp_grpc, snp_session, directed_read_options: @directed_read_options
         end
 
         ##
@@ -419,8 +419,7 @@ module Google
               project: project_id, instance: instance_id, database: database_id
             ),
             labels: @session_labels
-          Session.from_grpc grpc, @project.service, query_options: @query_options,
-directed_read_options: @directed_read_options
+          Session.from_grpc grpc, @project.service, query_options: @query_options
         end
 
         ##
