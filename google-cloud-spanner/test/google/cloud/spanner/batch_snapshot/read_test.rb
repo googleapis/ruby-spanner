@@ -224,6 +224,67 @@ describe Google::Cloud::Spanner::BatchSnapshot, :read, :mock_spanner do
     assert_results results
   end
 
+
+  it "can execute a simple read with directed read options" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+    mock = Minitest::Mock.new
+    mock.expect :streaming_read, results_enum, [{
+      session: session.path, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
+      transaction: tx_selector, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+      request_options: nil,
+      directed_read_options: expect_directed_read_options
+    }, default_options]
+    batch_snapshot.session.service.mocked_service = mock
+
+    results = batch_snapshot.read "my-table", columns, directed_read_options: expect_directed_read_options
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "can execute a simple read with directed read options (client-level)" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service
+    batch_snapshot =  Google::Cloud::Spanner::BatchSnapshot.from_grpc transaction_grpc, session, directed_read_options: expect_directed_read_options
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+    mock = Minitest::Mock.new
+    mock.expect :streaming_read, results_enum, [{
+      session: session.path, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
+      transaction: tx_selector, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+      request_options: nil,
+      directed_read_options: expect_directed_read_options
+    }, default_options]
+    batch_snapshot.session.service.mocked_service = mock
+
+    results = batch_snapshot.read "my-table", columns
+
+    mock.verify
+
+    assert_results results
+  end
+
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 

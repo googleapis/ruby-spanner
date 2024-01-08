@@ -397,8 +397,30 @@ describe Google::Cloud::Spanner::BatchSnapshot, :execute_partition, :mock_spanne
     assert_results results
   end
 
+  it "can execute a simple read with directed read options" do
+    expect_directed_read_options = Google::Cloud::Spanner::V1::DirectedReadOptions.new(
+        { include_replicas: { replica_selections: [
+            {
+                location: "us-west1",
+                type: "READ_ONLY",
+            },
+         ],
+         auto_failover_disabled: true
+        }}
+    )
+    mock = Minitest::Mock.new
+    batch_snapshot.session.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session.path, sql, transaction: tx_selector, param_types: {}, partition_token: partition_token, options: default_options, directed_read_options: expect_directed_read_options
+
+    results = batch_snapshot.execute_partition partition(sql: sql, directed_read_options: expect_directed_read_options)
+
+    mock.verify
+
+    assert_results results
+  end
+
   def partition table: nil, keys: nil, columns: nil, index: nil, sql: nil,
-                params: nil, param_types: nil, query_options: nil
+                params: nil, param_types: nil, query_options: nil, directed_read_options: nil
     if table
       columns = Array(columns).map(&:to_s)
       keys = Google::Cloud::Spanner::Convert.to_key_set keys
@@ -411,7 +433,8 @@ describe Google::Cloud::Spanner::BatchSnapshot, :execute_partition, :mock_spanne
           key_set: keys,
           index: index,
           transaction: tx_selector,
-          partition_token: partition_token
+          partition_token: partition_token,
+          directed_read_options: directed_read_options
         }.delete_if { |_, v| v.nil? }
       )
 
@@ -427,7 +450,8 @@ describe Google::Cloud::Spanner::BatchSnapshot, :execute_partition, :mock_spanne
           param_types: param_types,
           transaction: tx_selector,
           partition_token: partition_token,
-          query_options: query_options
+          query_options: query_options,
+          directed_read_options: directed_read_options
         }.delete_if { |_, v| v.nil? }
       )
 

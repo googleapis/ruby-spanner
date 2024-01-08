@@ -343,6 +343,69 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     assert_results results
   end
 
+  it "can execute a simple read with directed read options" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :streaming_read, results_enum, [{
+      session: session_grpc.name, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
+      transaction: nil, index: nil, limit: 1, resume_token: nil, partition_token: nil,
+      request_options: nil, directed_read_options: expect_directed_read_options
+     }, default_options]
+    spanner.service.mocked_service = mock
+
+    results = client.read "my-table", columns, keys: 1, limit: 1, directed_read_options: expect_directed_read_options
+
+    shutdown_client! client
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "can execute a simple read with directed read options (client-level)" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :streaming_read, results_enum, [{
+      session: session_grpc.name, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
+      transaction: nil, index: nil, limit: 1, resume_token: nil, partition_token: nil,
+      request_options: nil, directed_read_options: expect_directed_read_options
+     }, default_options]
+    spanner.service.mocked_service = mock
+    client = spanner.client instance_id, database_id, pool: { min: 0 }, directed_read_options: expect_directed_read_options 
+
+    results = client.read "my-table", columns, keys: 1, limit: 1
+
+    shutdown_client! client
+
+    mock.verify
+
+    assert_results results
+  end
+
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 

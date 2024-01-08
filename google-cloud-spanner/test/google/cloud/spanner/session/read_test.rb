@@ -175,6 +175,31 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
     assert_results results
   end
 
+  it "can execute a simple read with directed read options" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    mock = Minitest::Mock.new
+    mock.expect :streaming_read, results_enum, [{
+      session: session.path, table: "my-table", columns: columns,
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
+      transaction: nil, index: nil, limit:nil, resume_token: nil, partition_token: nil,
+      request_options: nil, directed_read_options: expect_directed_read_options
+    }, default_options]
+
+    session.service.mocked_service = mock
+    results = session.read "my-table", columns, keys: key_set(1), directed_read_options: expect_directed_read_options
+
+    mock.verify
+
+    assert_results results
+  end
+
   def key_set keys
     Google::Cloud::Spanner::Convert.to_key_set keys
   end

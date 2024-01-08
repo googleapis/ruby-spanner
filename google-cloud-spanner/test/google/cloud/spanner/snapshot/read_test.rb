@@ -22,7 +22,7 @@ describe Google::Cloud::Spanner::Snapshot, :read, :mock_spanner do
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
-  let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session }
+  let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session, nil }
   let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let :results_hash1 do
@@ -219,6 +219,59 @@ describe Google::Cloud::Spanner::Snapshot, :read, :mock_spanner do
     session.service.mocked_service = mock
 
     results = snapshot.read "my-table", columns, call_options: call_options
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "can execute a simple read with directed read options" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    mock = Minitest::Mock.new
+    mock.expect :streaming_read, results_enum, [{
+      session: session.path, table: "my-table", columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
+      transaction: tx_selector, index: nil, limit:nil, resume_token: nil, partition_token: nil,
+      request_options: nil, directed_read_options: expect_directed_read_options
+    }, default_options]
+
+    session.service.mocked_service = mock
+    results = snapshot.read "my-table", ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"], keys: 1, directed_read_options: expect_directed_read_options
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "can execute a simple read with directed read options (client-level)" do
+    expect_directed_read_options = { include_replicas: { replica_selections: [
+          {
+              location: "us-west1",
+              type: "READ_ONLY",
+          },
+      ],
+      auto_failover_disabled: true
+    }}
+    session = Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+    mock.expect :streaming_read, results_enum, [{
+      session: session.path, table: "my-table", columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
+      transaction: tx_selector, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+      request_options: nil, directed_read_options: expect_directed_read_options
+    }, default_options]
+
+
+    snapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session, expect_directed_read_options  
+    results = snapshot.read "my-table", ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"], keys: 1
 
     mock.verify
 

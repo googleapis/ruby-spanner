@@ -338,13 +338,10 @@ module Google
         #
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
-                          request_options: nil, call_options: nil, data_boost_enabled: nil
+                          request_options: nil, call_options: nil, data_boost_enabled: nil,
+                          directed_read_options: nil
           ensure_service!
-          if query_options.nil?
-            query_options = @query_options
-          else
-            query_options = @query_options.merge query_options unless @query_options.nil?
-          end
+          query_options = merge_if_present query_options, @query_options
 
           execute_query_options = {
             transaction: transaction, params: params, types: types,
@@ -353,6 +350,7 @@ module Google
             call_options: call_options
           }
           execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+          execute_query_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
 
           response = service.execute_streaming_sql path, sql, **execute_query_options
 
@@ -499,7 +497,7 @@ module Google
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
-                 call_options: nil, data_boost_enabled: nil
+                 call_options: nil, data_boost_enabled: nil, directed_read_options: nil
           ensure_service!
 
           read_options = {
@@ -507,10 +505,10 @@ module Google
             transaction: transaction,
             partition_token: partition_token,
             request_options: request_options,
-            call_options: call_options,
-            data_boost_enabled: data_boost_enabled
+            call_options: call_options
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
+          read_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
 
           response = service.streaming_read_table \
             path, table, columns, **read_options
@@ -1264,6 +1262,14 @@ module Google
         # available.
         def ensure_service!
           raise "Must have active connection to service" unless service
+        end
+
+        def merge_if_present hash, hash_to_merge
+          if hash.nil?
+            hash_to_merge
+          else
+            hash_to_merge.nil? ? hash : hash_to_merge.merge(hash)
+          end
         end
       end
     end
