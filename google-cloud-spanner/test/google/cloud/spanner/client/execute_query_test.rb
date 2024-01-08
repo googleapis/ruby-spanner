@@ -471,7 +471,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  it "can execute a simple query with directed read options set at request if set at client-level also" do
+  it "can execute a simple query with directed read options set at request-level by overriding client-level setting" do
     client_level_directed_read_options = { include_replicas: { replica_selections: [
           {
               location: "us-west1",
