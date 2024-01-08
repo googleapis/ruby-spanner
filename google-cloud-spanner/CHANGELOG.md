@@ -1,5 +1,14 @@
 # Release History
 
+### 2.19.0 (2024-01-08)
+
+#### Features
+
+* Support directed read options ([#75](https://github.com/googleapis/ruby-spanner/issues/75)) 
+#### Bug Fixes
+
+* add empty string validation for emulator host ([#73](https://github.com/googleapis/ruby-spanner/issues/73)) 
+
 ### 2.18.1 (2023-09-19)
 
 #### Bug Fixes
