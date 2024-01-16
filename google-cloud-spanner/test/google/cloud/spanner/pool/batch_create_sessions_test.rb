@@ -19,7 +19,12 @@ describe Google::Cloud::Spanner::Pool, :batch_create_sessions, :mock_spanner do
   let(:database_id) { "my-database-id" }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_batch_create_sessions) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
 
   after do
     shutdown_client! client
@@ -38,8 +43,8 @@ describe Google::Cloud::Spanner::Pool, :batch_create_sessions, :mock_spanner do
         Google::Cloud::Spanner::V1::Session.new(name: session_path(instance_id, database_id, "session-002")),
       ]
     )
-    mock.expect :batch_create_sessions, sessions_1, [{ database: database_path(instance_id, database_id), session_count: 2, session_template: nil }, default_options]
-    mock.expect :batch_create_sessions, sessions_2, [{ database: database_path(instance_id, database_id), session_count: 1, session_template: nil }, default_options]
+    mock.expect :batch_create_sessions, sessions_1, [{ database: database_path(instance_id, database_id), session_count: 2, session_template: nil }, default_options_batch_create_sessions]
+    mock.expect :batch_create_sessions, sessions_2, [{ database: database_path(instance_id, database_id), session_count: 1, session_template: nil }, default_options_batch_create_sessions]
 
     pool = Google::Cloud::Spanner::Pool.new client, min: 2
 

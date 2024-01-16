@@ -23,11 +23,16 @@ describe Google::Cloud::Spanner::Session, :release, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
-  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:default_options_release) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => false
+    }
+  end
 
   it "can release itself" do
     mock = Minitest::Mock.new
-    mock.expect :delete_session, nil, [{ name: session_grpc.name}, default_options]
+    mock.expect :delete_session, nil, [{ name: session_grpc.name}, default_options_release]
     spanner.service.mocked_service = mock
 
     transaction.release!

@@ -22,9 +22,24 @@ describe Google::Cloud::Spanner::Client, :close, :mock_spanner do
     Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id)
   }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
-  let(:default_options) {
-    ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) }
-  }
+  let(:default_options_delete_session) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => false
+    }
+  end
+  let(:default_options_batch_create_sessions) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
+  let(:default_options_execute_query) do
+    ::Gapic::CallOptions.new metadata: {
+      "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+      "x-goog-spanner-route-to-leader" => true
+    }
+  end
   let(:batch_create_sessions_grpc) {
     Google::Cloud::Spanner::V1::BatchCreateSessionsResponse.new session: [session_grpc]
   }
@@ -49,15 +64,15 @@ describe Google::Cloud::Spanner::Client, :close, :mock_spanner do
     mock = Minitest::Mock.new
     mock.expect :batch_create_sessions, batch_create_sessions_grpc, [
       { database: database_path(instance_id, database_id), session_count: 1, session_template: nil },
-      default_options
+      default_options_batch_create_sessions
     ]
-    mock.expect :delete_session, nil, [{ name: session_grpc.name }, default_options]
+    mock.expect :delete_session, nil, [{ name: session_grpc.name }, default_options_delete_session]
     mock.expect :batch_create_sessions, batch_create_sessions_grpc, [
       { database: database_path(instance_id, database_id), session_count: 1, session_template: nil },
-      default_options
+      default_options_batch_create_sessions
     ]
     spanner.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT 1", options: default_options
+    expect_execute_streaming_sql results_enum, session.path, "SELECT 1", options: default_options_execute_query
 
     client = spanner.client instance_id, database_id, pool: { min: 1, max: 1 }
     _(client.reset).must_equal true

@@ -18,7 +18,18 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
     let(:instance_id) { "my-instance-id" }
     let(:database_id) { "my-database-id" }
     let(:session_id) { "session123" }
-    let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+    let(:default_options_create_session) do
+      ::Gapic::CallOptions.new metadata: {
+        "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+        "x-goog-spanner-route-to-leader" => true
+      }
+    end
+    let(:default_options_batch_create_sessions) do
+      ::Gapic::CallOptions.new metadata: {
+        "google-cloud-resource-prefix" => database_path(instance_id, database_id),
+        "x-goog-spanner-route-to-leader" => true
+      }
+    end
     let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
 
     describe ".new" do
@@ -44,7 +55,7 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
       it "creates session with given database role" do
         mock = Minitest::Mock.new
         session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
-        mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: session }, default_options]
+        mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: session }, default_options_create_session]
         service = Google::Cloud::Spanner::Service.new(
             "test_project", OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new{""}))
         )
@@ -58,7 +69,7 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
       it "batch creates session with given database role" do
         mock = Minitest::Mock.new
         session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
-        mock.expect :batch_create_sessions, OpenStruct.new(session: Array.new(10) { session_grpc }), [{database: database_path(instance_id, database_id), session_count: 10, session_template: session }, default_options]
+        mock.expect :batch_create_sessions, OpenStruct.new(session: Array.new(10) { session_grpc }), [{database: database_path(instance_id, database_id), session_count: 10, session_template: session }, default_options_batch_create_sessions]
         service = Google::Cloud::Spanner::Service.new(
             "test_project", OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new{""}))
         )
