@@ -367,7 +367,8 @@ module Google
                                             transaction: tx_selector, seqno: seqno,
                                             query_options: query_options,
                                             request_options: request_options,
-                                            call_options: call_options
+                                            call_options: call_options,
+                                            route_to_leader: true
             @grpc ||= results.transaction
             results
           end
@@ -720,7 +721,8 @@ module Google
             results = session.read table, columns, keys: keys, index: index, limit: limit,
                                    transaction: tx_selector,
                                    request_options: request_options,
-                                   call_options: call_options
+                                   call_options: call_options,
+                                   route_to_leader: true
             @grpc ||= results.transaction
             results
           end
@@ -1190,7 +1192,7 @@ module Google
           @mutex.synchronize do
             return if existing_transaction?
             ensure_session!
-            @grpc = service.begin_transaction session.path
+            @grpc = service.begin_transaction session.path, route_to_leader: true
           end
         end
 

@@ -82,6 +82,8 @@ module Google
       #   `spanner-activerecord/0.0.1` is provided custom library name and
       #   version and `gccl/1.13.1` represents the Cloud Spanner Ruby library
       #   with version.
+      # @param enable_leader_aware_routing [Boolean] Specifies whether Leader
+      #   Aware Routing should be enabled. Defaults to true.
       #
       # @return [Google::Cloud::Spanner::Project]
       #
@@ -92,7 +94,8 @@ module Google
       #
       def self.new project_id: nil, credentials: nil, scope: nil, timeout: nil,
                    endpoint: nil, project: nil, keyfile: nil,
-                   emulator_host: nil, lib_name: nil, lib_version: nil
+                   emulator_host: nil, lib_name: nil, lib_version: nil,
+                   enable_leader_aware_routing: true
         project_id    ||= project || default_project_id
         scope         ||= configure.scope
         timeout       ||= configure.timeout
@@ -122,7 +125,8 @@ module Google
           Spanner::Service.new(
             project_id, credentials, quota_project: configure.quota_project,
             host: endpoint, timeout: timeout, lib_name: lib_name,
-            lib_version: lib_version
+            lib_version: lib_version,
+            enable_leader_aware_routing: enable_leader_aware_routing
           ),
           query_options: configure.query_options
         )
