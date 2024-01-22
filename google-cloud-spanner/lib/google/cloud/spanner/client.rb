@@ -443,12 +443,13 @@ module Google
           request_options = Convert.to_request_options request_options,
                                                        tag_type: :request_tag
           single_use_tx = single_use_transaction single_use
+          route_to_leader = decide_lar true
           results = nil
           @pool.with_session do |session|
             results = session.execute_query \
               sql, params: params, types: types, transaction: single_use_tx,
               query_options: query_options, request_options: request_options,
-              call_options: call_options, route_to_leader: true
+              call_options: call_options, route_to_leader: route_to_leader
           end
           results
         end
@@ -2289,6 +2290,11 @@ module Google
           (error.instance_of?(Google::Cloud::InternalError) ||
           error.instance_of?(GRPC::Internal)) &&
             !@project.service.retryable?(error)
+        end
+
+        def decide_lar route_to_leader
+          return nil if !@enable_leader_aware_routing
+          route_to_leader
         end
       end
     end

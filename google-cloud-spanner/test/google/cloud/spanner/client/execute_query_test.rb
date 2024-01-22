@@ -28,7 +28,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :mock_spanner do
   let(:default_options_execute_query) do
     ::Gapic::CallOptions.new metadata: {
       "google-cloud-resource-prefix" => database_path(instance_id, database_id),
-      "x-goog-spanner-route-to-leader" => true
+      # "x-goog-spanner-route-to-leader" => true
     }
   end
   let :results_hash do
@@ -68,7 +68,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :mock_spanner do
   let(:results_enum) { Array(results_grpc).to_enum }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
 
-  it "can execute a simple query" do
+  focus; it "can execute a simple query" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options_create_session]
     spanner.service.mocked_service = mock

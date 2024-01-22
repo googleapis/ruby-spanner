@@ -35,6 +35,7 @@ module Google
         attr_accessor :lib_name
         attr_accessor :lib_version
         attr_accessor :quota_project
+        attr_accessor :enable_leader_aware_routing
 
         RST_STREAM_INTERNAL_ERROR = "Received RST_STREAM".freeze
         EOS_INTERNAL_ERROR = "Received unexpected EOS on DATA frame from server".freeze
@@ -42,7 +43,8 @@ module Google
         ##
         # Creates a new Service instance.
         def initialize project, credentials, quota_project: nil,
-                       host: nil, timeout: nil, lib_name: nil, lib_version: nil
+                       host: nil, timeout: nil, lib_name: nil, lib_version: nil,
+                       enable_leader_aware_routing: nil
           @project = project
           @credentials = credentials
           @quota_project = quota_project || (credentials.quota_project_id if credentials.respond_to? :quota_project_id)
@@ -50,6 +52,7 @@ module Google
           @timeout = timeout
           @lib_name = lib_name
           @lib_version = lib_version
+          @enable_leader_aware_routing = enable_leader_aware_routing
         end
 
         def channel
@@ -655,7 +658,11 @@ module Google
             default_prefix = session_name.split("/sessions/").first
             metadata["google-cloud-resource-prefix"] = default_prefix
           end
-          unless route_to_leader.nil?
+          # unless route_to_leader.nil?
+          #   metadata["x-goog-spanner-route-to-leader"] = route_to_leader
+          # end
+          # pp "enabled routing : #{@enable_leader_aware_routing}"
+          if @enable_leader_aware_routing && !route_to_leader.nil?
             metadata["x-goog-spanner-route-to-leader"] = route_to_leader
           end
           opts[:metadata] = metadata

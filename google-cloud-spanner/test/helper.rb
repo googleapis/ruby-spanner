@@ -27,7 +27,7 @@ require "grpc"
 class MockSpanner < Minitest::Spec
   let(:project) { "test" }
   let(:credentials) { OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new {})) }
-  let(:spanner) { Google::Cloud::Spanner::Project.new(Google::Cloud::Spanner::Service.new(project, credentials)) }
+  let(:spanner) { Google::Cloud::Spanner::Project.new(Google::Cloud::Spanner::Service.new(project, credentials, enable_leader_aware_routing: true)) }
 
   # Register this spec type for when :spanner is used.
   register_spec_type(self) do |desc, *addl|
