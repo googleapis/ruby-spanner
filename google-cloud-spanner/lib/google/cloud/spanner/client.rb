@@ -738,14 +738,14 @@ module Google
           params, types = Convert.to_input_params_and_types params, types
           request_options = Convert.to_request_options request_options,
                                                        tag_type: :request_tag
-
+          route_to_leader = LARHeaders.partition_query
           results = nil
           @pool.with_session do |session|
             results = session.execute_query \
               sql, params: params, types: types,
               transaction: pdml_transaction(session),
               query_options: query_options, request_options: request_options,
-              call_options: call_options, route_to_leader: true
+              call_options: call_options, route_to_leader: route_to_leader
           end
           # Stream all PartialResultSet to get ResultSetStats
           results.rows.to_a

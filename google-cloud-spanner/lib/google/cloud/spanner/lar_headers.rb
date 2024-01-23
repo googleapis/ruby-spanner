@@ -33,16 +33,46 @@ module Google
             is_read_write ? "true" : "false"
           end
 
-          def create_session
-            "true"
-          end
-
           def commit
             "true"
           end
 
           def execute_batch_dml
             "true"
+          end
+
+          def create_session
+            "true"
+          end
+
+          def batch_create_sessions
+            "true"
+          end
+
+          def delete_session
+            "false"
+          end
+
+          # rubocop:disable Naming/AccessorMethodName
+          def get_session
+            "true"
+          end
+          # rubocop:enable Naming/AccessorMethodName
+
+          def partition_read
+            "true"
+          end
+
+          def partition_query
+            "true"
+          end
+
+          def rollback
+            "true"
+          end
+
+          def keepalive
+            "false"
           end
         end
 

@@ -122,7 +122,7 @@ module Google
         end
 
         def list_instances token: nil, max: nil, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent:     project_path,
             page_size:  max,
@@ -133,7 +133,7 @@ module Google
         end
 
         def get_instance name, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { name: instance_path(name) }
           instances.get_instance request, opts
         end
@@ -141,7 +141,7 @@ module Google
         def create_instance instance_id, name: nil, config: nil, nodes: nil,
                             processing_units: nil, labels: nil,
                             call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           labels = labels.to_h { |k, v| [String(k), String(v)] } if labels
 
           create_obj = Admin::Instance::V1::Instance.new({
@@ -159,7 +159,7 @@ module Google
         end
 
         def update_instance instance, field_mask: nil, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
 
           if field_mask.nil? || field_mask.empty?
             field_mask = %w[display_name node_count labels]
@@ -173,19 +173,19 @@ module Google
         end
 
         def delete_instance name, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { name: instance_path(name) }
           instances.delete_instance request, opts
         end
 
         def get_instance_policy name, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { resource: instance_path(name) }
           instances.get_iam_policy request, opts
         end
 
         def set_instance_policy name, new_policy, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             resource: instance_path(name),
             policy:  new_policy
@@ -194,7 +194,7 @@ module Google
         end
 
         def test_instance_permissions name, permissions, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             resource:    instance_path(name),
             permissions: permissions
@@ -203,20 +203,20 @@ module Google
         end
 
         def list_instance_configs token: nil, max: nil, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { parent: project_path, page_size: max, page_token: token }
           paged_enum = instances.list_instance_configs request, opts
           paged_enum.response
         end
 
         def get_instance_config name, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { name: instance_config_path(name) }
           instances.get_instance_config request, opts
         end
 
         def list_databases instance_id, token: nil, max: nil, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent:     instance_path(instance_id),
             page_size:  max,
@@ -227,14 +227,14 @@ module Google
         end
 
         def get_database instance_id, database_id, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { name: database_path(instance_id, database_id) }
           databases.get_database request, opts
         end
 
         def create_database instance_id, database_id, statements: [],
                             call_options: nil, encryption_config: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent: instance_path(instance_id),
             create_statement: "CREATE DATABASE `#{database_id}`",
@@ -245,20 +245,20 @@ module Google
         end
 
         def drop_database instance_id, database_id, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { database: database_path(instance_id, database_id) }
           databases.drop_database request, opts
         end
 
         def get_database_ddl instance_id, database_id, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { database: database_path(instance_id, database_id) }
           databases.get_database_ddl request, opts
         end
 
         def update_database_ddl instance_id, database_id, statements: [],
                                 operation_id: nil, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             database: database_path(instance_id, database_id),
             statements: Array(statements),
@@ -268,14 +268,14 @@ module Google
         end
 
         def get_database_policy instance_id, database_id, call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = { resource: database_path(instance_id, database_id) }
           databases.get_iam_policy request, opts
         end
 
         def set_database_policy instance_id, database_id, new_policy,
                                 call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             resource: database_path(instance_id, database_id),
             policy:   new_policy
@@ -285,7 +285,7 @@ module Google
 
         def test_database_permissions instance_id, database_id, permissions,
                                       call_options: nil
-          opts = default_options call_options: call_options, route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             resource:    database_path(instance_id, database_id),
             permissions: permissions
@@ -294,9 +294,10 @@ module Google
         end
 
         def get_session session_name, call_options: nil
+          route_to_leader = LARHeaders.get_session
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           service.get_session({ name: session_name }, opts)
         end
 
@@ -314,9 +315,10 @@ module Google
 
         def batch_create_sessions database_name, session_count, labels: nil,
                                   call_options: nil, database_role: nil
+          route_to_leader = LARHeaders.batch_create_sessions
           opts = default_options session_name: database_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           session = V1::Session.new labels: labels, creator_role: database_role if labels || database_role
           # The response may have fewer sessions than requested in the RPC.
           request = {
@@ -328,9 +330,10 @@ module Google
         end
 
         def delete_session session_name, call_options: nil
+          route_to_leader = LARHeaders.delete_session
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: false
+                                 route_to_leader: route_to_leader
           service.delete_session({ name: session_name }, opts)
         end
 
@@ -403,10 +406,10 @@ module Google
                            max_partitions: nil, call_options: nil
           partition_opts = partition_options partition_size_bytes,
                                              max_partitions
-
+          route_to_leader = LARHeaders.partition_read
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, table: table_name, key_set: keys,
             transaction: transaction, index: index, columns: columns,
@@ -420,10 +423,10 @@ module Google
                             max_partitions: nil, call_options: nil
           partition_opts = partition_options partition_size_bytes,
                                              max_partitions
-
+          route_to_leader = LARHeaders.partition_query
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, sql: sql, transaction: transaction,
             params: params, param_types: types,
@@ -458,9 +461,10 @@ module Google
         end
 
         def rollback session_name, transaction_id, call_options: nil
+          route_to_leader = LARHeaders.rollback
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           request = { session: session_name, transaction_id: transaction_id }
           service.rollback request, opts
         end
@@ -495,8 +499,7 @@ module Google
             )
           )
           opts = default_options session_name: session_name,
-                                 call_options: call_options,
-                                 route_to_leader: false
+                                 call_options: call_options
           request = { session: session_name, options: tx_opts }
           service.begin_transaction request, opts
         end
@@ -505,9 +508,10 @@ module Google
           tx_opts = V1::TransactionOptions.new(
             partitioned_dml: V1::TransactionOptions::PartitionedDml.new
           )
+          route_to_leader = LARHeaders.begin_transaction true
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: false
+                                 route_to_leader: route_to_leader
           request = { session: session_name, options: tx_opts }
           service.begin_transaction request, opts
         end
@@ -515,8 +519,7 @@ module Google
         def create_backup instance_id, database_id, backup_id, expire_time,
                           version_time, call_options: nil,
                           encryption_config: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           backup = {
             database: database_path(instance_id, database_id),
             expire_time: expire_time,
@@ -532,22 +535,19 @@ module Google
         end
 
         def get_backup instance_id, backup_id, call_options: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = { name: backup_path(instance_id, backup_id) }
           databases.get_backup request, opts
         end
 
         def update_backup backup, update_mask, call_options: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = { backup: backup, update_mask: update_mask }
           databases.update_backup request, opts
         end
 
         def delete_backup instance_id, backup_id, call_options: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = { name: backup_path(instance_id, backup_id) }
           databases.delete_backup request, opts
         end
@@ -555,8 +555,7 @@ module Google
         def list_backups instance_id,
                          filter: nil, page_size: nil, page_token: nil,
                          call_options: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent:    instance_path(instance_id),
             filter:    filter,
@@ -571,8 +570,7 @@ module Google
                                      page_size: nil,
                                      page_token: nil,
                                      call_options: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent:     instance_path(instance_id),
             filter:     filter,
@@ -586,8 +584,7 @@ module Google
                                    filter: nil, page_size: nil,
                                    page_token: nil,
                                    call_options: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent:     instance_path(instance_id),
             filter:     filter,
@@ -600,8 +597,7 @@ module Google
         def restore_database backup_instance_id, backup_id,
                              database_instance_id, database_id,
                              call_options: nil, encryption_config: nil
-          opts = default_options call_options: call_options,
-                                 route_to_leader: false
+          opts = default_options call_options: call_options
           request = {
             parent:      instance_path(database_instance_id),
             database_id: database_id,

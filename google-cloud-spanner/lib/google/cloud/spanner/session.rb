@@ -1181,7 +1181,8 @@ module Google
         # @private
         # Creates a new transaction object every time.
         def create_transaction
-          tx_grpc = service.begin_transaction path, route_to_leader: true
+          route_to_leader = LARHeaders.begin_transaction true
+          tx_grpc = service.begin_transaction path, route_to_leader: route_to_leader
           Transaction.from_grpc tx_grpc, self
         end
 
@@ -1217,7 +1218,8 @@ module Google
         # Keeps the session alive by executing `"SELECT 1"`.
         def keepalive!
           ensure_service!
-          execute_query "SELECT 1", route_to_leader: false
+          route_to_leader = LARHeaders.keepalive
+          execute_query "SELECT 1", route_to_leader: route_to_leader
           true
         rescue Google::Cloud::NotFoundError
           labels = @grpc.labels.to_h unless @grpc.labels.to_h.empty?
