@@ -23,6 +23,9 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
   let(:transaction_id) { "tx789" }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
+  let(:commit_time) { Time.now }
+  let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
+  let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp }
 
   after do
     shutdown_client! client
@@ -30,14 +33,22 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
   focus; it "does not send header x-goog-spanner-route-to-leader when LAR is disabled" do
     mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
+    end
     mock.expect :execute_batch_dml, batch_response_grpc do |request, gapic_options|
+      !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
+    end
+    mock.expect :commit, commit_resp do |request, gapic_options|
       !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
     end
     session.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = false
 
-    transaction.batch_update do |b|
-      b.batch_update "UPDATE users SET active = true"
+    client.transaction do |tx|
+      tx.batch_update do |b|
+        b.batch_update "UPDATE users SET active = true"
+      end
     end
 
     mock.verify
@@ -46,15 +57,25 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   focus;
   it "sends header x-goog-spanner-route-to-leader when LAR is enabled" do
     mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
+      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+    end
     mock.expect :execute_batch_dml, batch_response_grpc do |request, gapic_options|
+      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
+      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+    end
+    mock.expect :commit, commit_resp do |request, gapic_options|
       (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
       (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
     end
     session.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = true
 
-    transaction.batch_update do |b|
-      b.batch_update "UPDATE users SET active = true"
+    client.transaction do |tx|
+      tx.batch_update do |b|
+        b.batch_update "UPDATE users SET active = true"
+      end
     end
 
     mock.verify

@@ -23,6 +23,9 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
   let(:transaction_id) { "tx789" }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
+  let(:commit_time) { Time.now }
+  let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
+  let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp }
   let :results_hash do
     {
       metadata: {
@@ -49,12 +52,20 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = false
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
+    end
     mock.expect :streaming_read, results_enum do |request, gapic_options|
       !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
     end
+    mock.expect :commit, commit_resp do |request, gapic_options|
+      !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
+    end
 
-    transaction.read "my-table", columns,
-                                 request_options: { tag: "Tag-1-1" }
+    client.transaction do |tx|
+      tx.read "my-table", columns,
+                          request_options: { tag: "Tag-1-1" }
+    end
 
     mock.verify
   end
@@ -64,14 +75,23 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = true
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
+      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+    end
     mock.expect :streaming_read, results_enum do |request, gapic_options|
       (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
       (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
     end
+    mock.expect :commit, commit_resp do |request, gapic_options|
+      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
+      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+    end
 
-    transaction.read "my-table", columns,
-                                 request_options: { tag: "Tag-1-1" }
-
+    client.transaction do |tx|
+      tx.read "my-table", columns,
+                                  request_options: { tag: "Tag-1-1" }
+    end
     mock.verify
   end
 end
