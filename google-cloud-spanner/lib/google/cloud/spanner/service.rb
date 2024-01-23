@@ -641,13 +641,8 @@ module Google
           metadata = {}
           if session_name
             default_prefix = session_name.split("/sessions/").first
-            opts[:metadata] = { "google-cloud-resource-prefix" => default_prefix }
             metadata["google-cloud-resource-prefix"] = default_prefix
           end
-          # unless route_to_leader.nil?
-          #   metadata["x-goog-spanner-route-to-leader"] = route_to_leader
-          # end
-          # pp "enabled routing : #{@enable_leader_aware_routing}"
           if @enable_leader_aware_routing && !route_to_leader.nil?
             metadata["x-goog-spanner-route-to-leader"] = route_to_leader
           end

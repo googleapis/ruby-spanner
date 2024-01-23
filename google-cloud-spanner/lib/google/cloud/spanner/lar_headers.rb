@@ -70,10 +70,6 @@ module Google
           def rollback
             "true"
           end
-
-          def keepalive
-            "false"
-          end
         end
 
         extend ClassMethods

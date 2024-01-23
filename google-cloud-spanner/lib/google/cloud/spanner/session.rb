@@ -1218,7 +1218,7 @@ module Google
         # Keeps the session alive by executing `"SELECT 1"`.
         def keepalive!
           ensure_service!
-          route_to_leader = LARHeaders.keepalive
+          route_to_leader = LARHeaders.execute_query false
           execute_query "SELECT 1", route_to_leader: route_to_leader
           true
         rescue Google::Cloud::NotFoundError
