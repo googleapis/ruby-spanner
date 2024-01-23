@@ -20,6 +20,7 @@ require "google/cloud/spanner/v1"
 require "google/cloud/spanner/admin/instance/v1"
 require "google/cloud/spanner/admin/database/v1"
 require "google/cloud/spanner/convert"
+require "google/cloud/spanner/lar_headers"
 
 module Google
   module Cloud
@@ -301,9 +302,10 @@ module Google
 
         def create_session database_name, labels: nil,
                            call_options: nil, database_role: nil
+          route_to_leader = LARHeaders.create_session
           opts = default_options session_name: database_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           session = V1::Session.new labels: labels, creator_role: database_role if labels || database_role
           service.create_session(
             { database: database_name, session: session }, opts
@@ -361,9 +363,10 @@ module Google
 
         def execute_batch_dml session_name, transaction, statements, seqno,
                               request_options: nil, call_options: nil
+          route_to_leader = LARHeaders.execute_batch_dml
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           statements = statements.map(&:to_grpc)
           request = {
             session: session_name,
@@ -431,6 +434,7 @@ module Google
 
         def commit session_name, mutations = [], transaction_id: nil,
                    commit_options: nil, request_options: nil, call_options: nil
+          route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
             tx_opts = V1::TransactionOptions.new(
@@ -439,7 +443,7 @@ module Google
           end
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: true
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, transaction_id: transaction_id,
             single_use_transaction: tx_opts, mutations: mutations,

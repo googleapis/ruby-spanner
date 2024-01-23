@@ -76,7 +76,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     shutdown_client! client
   end
 
-  focus; it "does not send header x-goog-spanner-route-to-leader when LAR is disabled" do
+  it "does not send header x-goog-spanner-route-to-leader when LAR is disabled" do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc do |request, gapic_options|
@@ -94,15 +94,15 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.verify
   end
 
-  focus;
-  it "sends header x-goog-spanner-route-to-leader when LAR is enabled" do
+  
+ it "sends header x-goog-spanner-route-to-leader when LAR is enabled" do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc do |request, gapic_options|
-      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
     end
     mock.expect :streaming_read, results_enum do |request, gapic_options|
-      gapic_options.metadata["x-goog-spanner-route-to-leader"] == false
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'false'
     end
     spanner.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = true

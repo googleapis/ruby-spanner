@@ -24,6 +24,7 @@ require "google/cloud/spanner/range"
 require "google/cloud/spanner/column_value"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/commit_response"
+require "google/cloud/spanner/lar_headers"
 
 module Google
   module Cloud
@@ -466,14 +467,14 @@ module Google
           request_options = Convert.to_request_options request_options,
                                                        tag_type: :request_tag
           single_use_tx = single_use_transaction single_use
-          # route_to_leader = decide_lar true
+          route_to_leader = LARHeaders.execute_query true
           results = nil
           @pool.with_session do |session|
             results = session.execute_query \
               sql, params: params, types: types, transaction: single_use_tx,
               query_options: query_options, request_options: request_options,
               call_options: call_options, directed_read_options: (directed_read_options || @directed_read_options),
-              route_to_leader: true
+              route_to_leader: route_to_leader
           end
           results
         end
@@ -958,6 +959,7 @@ module Google
           columns = Array(columns).map(&:to_s)
           keys = Convert.to_key_set keys
           single_use_tx = single_use_transaction single_use
+          route_to_leader = LARHeaders.read false
           request_options = Convert.to_request_options request_options,
                                                        tag_type: :request_tag
 
@@ -969,7 +971,7 @@ module Google
                               request_options: request_options,
                               call_options: call_options,
                               directed_read_options: (directed_read_options || @directed_read_options),
-                              route_to_leader: false
+                              route_to_leader: route_to_leader
           end
           results
         end

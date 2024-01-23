@@ -18,6 +18,7 @@ require "google/cloud/spanner/convert"
 require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
 require "google/cloud/spanner/batch_update_results"
+require "google/cloud/spanner/lar_headers"
 
 module Google
   module Cloud
@@ -361,6 +362,7 @@ module Google
 
           params, types = Convert.to_input_params_and_types params, types
           request_options = build_request_options request_options
+          route_to_leader = LARHeaders.execute_query true
 
           safe_execute do |seqno|
             results = session.execute_query sql, params: params, types: types,
@@ -368,7 +370,7 @@ module Google
                                             query_options: query_options,
                                             request_options: request_options,
                                             call_options: call_options,
-                                            route_to_leader: true
+                                            route_to_leader: route_to_leader
             @grpc ||= results.transaction
             results
           end
@@ -716,13 +718,14 @@ module Google
           columns = Array(columns).map(&:to_s)
           keys = Convert.to_key_set keys
           request_options = build_request_options request_options
+          route_to_leader = LARHeaders.read true
 
           safe_execute do
             results = session.read table, columns, keys: keys, index: index, limit: limit,
                                    transaction: tx_selector,
                                    request_options: request_options,
                                    call_options: call_options,
-                                   route_to_leader: true
+                                   route_to_leader: route_to_leader
             @grpc ||= results.transaction
             results
           end
@@ -1192,7 +1195,8 @@ module Google
           @mutex.synchronize do
             return if existing_transaction?
             ensure_session!
-            @grpc = service.begin_transaction session.path, route_to_leader: true
+            route_to_leader = LARHeaders.begin_transaction true
+            @grpc = service.begin_transaction session.path, route_to_leader: route_to_leader
           end
         end
 
