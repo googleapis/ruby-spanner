@@ -2336,11 +2336,6 @@ module Google
           error.instance_of?(GRPC::Internal)) &&
             !@project.service.retryable?(error)
         end
-
-        # def decide_lar route_to_leader
-        #   return nil if !@enable_leader_aware_routing
-        #   route_to_leader
-        # end
       end
     end
   end
