@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ module Google
   module Cloud
     module Spanner
       ##
-      # @private Helper module to access headers for
-      #   Leader Aware Routing
+      # @private Helper module to access header values
+      # for Leader Aware Routing
       module LARHeaders
         module ClassMethods
           def begin_transaction is_read_write
