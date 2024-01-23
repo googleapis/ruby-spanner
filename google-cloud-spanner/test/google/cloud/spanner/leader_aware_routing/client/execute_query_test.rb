@@ -63,12 +63,10 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   focus; it "sends header x-goog-spanner-route-to-leader when LAR is enabled" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
     end    
     mock.expect :execute_streaming_sql, results_enum do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
     end
     spanner.service.mocked_service = mock
 

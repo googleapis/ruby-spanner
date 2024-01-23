@@ -99,12 +99,10 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
     end
     mock.expect :streaming_read, results_enum do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == false)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == false
     end
     spanner.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = true

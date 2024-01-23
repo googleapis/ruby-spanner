@@ -76,16 +76,13 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     session.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = true
     mock.expect :create_session, session_grpc do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
     end
     mock.expect :streaming_read, results_enum do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
     end
     mock.expect :commit, commit_resp do |request, gapic_options|
-      (gapic_options.metadata.key? "x-goog-spanner-route-to-leader") &&
-      (gapic_options.metadata["x-goog-spanner-route-to-leader"] == true)
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == true
     end
 
     client.transaction do |tx|
