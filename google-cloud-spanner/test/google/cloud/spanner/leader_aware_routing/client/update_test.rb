@@ -39,13 +39,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     spanner.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = false
 
-    client.commit do |c|
-      c.update "users", [{ id: 1, name: "Charlie", active: false }]
-      c.insert "users", [{ id: 2, name: "Harvey",  active: true }]
-      c.upsert "users", [{ id: 3, name: "Marley",  active: false }]
-      c.replace "users", [{ id: 4, name: "Henry",  active: true }]
-      c.delete "users", [1, 2, 3, 4, 5]
-    end
+    client.update "users", [{ id: 1, name: "Charlie", active: false }]
 
     mock.verify
   end
@@ -63,13 +57,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     spanner.service.mocked_service = mock
     spanner.service.enable_leader_aware_routing = true
 
-    client.commit do |c|
-      c.update "users", [{ id: 1, name: "Charlie", active: false }]
-      c.insert "users", [{ id: 2, name: "Harvey",  active: true }]
-      c.upsert "users", [{ id: 3, name: "Marley",  active: false }]
-      c.replace "users", [{ id: 4, name: "Henry",  active: true }]
-      c.delete "users", [1, 2, 3, 4, 5]
-    end
+    client.update "users", [{ id: 1, name: "Charlie", active: false }]
 
     mock.verify
   end
