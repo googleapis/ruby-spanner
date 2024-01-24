@@ -23,7 +23,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
-  let(:tx_begin_selector) do
+  let(:tx_selector_begin) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
         read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new
@@ -74,7 +74,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_begin_selector, seqno: 1, options: default_options
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
     mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
 
     results = nil
@@ -99,7 +99,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
-    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_begin_selector, seqno: 1, options: default_options
+    expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: tx_selector_begin, seqno: 1, options: default_options
     mock.expect :rollback, nil, [{ session: session_grpc.name, transaction_id: transaction_id }, default_options]
 
     results = nil

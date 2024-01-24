@@ -23,8 +23,8 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
-  let(:tx_id_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
-  let(:tx_begin_selector) do
+  let(:tx_selector_id) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
+  let(:tx_selector_begin) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
         read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new
@@ -99,7 +99,7 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
       end
 
       mock.expect :execute_streaming_sql, results_enum do |received_params|
-        received_params[:transaction] == tx_id_selector
+        received_params[:transaction] == tx_selector_id
       end
 
       begin
@@ -124,7 +124,7 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
 
       mock.expect :execute_streaming_sql, results_enum do |received_params|
         sleep 2 # simulate delayed response of rpc
-        received_params[:transaction] == tx_begin_selector
+        received_params[:transaction] == tx_selector_begin
       end
 
       begin
@@ -151,11 +151,11 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
 
       mock.expect :execute_streaming_sql, results_enum do |values|
         sleep 2 # simulate delayed response of rpc 
-        values[:transaction] == tx_begin_selector
+        values[:transaction] == tx_selector_begin
       end
 
       mock.expect :execute_streaming_sql, results_enum do |values|
-        values[:transaction] == tx_id_selector
+        values[:transaction] == tx_selector_id
       end
 
       results_1 = nil
@@ -183,12 +183,12 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
 
       mock.expect :execute_streaming_sql, results_enum do |values|
         sleep 2 # simulate delayed response of rpc
-        values[:transaction] == tx_begin_selector
+        values[:transaction] == tx_selector_begin
         raise Google::Cloud::InvalidArgumentError
       end
 
       mock.expect :execute_streaming_sql, results_enum do |values|
-        values[:transaction] == tx_begin_selector
+        values[:transaction] == tx_selector_begin
       end
 
       results_1 = nil
@@ -221,11 +221,11 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
 
       mock.expect :streaming_read, results_enum do |values|
         sleep 2 # simulate delayed response of rpc 
-        values[:transaction] == tx_begin_selector
+        values[:transaction] == tx_selector_begin
       end
 
       mock.expect :streaming_read, results_enum do |values|
-        values[:transaction] == tx_id_selector
+        values[:transaction] == tx_selector_id
       end
 
       results_1 = nil
@@ -256,12 +256,12 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
 
       mock.expect :streaming_read, results_enum do |values|
         sleep 2 # simulate delayed response of rpc
-        values[:transaction] == tx_begin_selector
+        values[:transaction] == tx_selector_begin
         raise Google::Cloud::InvalidArgumentError
       end
 
       mock.expect :streaming_read, results_enum do |values|
-        values[:transaction] == tx_begin_selector
+        values[:transaction] == tx_selector_begin
       end
 
       results_1 = nil
