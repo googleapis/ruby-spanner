@@ -1,5 +1,11 @@
 # Release History
 
+### 2.19.1 (2024-01-24)
+
+#### Bug Fixes
+
+* Bump up minimum version of google-cloud-spanner-v1 to 0.19.0 ([#79](https://github.com/googleapis/ruby-spanner/issues/79)) 
+
 ### 2.19.0 (2024-01-08)
 
 #### Features
