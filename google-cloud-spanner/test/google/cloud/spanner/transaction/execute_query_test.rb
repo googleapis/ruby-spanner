@@ -23,7 +23,7 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
-  let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
+  let(:tx_id_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_begin_selector) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
@@ -302,7 +302,7 @@ describe Google::Cloud::Spanner::Transaction, :execute_query, :mock_spanner do
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users",
-                                 transaction: tx_selector, seqno: 1,
+                                 transaction: tx_id_selector, seqno: 1,
                                  request_options: { transaction_tag: "Tag-1", request_tag: "Tag-1-1"},
                                  options: default_options
 

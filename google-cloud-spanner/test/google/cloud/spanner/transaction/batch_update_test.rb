@@ -22,7 +22,7 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:transaction_id) { "tx789" }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
-  let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
+  let(:tx_id_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_begin_selector) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
@@ -125,8 +125,8 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
       session.service.mocked_service = mock
       expect_execute_streaming_sql results_enum, session_grpc.name, "UPDATE users SET active = true", transaction: tx_begin_selector, seqno: 1, options: default_options
       statement = statement_grpc("UPDATE users SET age = @age", params: Google::Protobuf::Struct.new(fields: { "age" => Google::Protobuf::Value.new(string_value: "29") }), param_types: { "age" => Google::Cloud::Spanner::V1::Type.new(code: :INT64) })
-      mock.expect :execute_batch_dml, batch_response_grpc, [{ session: session_grpc.name, transaction: tx_selector, statements: [statement], seqno: 2, request_options: nil }, default_options]
-      expect_execute_streaming_sql results_enum, session_grpc.name, "UPDATE users SET active = false", transaction: tx_selector, seqno: 3, options: default_options
+      mock.expect :execute_batch_dml, batch_response_grpc, [{ session: session_grpc.name, transaction: tx_id_selector, statements: [statement], seqno: 2, request_options: nil }, default_options]
+      expect_execute_streaming_sql results_enum, session_grpc.name, "UPDATE users SET active = false", transaction: tx_id_selector, seqno: 3, options: default_options
 
       transaction.execute_update "UPDATE users SET active = true"
       transaction.batch_update do |b|

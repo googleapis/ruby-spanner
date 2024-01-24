@@ -23,7 +23,6 @@ describe Google::Cloud::Spanner::Client, :transaction, :rollback, :mock_spanner 
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
-  let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_begin_selector) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
