@@ -21,10 +21,7 @@ describe Google::Cloud::Spanner::Transaction, :read, :mock_spanner do
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:transaction_id) { "tx789" }
-  let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
-  # let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
-  let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_selector_begin) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
