@@ -22,9 +22,8 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
-  # let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
-  let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
+  let(:tx_selector_id) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_selector_begin) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
       begin: Google::Cloud::Spanner::V1::TransactionOptions.new(
@@ -100,7 +99,7 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
       end
 
       mock.expect :execute_streaming_sql, results_enum do |received_params|
-        received_params[:transaction] == tx_selector
+        received_params[:transaction] == tx_selector_id
       end
 
       begin
@@ -156,7 +155,7 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
       end
 
       mock.expect :execute_streaming_sql, results_enum do |values|
-        values[:transaction] == tx_selector
+        values[:transaction] == tx_selector_id
       end
 
       results_1 = nil
@@ -226,7 +225,7 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
       end
 
       mock.expect :streaming_read, results_enum do |values|
-        values[:transaction] == tx_selector
+        values[:transaction] == tx_selector_id
       end
 
       results_1 = nil
