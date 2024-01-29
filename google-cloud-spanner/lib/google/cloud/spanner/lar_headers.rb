@@ -43,7 +43,7 @@ module Google
       # or read-write transactions.
       #
       module LARHeaders
-        module ClassMethods
+        class << self
           def begin_transaction is_read_write_tx
             is_read_write_tx ? "true" : "false"
           end
@@ -94,8 +94,6 @@ module Google
             "true"
           end
         end
-
-        extend ClassMethods
       end
     end
   end
