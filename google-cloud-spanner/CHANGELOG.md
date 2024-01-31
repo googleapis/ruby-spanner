@@ -1,5 +1,11 @@
 # Release History
 
+### 2.20.0 (2024-01-31)
+
+#### Features
+
+* Support Leader Aware Routing ([#78](https://github.com/googleapis/ruby-spanner/issues/78)) 
+
 ### 2.19.1 (2024-01-24)
 
 #### Bug Fixes
