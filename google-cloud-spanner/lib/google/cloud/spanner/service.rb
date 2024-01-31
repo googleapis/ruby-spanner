@@ -20,6 +20,7 @@ require "google/cloud/spanner/v1"
 require "google/cloud/spanner/admin/instance/v1"
 require "google/cloud/spanner/admin/database/v1"
 require "google/cloud/spanner/convert"
+require "google/cloud/spanner/lar_headers"
 
 module Google
   module Cloud
@@ -35,6 +36,7 @@ module Google
         attr_accessor :lib_name
         attr_accessor :lib_version
         attr_accessor :quota_project
+        attr_accessor :enable_leader_aware_routing
 
         RST_STREAM_INTERNAL_ERROR = "Received RST_STREAM".freeze
         EOS_INTERNAL_ERROR = "Received unexpected EOS on DATA frame from server".freeze
@@ -42,7 +44,8 @@ module Google
         ##
         # Creates a new Service instance.
         def initialize project, credentials, quota_project: nil,
-                       host: nil, timeout: nil, lib_name: nil, lib_version: nil
+                       host: nil, timeout: nil, lib_name: nil, lib_version: nil,
+                       enable_leader_aware_routing: nil
           @project = project
           @credentials = credentials
           @quota_project = quota_project || (credentials.quota_project_id if credentials.respond_to? :quota_project_id)
@@ -50,6 +53,7 @@ module Google
           @timeout = timeout
           @lib_name = lib_name
           @lib_version = lib_version
+          @enable_leader_aware_routing = enable_leader_aware_routing
         end
 
         def channel
@@ -290,15 +294,19 @@ module Google
         end
 
         def get_session session_name, call_options: nil
+          route_to_leader = LARHeaders.get_session
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           service.get_session({ name: session_name }, opts)
         end
 
         def create_session database_name, labels: nil,
                            call_options: nil, database_role: nil
+          route_to_leader = LARHeaders.create_session
           opts = default_options session_name: database_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           session = V1::Session.new labels: labels, creator_role: database_role if labels || database_role
           service.create_session(
             { database: database_name, session: session }, opts
@@ -307,8 +315,10 @@ module Google
 
         def batch_create_sessions database_name, session_count, labels: nil,
                                   call_options: nil, database_role: nil
+          route_to_leader = LARHeaders.batch_create_sessions
           opts = default_options session_name: database_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           session = V1::Session.new labels: labels, creator_role: database_role if labels || database_role
           # The response may have fewer sessions than requested in the RPC.
           request = {
@@ -320,8 +330,10 @@ module Google
         end
 
         def delete_session session_name, call_options: nil
+          route_to_leader = LARHeaders.delete_session
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           service.delete_session({ name: session_name }, opts)
         end
 
@@ -330,9 +342,11 @@ module Google
                                   partition_token: nil, seqno: nil,
                                   query_options: nil, request_options: nil,
                                   call_options: nil, data_boost_enabled: nil,
-                                  directed_read_options: nil
+                                  directed_read_options: nil,
+                                  route_to_leader: nil
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request =  {
             session: session_name,
             sql: sql,
@@ -352,8 +366,10 @@ module Google
 
         def execute_batch_dml session_name, transaction, statements, seqno,
                               request_options: nil, call_options: nil
+          route_to_leader = LARHeaders.execute_batch_dml
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           statements = statements.map(&:to_grpc)
           request = {
             session: session_name,
@@ -369,9 +385,11 @@ module Google
                                  index: nil, transaction: nil, limit: nil,
                                  resume_token: nil, partition_token: nil,
                                  request_options: nil, call_options: nil,
-                                 data_boost_enabled: nil, directed_read_options: nil
+                                 data_boost_enabled: nil, directed_read_options: nil,
+                                 route_to_leader: nil
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, table: table_name, columns: columns,
             key_set: keys, transaction: transaction, index: index,
@@ -388,9 +406,10 @@ module Google
                            max_partitions: nil, call_options: nil
           partition_opts = partition_options partition_size_bytes,
                                              max_partitions
-
+          route_to_leader = LARHeaders.partition_read
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, table: table_name, key_set: keys,
             transaction: transaction, index: index, columns: columns,
@@ -404,9 +423,10 @@ module Google
                             max_partitions: nil, call_options: nil
           partition_opts = partition_options partition_size_bytes,
                                              max_partitions
-
+          route_to_leader = LARHeaders.partition_query
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, sql: sql, transaction: transaction,
             params: params, param_types: types,
@@ -417,6 +437,7 @@ module Google
 
         def commit session_name, mutations = [], transaction_id: nil,
                    commit_options: nil, request_options: nil, call_options: nil
+          route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
             tx_opts = V1::TransactionOptions.new(
@@ -424,7 +445,8 @@ module Google
             )
           end
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name, transaction_id: transaction_id,
             single_use_transaction: tx_opts, mutations: mutations,
@@ -439,19 +461,23 @@ module Google
         end
 
         def rollback session_name, transaction_id, call_options: nil
+          route_to_leader = LARHeaders.rollback
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = { session: session_name, transaction_id: transaction_id }
           service.rollback request, opts
         end
 
         def begin_transaction session_name, request_options: nil,
-                              call_options: nil
+                              call_options: nil,
+                              route_to_leader: nil
           tx_opts = V1::TransactionOptions.new(
             read_write: V1::TransactionOptions::ReadWrite.new
           )
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name,
             options: tx_opts,
@@ -482,8 +508,10 @@ module Google
           tx_opts = V1::TransactionOptions.new(
             partitioned_dml: V1::TransactionOptions::PartitionedDml.new
           )
+          route_to_leader = LARHeaders.begin_transaction true
           opts = default_options session_name: session_name,
-                                 call_options: call_options
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
           request = { session: session_name, options: tx_opts }
           service.begin_transaction request, opts
         end
@@ -608,12 +636,17 @@ module Google
           value << " gccl"
         end
 
-        def default_options session_name: nil, call_options: nil
+        def default_options session_name: nil, call_options: nil, route_to_leader: nil
           opts = {}
+          metadata = {}
           if session_name
             default_prefix = session_name.split("/sessions/").first
-            opts[:metadata] = { "google-cloud-resource-prefix" => default_prefix }
+            metadata["google-cloud-resource-prefix"] = default_prefix
           end
+          if @enable_leader_aware_routing && !route_to_leader.nil?
+            metadata["x-goog-spanner-route-to-leader"] = route_to_leader
+          end
+          opts[:metadata] = metadata
           if call_options
             opts[:timeout] = call_options[:timeout] if call_options[:timeout]
             opts[:retry_policy] = call_options[:retry_policy] if call_options[:retry_policy]

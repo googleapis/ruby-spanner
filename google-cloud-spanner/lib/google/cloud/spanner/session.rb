@@ -339,7 +339,7 @@ module Google
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
                           request_options: nil, call_options: nil, data_boost_enabled: nil,
-                          directed_read_options: nil
+                          directed_read_options: nil, route_to_leader: nil
           ensure_service!
           query_options = merge_if_present query_options, @query_options
 
@@ -347,7 +347,8 @@ module Google
             transaction: transaction, params: params, types: types,
             partition_token: partition_token, seqno: seqno,
             query_options: query_options, request_options: request_options,
-            call_options: call_options
+            call_options: call_options,
+            route_to_leader: route_to_leader
           }
           execute_query_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           execute_query_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
@@ -497,7 +498,8 @@ module Google
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
-                 call_options: nil, data_boost_enabled: nil, directed_read_options: nil
+                 call_options: nil, data_boost_enabled: nil, directed_read_options: nil,
+                 route_to_leader: nil
           ensure_service!
 
           read_options = {
@@ -505,7 +507,8 @@ module Google
             transaction: transaction,
             partition_token: partition_token,
             request_options: request_options,
-            call_options: call_options
+            call_options: call_options,
+            route_to_leader: route_to_leader
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           read_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
@@ -1178,7 +1181,8 @@ module Google
         # @private
         # Creates a new transaction object every time.
         def create_transaction
-          tx_grpc = service.begin_transaction path
+          route_to_leader = LARHeaders.begin_transaction true
+          tx_grpc = service.begin_transaction path, route_to_leader: route_to_leader
           Transaction.from_grpc tx_grpc, self
         end
 
@@ -1214,7 +1218,8 @@ module Google
         # Keeps the session alive by executing `"SELECT 1"`.
         def keepalive!
           ensure_service!
-          execute_query "SELECT 1"
+          route_to_leader = LARHeaders.execute_query false
+          execute_query "SELECT 1", route_to_leader: route_to_leader
           true
         rescue Google::Cloud::NotFoundError
           labels = @grpc.labels.to_h unless @grpc.labels.to_h.empty?
