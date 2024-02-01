@@ -455,6 +455,7 @@ module Google
 
           if commit_options
             request[:return_commit_stats] = commit_options[:return_commit_stats]
+            request[:max_commit_delay] = nil
           end
 
           service.commit request, opts

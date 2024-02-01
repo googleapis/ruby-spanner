@@ -104,6 +104,7 @@ describe "Spanner Client", :crud, :spanner do
       _(results.timestamp).wont_be :nil?
     end
 
+    focus
     it "inserts, updates, upserts, reads, and deletes records using commit and return commit stats for #{dialect}" do
       skip if emulator_enabled?
 
