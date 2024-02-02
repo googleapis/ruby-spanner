@@ -135,11 +135,10 @@ describe "Spanner Client", :crud, :spanner do
       _(results.timestamp).wont_be :nil?
     end
 
-    focus
     it "commits with max commit delay for #{dialect}" do
       skip if emulator_enabled?
 
-      commit_options = { return_commit_stats: true, max_commit_delay: 0.1 }
+      commit_options = { return_commit_stats: true, max_commit_delay: 120 }
       commit_resp = db[dialect].commit commit_options: commit_options do |c|
         c.insert "accounts", @default_rows[dialect][0]
       end
