@@ -104,11 +104,42 @@ describe "Spanner Client", :crud, :spanner do
       _(results.timestamp).wont_be :nil?
     end
 
-    focus
     it "inserts, updates, upserts, reads, and deletes records using commit and return commit stats for #{dialect}" do
       skip if emulator_enabled?
 
       commit_options = { return_commit_stats: true }
+      commit_resp = db[dialect].commit commit_options: commit_options do |c|
+        c.insert "accounts", @default_rows[dialect][0]
+      end
+
+      assert_commit_response commit_resp, commit_options
+
+      results = db[dialect].read "accounts", ["account_id"], single_use: { timestamp: commit_resp.timestamp }
+      _(results.rows.count).must_equal 1
+      _(results.timestamp).wont_be :nil?
+
+      commit_resp = db[dialect].commit commit_options: commit_options do |c|
+        c.upsert "accounts", @default_rows[dialect][0]
+      end
+
+      assert_commit_response commit_resp, commit_options
+
+      commit_resp = db[dialect].commit commit_options: commit_options do |c|
+        c.delete "accounts", [1]
+      end
+
+      assert_commit_response commit_resp, commit_options
+
+      results = db[dialect].read "accounts", ["account_id"], single_use: { timestamp: commit_resp.timestamp }
+      _(results.rows.count).must_equal 0
+      _(results.timestamp).wont_be :nil?
+    end
+
+    focus
+    it "commits with max commit delay for #{dialect}" do
+      skip if emulator_enabled?
+
+      commit_options = { return_commit_stats: true, max_commit_delay: 0.1 }
       commit_resp = db[dialect].commit commit_options: commit_options do |c|
         c.insert "accounts", @default_rows[dialect][0]
       end

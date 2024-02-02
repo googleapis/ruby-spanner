@@ -453,12 +453,17 @@ module Google
             request_options: request_options
           }
 
-          if commit_options
-            request[:return_commit_stats] = commit_options[:return_commit_stats]
-            request[:max_commit_delay] = nil
-          end
+          request = add_commit_options request, commit_options
 
           service.commit request, opts
+        end
+
+        def add_commit_options request, commit_options
+          if commit_options
+            request[:return_commit_stats] = commit_options[:return_commit_stats] if commit_options.key?(:return_commit_stats)
+            request[:max_commit_delay] = Convert.number_to_duration(commit_options[:max_commit_delay]) if commit_options.key?(:max_commit_delay)
+          end
+          request
         end
 
         def rollback session_name, transaction_id, call_options: nil
