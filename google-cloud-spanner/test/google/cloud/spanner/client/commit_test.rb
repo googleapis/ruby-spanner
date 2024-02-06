@@ -572,9 +572,10 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
         )
       )]
       commit_options[:max_commit_delay] = 120
+      commit_delay_duration = Google::Cloud::Spanner::Convert.number_to_duration(120, millisecond: true)
       mock = Minitest::Mock.new
       mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-      mock.expect :commit, commit_stats_resp_grpc, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, return_commit_stats: true, max_commit_delay: Google::Cloud::Spanner::Convert.number_to_duration(120, millisecond: true), request_options: nil}, default_options]
+      mock.expect :commit, commit_stats_resp_grpc, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, return_commit_stats: true, max_commit_delay: commit_delay_duration, request_options: nil}, default_options]
       spanner.service.mocked_service = mock
 
       commit_resp = client.commit commit_options: commit_options do |c|
