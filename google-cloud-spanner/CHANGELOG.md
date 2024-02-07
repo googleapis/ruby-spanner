@@ -1,5 +1,11 @@
 # Release History
 
+### 2.21.0 (2024-02-07)
+
+#### Features
+
+* support  max_commit_delay for commit_options ([#85](https://github.com/googleapis/ruby-spanner/issues/85)) 
+
 ### 2.20.0 (2024-01-31)
 
 #### Features
