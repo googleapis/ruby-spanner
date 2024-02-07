@@ -29,6 +29,14 @@ describe Google::Cloud::Spanner::Convert, :number_to_duration, :mock_spanner do
     _(duration.nanos).must_equal 0
   end
 
+  it "converts from millisecond" do
+    number = 100
+    duration = Google::Cloud::Spanner::Convert.number_to_duration number, millisecond: true
+    _(duration).must_be_kind_of Google::Protobuf::Duration
+    _(duration.seconds).must_equal 0
+    _(duration.nanos).must_equal 100_000_000
+  end
+
   it "converts a negative Integer" do
     number = -42
     duration = Google::Cloud::Spanner::Convert.number_to_duration number

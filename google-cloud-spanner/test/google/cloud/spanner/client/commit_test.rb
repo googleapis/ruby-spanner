@@ -439,7 +439,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       )]
       mock = Minitest::Mock.new
       mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-      mock.expect :commit, commit_stats_resp_grpc, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, return_commit_stats: true, request_options: nil }, default_options]
+      mock.expect :commit, commit_stats_resp_grpc, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, return_commit_stats: true, request_options: nil}, default_options]
       spanner.service.mocked_service = mock
 
       commit_resp = client.commit commit_options: commit_options do |c|
@@ -558,6 +558,30 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       spanner.service.mocked_service = mock
 
       commit_resp = client.replace "users", [{ id: 4, name: "Henry", updated_at: client.commit_timestamp }], commit_options: commit_options
+      assert_commit_response commit_resp, commit_stats_resp_grpc
+
+      shutdown_client! client
+      mock.verify
+    end
+
+    it "commits with max_commit_delay" do
+      mutations = [Google::Cloud::Spanner::V1::Mutation.new(
+        update: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1, "Charlie", false]).list_value]
+        )
+      )]
+      commit_options[:max_commit_delay] = 120
+      commit_delay_duration = Google::Cloud::Spanner::Convert.number_to_duration(120, millisecond: true)
+      mock = Minitest::Mock.new
+      mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
+      mock.expect :commit, commit_stats_resp_grpc, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, return_commit_stats: true, max_commit_delay: commit_delay_duration, request_options: nil}, default_options]
+      spanner.service.mocked_service = mock
+
+      commit_resp = client.commit commit_options: commit_options do |c|
+        c.update "users", [{ id: 1, name: "Charlie", active: false }]
+      end
+
       assert_commit_response commit_resp, commit_stats_resp_grpc
 
       shutdown_client! client

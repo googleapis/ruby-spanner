@@ -242,8 +242,9 @@ module Google
             Hash[row_to_pairs(row_types, row)]
           end
 
-          def number_to_duration number
+          def number_to_duration number, millisecond: false
             return nil if number.nil?
+            number = number/1000.to_f if millisecond
 
             Google::Protobuf::Duration.new \
               seconds: number.to_i,

@@ -1022,6 +1022,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1141,6 +1145,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1259,6 +1267,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1378,6 +1390,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1475,6 +1491,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1579,6 +1599,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1706,6 +1730,10 @@ module Google
         #   * `:return_commit_stats` (Boolean) A boolean value. If `true`,
         #     then statistics related to the transaction will be included in
         #     {CommitResponse}. Default value is `false`
+        #   *  `:maxCommitDelay` (Numeric) The amount of latency in millisecond in this request
+        #         is willing to incur in order to improve throughput.
+        #         The commit delay must be at least 0ms and at most 500ms.
+        #         Default value is nil.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
