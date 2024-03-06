@@ -196,8 +196,8 @@ module Google
           snp_session = session
           snp_grpc = @project.service.create_snapshot \
             snp_session.path, strong: strong,
-                              timestamp: (timestamp || read_timestamp),
-                              staleness: (staleness || exact_staleness)
+                              timestamp: timestamp || read_timestamp,
+                              staleness: staleness || exact_staleness
           BatchSnapshot.from_grpc snp_grpc, snp_session, directed_read_options: @directed_read_options
         end
 

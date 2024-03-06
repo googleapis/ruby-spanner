@@ -95,8 +95,7 @@ module Google
           def database
             return nil unless done?
             return nil unless @grpc.grpc_op.result == :response
-            return nil unless @grpc.results.instance_of? \
-              Admin::Database::V1::Database
+            return nil unless @grpc.results.instance_of? Admin::Database::V1::Database
             Database.from_grpc @grpc.results, service
           end
 
