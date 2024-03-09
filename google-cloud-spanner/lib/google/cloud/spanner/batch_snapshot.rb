@@ -255,7 +255,7 @@ module Google
                 partition_token: grpc.partition_token,
                 query_options: query_options,
                 data_boost_enabled: data_boost_enabled,
-                directed_read_options: (directed_read_options || @directed_read_options)
+                directed_read_options: directed_read_options || @directed_read_options
               }.compact
             )
             Partition.from_execute_sql_grpc execute_sql_grpc
@@ -365,7 +365,7 @@ module Google
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
                 data_boost_enabled: data_boost_enabled,
-                directed_read_options: (directed_read_options || @directed_read_options)
+                directed_read_options: directed_read_options || @directed_read_options
               }.compact
             )
             Partition.from_read_grpc read_grpc
@@ -704,7 +704,7 @@ module Google
                                 transaction: tx_selector,
                                 query_options: query_options,
                                 call_options: call_options,
-                                directed_read_options: (directed_read_options || @directed_read_options)
+                                directed_read_options: directed_read_options || @directed_read_options
         end
         alias execute execute_query
         alias query execute_query
@@ -780,7 +780,7 @@ module Google
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
                                        call_options: call_options,
-                                       directed_read_options: (directed_read_options || @directed_read_options)
+                                       directed_read_options: directed_read_options || @directed_read_options
         end
 
         ##

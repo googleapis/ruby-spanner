@@ -310,7 +310,7 @@ module Google
                                      transaction: tx_selector,
                                      query_options: query_options,
                                      call_options: call_options,
-                                     directed_read_options: (directed_read_options || @directed_read_options)
+                                     directed_read_options: directed_read_options || @directed_read_options
         end
         alias execute execute_query
         alias query execute_query
@@ -387,7 +387,7 @@ module Google
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
                                        call_options: call_options,
-                                       directed_read_options: (directed_read_options || @directed_read_options)
+                                       directed_read_options: directed_read_options || @directed_read_options
         end
 
         ##

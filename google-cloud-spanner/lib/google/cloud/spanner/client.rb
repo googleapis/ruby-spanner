@@ -473,7 +473,7 @@ module Google
             results = session.execute_query \
               sql, params: params, types: types, transaction: single_use_tx,
               query_options: query_options, request_options: request_options,
-              call_options: call_options, directed_read_options: (directed_read_options || @directed_read_options),
+              call_options: call_options, directed_read_options: directed_read_options || @directed_read_options,
               route_to_leader: route_to_leader
           end
           results
@@ -970,7 +970,7 @@ module Google
                               transaction: single_use_tx,
                               request_options: request_options,
                               call_options: call_options,
-                              directed_read_options: (directed_read_options || @directed_read_options),
+                              directed_read_options: directed_read_options || @directed_read_options,
                               route_to_leader: route_to_leader
           end
           results
@@ -2003,8 +2003,8 @@ module Google
           @pool.with_session do |session|
             snp_grpc = @project.service.create_snapshot \
               session.path, strong: strong,
-                            timestamp: (timestamp || read_timestamp),
-                            staleness: (staleness || exact_staleness),
+                            timestamp: timestamp || read_timestamp,
+                            staleness: staleness || exact_staleness,
                             call_options: call_options
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
             snp = Snapshot.from_grpc snp_grpc, session, @directed_read_options

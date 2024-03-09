@@ -283,7 +283,7 @@ module Google
         # Whether the row count is the lower bound row count for PDML
         # statements.
         def row_count_lower_bound?
-          return nil if @stats.nil?
+          return nil if @stats.nil? # rubocop:disable Style/ReturnNilInPredicateMethodDefinition
           @stats.row_count == :row_count_lower_bound
         end
 
@@ -291,7 +291,7 @@ module Google
         # @private
         # Whether the row count is the exact row count for DML statements.
         def row_count_exact?
-          return nil if @stats.nil?
+          return nil if @stats.nil? # rubocop:disable Style/ReturnNilInPredicateMethodDefinition
           @stats.row_count == :row_count_exact
         end
 

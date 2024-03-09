@@ -74,8 +74,9 @@ module Google
     #   spanner = gcloud.spanner scope: platform_scope
     #
     def spanner scope: nil, timeout: nil, lib_name: nil, lib_version: nil
+      timeout ||= @timeout
       Google::Cloud.spanner @project, @keyfile, scope: scope,
-                                                timeout: (timeout || @timeout),
+                                                timeout: timeout,
                                                 lib_name: lib_name,
                                                 lib_version: lib_version
     end
@@ -130,8 +131,10 @@ module Google
       require "google/cloud/spanner"
       Google::Cloud::Spanner.new project_id: project_id,
                                  credentials: credentials,
-                                 scope: scope, timeout: timeout,
-                                 lib_name: lib_name, lib_version: lib_version
+                                 scope: scope,
+                                 timeout: timeout,
+                                 lib_name: lib_name,
+                                 lib_version: lib_version
     end
   end
 end
