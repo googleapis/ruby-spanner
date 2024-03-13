@@ -183,7 +183,7 @@ module Google
             when :PG_NUMERIC
               V1::Type.new(code: :NUMERIC, type_annotation: :PG_NUMERIC)
             when :PG_JSONB
-              V1::Type.new(code: :JSON, type_annotation: :PG_JSONB)  
+              V1::Type.new(code: :JSON, type_annotation: :PG_JSONB)
             else
               V1::Type.new(code: field)
             end
@@ -198,6 +198,20 @@ module Google
             when :INT64
               Integer value.string_value
             when :FLOAT64
+              if value.kind == :string_value
+                if value.string_value == "Infinity"
+                  Float::INFINITY
+                elsif value.string_value == "-Infinity"
+                  -Float::INFINITY
+                elsif value.string_value == "NaN"
+                  Float::NAN
+                else
+                  Float value.string_value
+                end
+              else
+                value.number_value
+              end
+            when :FLOAT32
               if value.kind == :string_value
                 if value.string_value == "Infinity"
                   Float::INFINITY
