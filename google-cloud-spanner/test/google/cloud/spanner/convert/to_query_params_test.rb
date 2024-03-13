@@ -45,34 +45,64 @@ describe Google::Cloud::Spanner::Convert, :to_query_params, :mock_spanner do
                                            Google::Cloud::Spanner::V1::Type.new(code: :INT64)] })
   end
 
-  it "converts a float value" do
+  it "converts a FLOAT64 value" do
     combined_params = Google::Cloud::Spanner::Convert.to_query_params score: 0.9
     _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(number_value: 0.9),
                                              Google::Cloud::Spanner::V1::Type.new(code: :FLOAT64)] })
   end
 
-  it "converts a float value (Infinity)" do
+  it "converts a FLOAT64 value (Infinity)" do
     combined_params = Google::Cloud::Spanner::Convert.to_query_params score: Float::INFINITY
     _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(string_value: "Infinity"),
                                              Google::Cloud::Spanner::V1::Type.new(code: :FLOAT64)] })
   end
 
-  it "converts a float value (-Infinity)" do
+  it "converts a FLOAT64 value (-Infinity)" do
     combined_params = Google::Cloud::Spanner::Convert.to_query_params score: -Float::INFINITY
     _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(string_value: "-Infinity"),
                                              Google::Cloud::Spanner::V1::Type.new(code: :FLOAT64)] })
   end
 
-  it "converts a float value (NaN)" do
+  it "converts a FLOAT64 value (NaN)" do
     combined_params = Google::Cloud::Spanner::Convert.to_query_params score: Float::NAN
     _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(string_value: "NaN"),
                                              Google::Cloud::Spanner::V1::Type.new(code: :FLOAT64)] })
   end
 
-  it "converts a nil float value" do
+  it "converts a FLOAT64 value (nil)" do
     combined_params = Google::Cloud::Spanner::Convert.to_query_params({score: nil}, {score: :FLOAT64})
     _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(null_value: :NULL_VALUE),
                                              Google::Cloud::Spanner::V1::Type.new(code: :FLOAT64)] })
+  end
+
+  focus; it "converts a FLOAT32 value" do
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({score: 0.9}, {score: :FLOAT32})
+    _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(number_value: 0.9),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)] })
+  end
+
+  focus; it "converts a FLOAT32 value (Infinity)" do
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({score: Float::INFINITY}, {score: :FLOAT32})
+    _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(string_value: "Infinity"),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)] })
+  end
+
+  focus; it "converts a FLOAT32 value (-Infinity)" do
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({score: -Float::INFINITY}, {score: :FLOAT32})
+    _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(string_value: "-Infinity"),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)] })
+  end
+
+  focus; it "converts a FLOAT32 value (NaN)" do
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({score: Float::NAN}, {score: :FLOAT32})
+    _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(string_value: "NaN"),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)] })
+  end
+
+  focus; it "converts a FLOAT32 value (nil)" do
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({score: nil}, {score: :FLOAT32})
+    _(combined_params).must_equal({ "score" => [Google::Protobuf::Value.new(null_value: :NULL_VALUE),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)] })
   end
 
   it "converts a Time value" do

@@ -35,6 +35,12 @@ describe Google::Cloud::Spanner::Convert, :grpc_type_for_field, :mock_spanner do
     assert_equal type.code, :FLOAT64
   end
 
+  focus; it "converts a FLOAT32 value" do
+    field = :FLOAT32
+    type = Google::Cloud::Spanner::Convert.grpc_type_for_field field
+    assert_equal type.code, :FLOAT32
+  end
+
   it "converts a TIMESTAMP value" do
     field = :TIMESTAMP
     type = Google::Cloud::Spanner::Convert.grpc_type_for_field field
@@ -88,7 +94,7 @@ describe Google::Cloud::Spanner::Convert, :grpc_type_for_field, :mock_spanner do
     field = :PG_JSONB
     type = Google::Cloud::Spanner::Convert.grpc_type_for_field field
     assert_equal type.code, :JSON
-    assert_equal type.type_annotation, :PG_JSONB 
+    assert_equal type.type_annotation, :PG_JSONB
   end
 
   it "converts a PG_NUMERIC value" do
