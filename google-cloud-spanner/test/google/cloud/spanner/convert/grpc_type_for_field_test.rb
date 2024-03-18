@@ -35,7 +35,7 @@ describe Google::Cloud::Spanner::Convert, :grpc_type_for_field, :mock_spanner do
     assert_equal type.code, :FLOAT64
   end
 
-  focus; it "converts a FLOAT32 value" do
+  it "converts a FLOAT32 value" do
     field = :FLOAT32
     type = Google::Cloud::Spanner::Convert.grpc_type_for_field field
     assert_equal type.code, :FLOAT32

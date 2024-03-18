@@ -18,7 +18,7 @@ describe "Spanner Client", :types, :float32, :spanner do
   let(:db) { spanner_client }
   let(:table_name) { "stuffs" }
 
-  focus; it "writes and reads float32" do
+  it "writes and reads float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: 99.99 }
     results = db.read table_name, [:id, :float32], keys: id
@@ -30,7 +30,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(first_row[:float32]).must_be_within_delta 99.99
   end
 
-  focus; it "writes and queries float32" do
+  it "writes and queries float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: 99.99 }
     results = db.execute_sql "SELECT id, float32 FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -42,7 +42,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(first_row[:float32]).must_be_within_delta 99.99
   end
 
-  focus; it "writes and reads Infinity float32" do
+  it "writes and reads Infinity float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: Float::INFINITY }
     results = db.read table_name, [:id, :float32], keys: id
@@ -52,7 +52,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32: Float::INFINITY })
   end
 
-  focus; it "writes and queries Infinity float32" do
+  it "writes and queries Infinity float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: Float::INFINITY }
     results = db.execute_sql "SELECT id, float32 FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -62,7 +62,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32: Float::INFINITY })
   end
 
-  focus; it "writes and reads -Infinity float32" do
+  it "writes and reads -Infinity float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: -Float::INFINITY }
     results = db.read table_name, [:id, :float32], keys: id
@@ -72,7 +72,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32: -Float::INFINITY })
   end
 
-  focus; it "writes and queries -Infinity float32" do
+  it "writes and queries -Infinity float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: -Float::INFINITY }
     results = db.execute_sql "SELECT id, float32 FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -82,7 +82,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32: -Float::INFINITY })
   end
 
-  focus; it "writes and reads NaN float32" do
+  it "writes and reads NaN float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: Float::NAN }
     results = db.read table_name, [:id, :float32], keys: id
@@ -95,7 +95,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(returned_value).must_be :nan?
   end
 
-  focus; it "writes and queries NaN float32" do
+  it "writes and queries NaN float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: Float::NAN }
     results = db.execute_sql "SELECT id, float32 FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -108,7 +108,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(returned_value).must_be :nan?
   end
 
-  focus; it "writes and reads NULL float32" do
+  it "writes and reads NULL float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: nil }
     results = db.read table_name, [:id, :float32], keys: id
@@ -118,7 +118,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32: nil })
   end
 
-  focus; it "writes and queries NULL float32" do
+  it "writes and queries NULL float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32: nil }
     results = db.execute_sql "SELECT id, float32 FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -128,7 +128,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32: nil })
   end
 
-  focus; it "writes and reads array of float32" do
+  it "writes and reads array of float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: [77.77, 88.88, 99.99] }
     results = db.read table_name, [:id, :float32s], keys: id
@@ -142,7 +142,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(first_row[:float32s][2]).must_be_within_delta 99.99
   end
 
-  focus; it "writes and queries array of float32" do
+  it "writes and queries array of float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: [77.77, 88.88, 99.99] }
     results = db.execute_sql "SELECT id, float32s FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -156,7 +156,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(first_row[:float32s][2]).must_be_within_delta 99.99
   end
 
-  focus; it "writes and reads array of float32 with NULL" do
+  it "writes and reads array of float32 with NULL" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: [nil, 77.77, 88.88, 99.99] }
     results = db.read table_name, [:id, :float32s], keys: id
@@ -171,7 +171,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(first_row[:float32s][3]).must_be_within_delta 99.99
   end
 
-  focus; it "writes and queries array of float32 with NULL" do
+  it "writes and queries array of float32 with NULL" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: [nil, 77.77, 88.88, 99.99] }
     results = db.execute_sql "SELECT id, float32s FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -186,7 +186,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(first_row[:float32s][3]).must_be_within_delta 99.99
   end
 
-  focus; it "writes and reads empty array of float32" do
+  it "writes and reads empty array of float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: [] }
     results = db.read table_name, [:id, :float32s], keys: id
@@ -196,7 +196,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32s: [] })
   end
 
-  focus; it "writes and queries empty array of float32" do
+  it "writes and queries empty array of float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: [] }
     results = db.execute_sql "SELECT id, float32s FROM #{table_name} WHERE id = @id", params: { id: id }
@@ -206,7 +206,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32s: [] })
   end
 
-  focus; it "writes and reads NULL array of float32" do
+  it "writes and reads NULL array of float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: nil }
     results = db.read table_name, [:id, :float32s], keys: id
@@ -216,7 +216,7 @@ describe "Spanner Client", :types, :float32, :spanner do
     _(results.rows.first.to_h).must_equal({ id: id, float32s: nil })
   end
 
-  focus; it "writes and queries NULL array of float32" do
+  it "writes and queries NULL array of float32" do
     id = SecureRandom.int64
     db.upsert table_name, { id: id, float32s: nil }
     results = db.execute_sql "SELECT id, float32s FROM #{table_name} WHERE id = @id", params: { id: id }

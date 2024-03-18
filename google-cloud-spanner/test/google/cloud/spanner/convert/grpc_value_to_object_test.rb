@@ -63,28 +63,28 @@ describe Google::Cloud::Spanner::Convert, :grpc_value_to_object, :mock_spanner d
     _(raw).must_be :nan? # equality checks on Float::NAN fails
   end
 
-  focus; it "converts a FLOAT32 value" do
+  it "converts a FLOAT32 value" do
     value = Google::Protobuf::Value.new(number_value: 0.9)
     type = Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)
     raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
     _(raw).must_equal 0.9
   end
 
-  focus; it "converts a FLOAT32 value (Infinity)" do
+  it "converts a FLOAT32 value (Infinity)" do
     value = Google::Protobuf::Value.new(string_value: "Infinity")
     type = Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)
     raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
     _(raw).must_equal Float::INFINITY
   end
 
-  focus; it "converts a FLOAT32 value (-Infinity)" do
+  it "converts a FLOAT32 value (-Infinity)" do
     value = Google::Protobuf::Value.new(string_value: "-Infinity")
     type = Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)
     raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
     _(raw).must_equal -Float::INFINITY
   end
 
-  focus; it "converts a FLOAT32 value (NaN)" do
+  it "converts a FLOAT32 value (NaN)" do
     value = Google::Protobuf::Value.new(string_value: "NaN")
     type = Google::Cloud::Spanner::V1::Type.new(code: :FLOAT32)
     raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
