@@ -1,5 +1,14 @@
 # Release History
 
+### 2.22.0 (2024-03-28)
+
+#### Features
+
+* Update minimum Ruby version to 2.7 ([#89](https://github.com/googleapis/ruby-spanner/issues/89)) 
+#### Bug Fixes
+
+* Use https in Gemfile to avoid security vulnerability ([#95](https://github.com/googleapis/ruby-spanner/issues/95)) 
+
 ### 2.21.0 (2024-02-07)
 
 #### Features
