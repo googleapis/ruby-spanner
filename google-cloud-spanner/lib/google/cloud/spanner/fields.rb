@@ -63,6 +63,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:NUMERIC`
         #   * `:INT64`
         #   * `:STRING`

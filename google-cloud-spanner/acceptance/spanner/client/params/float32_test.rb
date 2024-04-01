@@ -25,6 +25,14 @@ describe "Spanner Client", :params, :float32, :spanner do
     _(results.rows.first[:value]).must_equal 12.0
   end
 
+  it "queries and returns FLOAT32 when FLOAT64 is sent to be casted" do
+    results = db.execute_query "SELECT CAST(@value as FLOAT32) as value", params: { value: 12.0 }
+
+    _(results).must_be_kind_of Google::Cloud::Spanner::Results
+    _(results.fields[:value]).must_equal :FLOAT32
+    _(results.rows.first[:value]).must_equal 12.0
+  end
+
   it "queries and returns a float32 parameter (Infinity)" do
     results = db.execute_query "SELECT @value AS value", params: { value: Float::INFINITY }, types: { value: :FLOAT32 }
 
