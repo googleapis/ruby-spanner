@@ -60,7 +60,8 @@ describe "Spanner Client", :params, :float32, :spanner do
   end
 
   it "queries and returns an array of float32 parameters" do
-    results = db.execute_query "SELECT @value AS value", params: { value: [1.0, 2.2, 3.5] }, types: { value: [:FLOAT32] }
+    results = db.execute_query "SELECT @value AS value", params: { value: [1.0, 2.2, 3.5] },
+                               types: { value: [:FLOAT32] }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields[:value]).must_equal [:FLOAT32]
@@ -72,7 +73,8 @@ describe "Spanner Client", :params, :float32, :spanner do
 
   it "queries and returns an array of special float32 parameters" do
     results = db.execute_query "SELECT @value AS value",
-                               params: { value: [Float::INFINITY, -Float::INFINITY, -Float::NAN] }, types: { value: [:FLOAT32] }
+                               params: { value: [Float::INFINITY, -Float::INFINITY, -Float::NAN] },
+                               types: { value: [:FLOAT32] }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields[:value]).must_equal [:FLOAT32]
@@ -84,7 +86,8 @@ describe "Spanner Client", :params, :float32, :spanner do
   end
 
   it "queries and returns an array of float32 parameters with a nil value" do
-    results = db.execute_query "SELECT @value AS value", params: { value: [nil, 1.0, 2.2, 3.5] }, types: { value: [:FLOAT32] }
+    results = db.execute_query "SELECT @value AS value", params: { value: [nil, 1.0, 2.2, 3.5] },
+                               types: { value: [:FLOAT32] }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields[:value]).must_equal [:FLOAT32]
