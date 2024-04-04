@@ -306,6 +306,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`

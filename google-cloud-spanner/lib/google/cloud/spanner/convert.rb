@@ -197,7 +197,7 @@ module Google
               value.bool_value
             when :INT64
               Integer value.string_value
-            when :FLOAT64
+            when :FLOAT32, :FLOAT64
               if value.kind == :string_value
                 if value.string_value == "Infinity"
                   Float::INFINITY

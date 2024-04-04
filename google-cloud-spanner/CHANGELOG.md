@@ -1,5 +1,15 @@
 # Release History
 
+### 2.22.0 (2024-04-01)
+
+#### Features
+
+* Support FLOAT32 datatype ([#94](https://github.com/googleapis/ruby-spanner/issues/94)) 
+* Update minimum Ruby version to 2.7 ([#89](https://github.com/googleapis/ruby-spanner/issues/89)) 
+#### Bug Fixes
+
+* Use https in Gemfile to avoid security vulnerability ([#95](https://github.com/googleapis/ruby-spanner/issues/95)) 
+
 ### 2.21.0 (2024-02-07)
 
 #### Features
