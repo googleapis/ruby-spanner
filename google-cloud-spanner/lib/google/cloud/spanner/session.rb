@@ -656,6 +656,11 @@ module Google
           commit_options ? resp : resp.timestamp
         end
 
+        def batch_write
+          mutation_group = Mutation.Group.new
+          yield mutation_group
+        end
+
         ##
         # Inserts or updates rows in a table. If any of the rows already exist,
         # then its column values are overwritten with the ones provided. Any

@@ -1710,6 +1710,15 @@ module Google
           end
         end
 
+        def batch_write
+          @pool.with_session do |session|
+            session.batch_write(
+              # TODO: Need to create a method in Session class first
+              &block
+            )
+          end
+        end
+
         # rubocop:disable Metrics/AbcSize
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/BlockLength
