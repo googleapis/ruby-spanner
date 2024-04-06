@@ -97,13 +97,16 @@ module Google
           return rows if rows.empty?
           rows.compact
           rows.delete_if(&:empty?)
+          # @mutations += rows.map do |row|
+          #   V1::Mutation.new(
+          #     insert_or_update: V1::Mutation::Write.new(
+          #       table: table, columns: row.keys.map(&:to_s),
+          #       values: [Convert.object_to_grpc_value(row.values).list_value]
+          #     )
+          #   )
+          # end
           @mutations += rows.map do |row|
-            V1::Mutation.new(
-              insert_or_update: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
+            Mutation.upsert table, row
           end
           rows
         end
@@ -157,13 +160,16 @@ module Google
           return rows if rows.empty?
           rows.compact
           rows.delete_if(&:empty?)
+          # @mutations += rows.map do |row|
+          #   V1::Mutation.new(
+          #     insert: V1::Mutation::Write.new(
+          #       table: table, columns: row.keys.map(&:to_s),
+          #       values: [Convert.object_to_grpc_value(row.values).list_value]
+          #     )
+          #   )
+          # end
           @mutations += rows.map do |row|
-            V1::Mutation.new(
-              insert: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
+            Mutation.insert table, row
           end
           rows
         end
@@ -216,13 +222,16 @@ module Google
           return rows if rows.empty?
           rows.compact
           rows.delete_if(&:empty?)
+          # @mutations += rows.map do |row|
+          #   V1::Mutation.new(
+          #     update: V1::Mutation::Write.new(
+          #       table: table, columns: row.keys.map(&:to_s),
+          #       values: [Convert.object_to_grpc_value(row.values).list_value]
+          #     )
+          #   )
+          # end
           @mutations += rows.map do |row|
-            V1::Mutation.new(
-              update: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
+            Mutation.update table, row
           end
           rows
         end
@@ -277,13 +286,16 @@ module Google
           return rows if rows.empty?
           rows.compact
           rows.delete_if(&:empty?)
+          # @mutations += rows.map do |row|
+          #   V1::Mutation.new(
+          #     replace: V1::Mutation::Write.new(
+          #       table: table, columns: row.keys.map(&:to_s),
+          #       values: [Convert.object_to_grpc_value(row.values).list_value]
+          #     )
+          #   )
+          # end
           @mutations += rows.map do |row|
-            V1::Mutation.new(
-              replace: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
+            Mutation.replace table, row
           end
           rows
         end
@@ -313,13 +325,14 @@ module Google
         #   end
         #
         def delete table, keys = []
-          @mutations += [
-            V1::Mutation.new(
-              delete: V1::Mutation::Delete.new(
-                table: table, key_set: key_set(keys)
-              )
-            )
-          ]
+          # @mutations += [
+          #   V1::Mutation.new(
+          #     delete: V1::Mutation::Delete.new(
+          #       table: table, key_set: key_set(keys)
+          #     )
+          #   )
+          # ]
+          @mutations += [Mutation.delete(table, keys)]
           keys
         end
 
@@ -328,32 +341,37 @@ module Google
           @mutations
         end
 
+        # @private
+        def mutations_grpc
+          @mutations.map(&:to_grpc)
+        end
+
         protected
 
-        def key_set keys
-          return V1::KeySet.new all: true if keys.nil?
-          keys = [keys] unless keys.is_a? Array
-          return V1::KeySet.new all: true if keys.empty?
-          if keys_are_ranges? keys
-            key_ranges = keys.map do |r|
-              Convert.to_key_range r
-            end
-            return V1::KeySet.new ranges: key_ranges
-          end
-          key_list = keys.map do |key|
-            key = [key] unless key.is_a? Array
-            Convert.object_to_grpc_value(key).list_value
-          end
-          V1::KeySet.new keys: key_list
-        end
+        # def key_set keys
+        #   return V1::KeySet.new all: true if keys.nil?
+        #   keys = [keys] unless keys.is_a? Array
+        #   return V1::KeySet.new all: true if keys.empty?
+        #   if keys_are_ranges? keys
+        #     key_ranges = keys.map do |r|
+        #       Convert.to_key_range r
+        #     end
+        #     return V1::KeySet.new ranges: key_ranges
+        #   end
+        #   key_list = keys.map do |key|
+        #     key = [key] unless key.is_a? Array
+        #     Convert.object_to_grpc_value(key).list_value
+        #   end
+        #   V1::KeySet.new keys: key_list
+        # end
 
-        def keys_are_ranges? keys
-          keys.each do |key|
-            return true if key.is_a? ::Range
-            return true if key.is_a? Google::Cloud::Spanner::Range
-          end
-          false
-        end
+        # def keys_are_ranges? keys
+        #   keys.each do |key|
+        #     return true if key.is_a? ::Range
+        #     return true if key.is_a? Google::Cloud::Spanner::Range
+        #   end
+        #   false
+        # end
       end
     end
   end

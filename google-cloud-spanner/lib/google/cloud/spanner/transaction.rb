@@ -1150,6 +1150,13 @@ module Google
         end
 
         ##
+        # @private
+        # All of the mutations created in the transaction block.
+        def mutations_grpc
+          @commit.mutations.map(&:to_grpc)
+        end
+
+        ##
         # @private Creates a new Transaction instance from a
         # `Google::Cloud::Spanner::V1::Transaction`.
         def self.from_grpc grpc, session

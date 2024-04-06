@@ -1896,7 +1896,7 @@ module Google
               transaction_id = nil
               transaction_id = tx.transaction_id if tx.existing_transaction?
               commit_resp = @project.service.commit \
-                tx.session.path, tx.mutations,
+                tx.session.path, tx.mutations_grpc,
                 transaction_id: transaction_id,
                 commit_options: commit_options,
                 request_options: request_options,

@@ -18,6 +18,7 @@ require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
 require "google/cloud/spanner/commit_response"
 require "google/cloud/spanner/batch_update"
+require "google/cloud/spanner/mutation"
 
 module Google
   module Cloud
@@ -646,7 +647,7 @@ module Google
           ensure_service!
           commit = Commit.new
           yield commit
-          commit_resp = service.commit path, commit.mutations,
+          commit_resp = service.commit path, commit.mutations_grpc,
                                        transaction_id: transaction_id,
                                        commit_options: commit_options,
                                        request_options: request_options,

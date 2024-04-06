@@ -34,7 +34,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     )
   end
   let(:tx_no_dml_options) do
-    # Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id 
+    # Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id
     Google::Cloud::Spanner::V1::TransactionOptions.new(
       read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(
           read_lock_mode: :READ_LOCK_MODE_UNSPECIFIED
