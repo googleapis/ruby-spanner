@@ -211,20 +211,6 @@ module Google
               else
                 value.number_value
               end
-            when :FLOAT32
-              if value.kind == :string_value
-                if value.string_value == "Infinity"
-                  Float::INFINITY
-                elsif value.string_value == "-Infinity"
-                  -Float::INFINITY
-                elsif value.string_value == "NaN"
-                  Float::NAN
-                else
-                  Float value.string_value
-                end
-              else
-                value.number_value
-              end
             when :TIMESTAMP
               Time.parse value.string_value
             when :DATE
