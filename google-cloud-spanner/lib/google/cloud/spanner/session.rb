@@ -18,6 +18,7 @@ require "google/cloud/spanner/results"
 require "google/cloud/spanner/commit"
 require "google/cloud/spanner/commit_response"
 require "google/cloud/spanner/batch_update"
+require "google/cloud/spanner/batch_write"
 
 module Google
   module Cloud
@@ -656,9 +657,13 @@ module Google
           commit_options ? resp : resp.timestamp
         end
 
-        def batch_write
-          mutation_group = Mutation.Group.new
-          yield mutation_group
+        def batch_write request_options: nil, call_options: nil
+          b = BatchWrite.new
+          yield b
+          # TODO: Process the response of RPC
+          service.batch_write path, b.mutation_groups_grpc,
+                              request_options: request_options,
+                              call_options: call_options
         end
 
         ##

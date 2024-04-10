@@ -12,42 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require "google/cloud/spanner/mutation_group"
+
 module Google
   module Cloud
     module Spanner
-      class MutationGroup
+      class BatchWrite
         # @private
         def initialize
-          @commit = Commit.new
-        end
-
-        def upsert table, *rows
-          # TODO: Should I add ensure_sesion! to every method?
-          @commit.upsert table, rows
-        end
-        alias save upsert
-
-        def insert table, *rows
-          @commit.insert table, rows
-        end
-
-        def update table, *rows
-          @commit.update table, rows
-        end
-
-        def replace table, *rows
-          @commit.replace table, rows
-        end
-
-        def delete table, keys = []
-          @commit.delete table, keys
+          @mutation_groups = []
         end
 
         ##
-        # @private
-        # All of the mutations created in the transaction block.
-        def mutations
-          @commit.mutations
+        # Adds a groups of mutations
+        def mutation_group
+          mg = MutationGroup.new
+          yield mg
+          @mutation_groups << mg
+        end
+
+        def mutation_groups_grpc
+          @mutation_groups.map(&:mutations)
         end
       end
     end

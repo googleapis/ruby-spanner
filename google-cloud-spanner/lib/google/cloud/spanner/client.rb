@@ -1710,10 +1710,11 @@ module Google
           end
         end
 
-        def batch_write
+        def batch_write request_options: nil, call_options: nil, &block
           @pool.with_session do |session|
             session.batch_write(
-              # TODO: Need to create a method in Session class first
+              request_options: request_options,
+              call_options: call_options,
               &block
             )
           end
