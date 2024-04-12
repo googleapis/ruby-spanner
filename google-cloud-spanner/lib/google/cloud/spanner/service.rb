@@ -510,7 +510,6 @@ module Google
             session: session_name,
             request_options: request_options,
             mutation_groups: mutation_groups,
-            exclude_txn_from_change_streams: true # TODO: PLACEHOLDER - What to do with this?
           }
           service.batch_write request, opts
         end

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require "google/cloud/spanner/mutation_group"
+require "google/cloud/spanner/v1"
 
 module Google
   module Cloud
@@ -32,7 +33,9 @@ module Google
         end
 
         def mutation_groups_grpc
-          @mutation_groups.map(&:mutations)
+          @mutation_groups.map do |mg|
+            Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: mg.mutations)
+          end
         end
       end
     end

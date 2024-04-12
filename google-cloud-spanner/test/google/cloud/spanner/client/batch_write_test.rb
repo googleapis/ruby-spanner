@@ -109,12 +109,17 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
       )
     ]
   }
-  let(:mutation_groups) { [user_mutations, admin_mutations] }
+  let(:mutation_groups) {
+    [
+      Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: user_mutations),
+      Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: admin_mutations)
+    ]
+  }
 
   it "batch writes using groups of mutations" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-    mock.expect :batch_write, commit_resp, [{ session: session_grpc.name, mutation_groups: mutation_groups, exclude_txn_from_change_streams: true, request_options: nil }, default_options]
+    mock.expect :batch_write, commit_resp, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
     spanner.service.mocked_service = mock
 
     client.batch_write do |b|
