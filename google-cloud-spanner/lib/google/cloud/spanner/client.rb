@@ -25,6 +25,7 @@ require "google/cloud/spanner/column_value"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/commit_response"
 require "google/cloud/spanner/lar_headers"
+require "google/cloud/spanner/batch_write_results"
 
 module Google
   module Cloud
@@ -1711,12 +1712,16 @@ module Google
         end
 
         def batch_write request_options: nil, call_options: nil, &block
+          raise ArgumentError, "Must provide a block" unless block_given?
+
           @pool.with_session do |session|
-            session.batch_write(
+            response = session.batch_write(
               request_options: request_options,
               call_options: call_options,
               &block
             )
+            batch_write_results = BatchWriteResults.new response
+            batch_write_results.indexes
           end
         end
 

@@ -21,7 +21,13 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:commit_time) { Time.now }
   let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
-  let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp }
+  let(:batch_write_resp) {
+    Google::Cloud::Spanner::V1::BatchWriteResponse.new(
+      status: Google::Rpc::Status.new(code: 0),
+      indexes: [5, 5]
+    )
+  }
+  let(:results_grpc) { Array(batch_write_resp).to_enum }
   let(:commit_stats_grpc) {
     Google::Cloud::Spanner::V1::CommitResponse::CommitStats.new(
       mutation_count: 5
@@ -119,10 +125,10 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
   it "batch writes using groups of mutations" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-    mock.expect :batch_write, commit_resp, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
+    mock.expect :batch_write, batch_write_resp, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
     spanner.service.mocked_service = mock
 
-    client.batch_write do |b|
+    results = client.batch_write do |b|
       b.mutation_group do |mg|
         mg.update "users", [{ id: 1, name: "Charlie", active: false }]
         mg.insert "users", [{ id: 2, name: "Harvey",  active: true }]
@@ -139,8 +145,16 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
       end
     end
 
+    _(results).must_be_kind_of Google::Protobuf::RepeatedField
+
     shutdown_client! client
 
     mock.verify
+  end
+
+  it "raises ArgumentError if no block is provided" do
+    expect do
+      client.batch_write
+    end.must_raise ArgumentError
   end
 end

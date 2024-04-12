@@ -95,6 +95,14 @@ module Google
           end
         end
       end
+
+      class BatchWriteError < Google::Cloud::Error
+        # TODO: Should I have an indexes field in this class,
+        # Or will the BatchWrite API not produce any partial results?
+        def self.from_grpc grpc
+          new
+        end
+      end
     end
   end
 end
