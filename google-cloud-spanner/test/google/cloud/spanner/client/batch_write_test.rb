@@ -19,26 +19,6 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
   let(:database_id) { "my-database-id" }
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
-  let(:commit_time) { Time.now }
-  let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
-  let(:batch_write_resp) {
-    Google::Cloud::Spanner::V1::BatchWriteResponse.new(
-      status: Google::Rpc::Status.new(code: 0),
-      indexes: [5, 5]
-    )
-  }
-  let(:results_grpc) { Array(batch_write_resp).to_enum }
-  let(:commit_stats_grpc) {
-    Google::Cloud::Spanner::V1::CommitResponse::CommitStats.new(
-      mutation_count: 5
-    )
-  }
-  let(:commit_stats_resp_grpc) {
-    Google::Cloud::Spanner::V1::CommitResponse.new(
-      commit_timestamp: commit_timestamp, commit_stats: commit_stats_grpc
-    )
-  }
-  let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
   let(:user_mutations) {
@@ -121,11 +101,18 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
       Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: admin_mutations)
     ]
   }
+  let(:results_grpc) {
+    Google::Cloud::Spanner::V1::BatchWriteResponse.new(
+      indexes: [5, 5],
+      status: Google::Rpc::Status.new(code: 0)
+    )
+  }
+  let(:results_enum) { Array(results_grpc).to_enum }
 
   it "batch writes using groups of mutations" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-    mock.expect :batch_write, batch_write_resp, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
+    mock.expect :batch_write, results_enum, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
     spanner.service.mocked_service = mock
 
     results = client.batch_write do |b|
@@ -145,7 +132,8 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
       end
     end
 
-    _(results).must_be_kind_of Google::Protobuf::RepeatedField
+    _(results).must_be_kind_of Google::Cloud::Spanner::BatchWriteResults
+    _(results.indexes).must_be_kind_of Google::Protobuf::RepeatedField
 
     shutdown_client! client
 

@@ -32,7 +32,7 @@ describe "Spanner Client", :commit_timestamp, :spanner do
     end
   end
 
-  focus; it "performs batch operation" do
+  it "performs batch operation" do
     results = db.batch_write do |b|
       b.mutation_group do |mg|
         mg.update "accounts", [{ account_id: 1, username: "Charlie", active: false }]
@@ -40,7 +40,7 @@ describe "Spanner Client", :commit_timestamp, :spanner do
       end
 
     end
-    pp results
-    pp results.to_a
+    _(results).must_be_kind_of Google::Cloud::Spanner::BatchWriteResults
+    _(results.indexes).must_be_kind_of Google::Protobuf::RepeatedField
   end
 end

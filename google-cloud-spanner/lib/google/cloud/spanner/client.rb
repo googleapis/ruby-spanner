@@ -1715,13 +1715,11 @@ module Google
           raise ArgumentError, "Must provide a block" unless block_given?
 
           @pool.with_session do |session|
-            response = session.batch_write(
+            session.batch_write(
               request_options: request_options,
               call_options: call_options,
               &block
             )
-            batch_write_results = BatchWriteResults.new response
-            batch_write_results.indexes
           end
         end
 

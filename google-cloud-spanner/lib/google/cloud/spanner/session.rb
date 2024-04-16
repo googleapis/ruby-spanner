@@ -658,12 +658,15 @@ module Google
         end
 
         def batch_write request_options: nil, call_options: nil
+          ensure_service!
           b = BatchWrite.new
           yield b
-          # TODO: Process the response of RPC
-          service.batch_write path, b.mutation_groups_grpc,
-                              request_options: request_options,
-                              call_options: call_options
+          response = service.batch_write path, b.mutation_groups_grpc,
+                                         request_options: request_options,
+                                         call_options: call_options
+          results = BatchWriteResults.new response
+          @last_updated_at = Time.now
+          results
         end
 
         ##

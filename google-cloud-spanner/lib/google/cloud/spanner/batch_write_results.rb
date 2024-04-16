@@ -23,8 +23,9 @@ module Google
         # Google::Cloud::Spanner::V1::BatchWriteResponse
         attr_reader :grpc
 
-        def initialize grpc
-          @grpc = grpc
+        def initialize enum
+          @grpc = enum.peek
+          # TODO: Shoud I handle error here similar to from_enum() in Results class?
         end
 
         def indexes
