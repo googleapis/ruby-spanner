@@ -18,6 +18,13 @@ require "google/cloud/spanner/v1"
 module Google
   module Cloud
     module Spanner
+      ##
+      # # BatchWrite
+      #
+      # Accepts mutation groups a batch write of mutation.
+      #
+      # See {Google::Cloud::Spanner::Client#batch_write}.
+      #
       class BatchWrite
         # @private
         def initialize
@@ -26,12 +33,33 @@ module Google
 
         ##
         # Adds a groups of mutations
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   results = db.batch_write do |b|
+        #     # First mutation group
+        #     b.mutation_group do |mg|
+        #       mg.upsert "Singers", [{ SingerId: 16, FirstName: "Charlie", LastName: "Terry" }]
+        #     end
+        #
+        #     # Second mutation group
+        #     b.mutation_group do |mg|
+        #       mg.upsert "Singers", [{ SingerId: 17, FirstName: "Catalina", LastName: "Smith" }]
+        #       mg.update "Albums", [{ SingerId: 17, AlbumId: 1, AlbumTitle: "Go Go Go" }]
+        #     end
+        #   end
         def mutation_group
           mg = MutationGroup.new
           yield mg
           @mutation_groups << mg
         end
 
+        # @private
         def mutation_groups_grpc
           @mutation_groups.map do |mg|
             Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: mg.mutations)
