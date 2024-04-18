@@ -62,7 +62,7 @@ module Google
         # @private
         def mutation_groups_grpc
           @mutation_groups.map do |mg|
-            Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: mg.mutations)
+            Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new mutations: mg.mutations
           end
         end
       end

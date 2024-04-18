@@ -511,7 +511,7 @@ module Google
           request = {
             session: session_name,
             request_options: request_options,
-            mutation_groups: mutation_groups,
+            mutation_groups: mutation_groups
           }
           service.batch_write request, opts
         end
