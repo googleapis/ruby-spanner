@@ -18,6 +18,13 @@ module Google
     module Spanner
       ##
       # @private Helper class to process BatchWrite response
+      #
+      # TODO: This class should be modified to handle responses as a stream through pagination.
+      # As of now, it only supports loading all data into memory at once, which is not
+      # a good idea for large datasets.
+      #
+      # If the streaming is paginated, then the index() method should be changed to
+      # retrieve indexes as pages.
       class BatchWriteResults
         ## Object of type
         # Google::Cloud::Spanner::V1::BatchWriteResponse
@@ -25,7 +32,7 @@ module Google
 
         def initialize enum
           @grpc = enum.peek
-          # TODO: Shoud I handle error here similar to from_enum() in Results class?
+          # TODO: Shoud this class handle error here similar to from_enum() in Results class?
         end
 
         def indexes

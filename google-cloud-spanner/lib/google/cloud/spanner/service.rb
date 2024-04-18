@@ -505,7 +505,9 @@ module Google
                         call_options: nil
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 route_to_leader: "PLACEHOLDER" # TODO
+                                 # TODO: The design spec doesn't mention what
+                                 # value is sent for leader aware routing.
+                                 route_to_leader: nil
           request = {
             session: session_name,
             request_options: request_options,

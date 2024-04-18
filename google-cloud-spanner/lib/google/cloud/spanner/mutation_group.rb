@@ -95,7 +95,6 @@ module Google
         #     end
         #   end
         def upsert table, *rows
-          # TODO: Should I add ensure_sesion! to every method?
           @commit.upsert table, rows
         end
         alias save upsert
