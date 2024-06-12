@@ -116,7 +116,7 @@ module Google
         # @return [::Boolean]
         #
         def ok?
-          all? { |batch_result| batch_result.ok? }
+          all?(&:ok?)
         end
 
         ##

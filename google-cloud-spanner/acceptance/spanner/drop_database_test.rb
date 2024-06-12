@@ -56,8 +56,7 @@ describe "Spanner Databases Client", :spanner do
   end
 
   it "lists databases and checks for drop protection field" do
-    instance_path = \
-      client.instance_path project: spanner.project, instance: instance_id
+    instance_path = client.instance_path project: spanner.project, instance: instance_id
     all_databases = client.list_databases parent: instance_path
     _(all_databases.response).wont_be :nil?
     all_databases.each do |database|
