@@ -21,6 +21,8 @@ module Google
     module Spanner
       module Admin
         module Instance
+          # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize, Metrics/MethodLength
+
           ##
           # Create a new client object for a InstanceAdmin.
           #
@@ -81,7 +83,6 @@ module Google
           #
           # @return [Admin::Instance::V1::InstanceAdmin::Client] A client object of version V1.
           #
-          # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize, Metrics/MethodLength
           def self.instance_admin project_id: nil,
                                   credentials: nil,
                                   scope: nil,
@@ -135,16 +136,6 @@ module Google
           # Configure the Google Cloud Spanner Instance Admin library. This configuration can be
           # applied globally to all clients.
           #
-          # @example
-          #
-          # Modify the global config, setting the timeout to 10 seconds for all admin instances.
-          #
-          # require "google/cloud/spanner/admin/instance"
-          #
-          # ::Google::Cloud::Spanner::Admin::Instance.configure do |config|
-          #   config.timeout = 10.0
-          # end
-          #
           # The following configuration parameters are supported:
           #
           # * `credentials` (*type:* `String, Hash, Google::Auth::Credentials`) -
@@ -171,6 +162,13 @@ module Google
           #       The error codes that should trigger a retry.
           #
           # @return [::Google::Cloud::Config] The default configuration used by this library
+          #
+          # @example Modify the global config, setting the timeout to 10 seconds for all admin instances.
+          #   require "google/cloud/spanner/admin/instance"
+          #
+          #   ::Google::Cloud::Spanner::Admin::Instance.configure do |config|
+          #     config.timeout = 10.0
+          #   end
           #
           def self.configure
             @configure ||= begin

@@ -27,9 +27,8 @@ module Google
           # Instance::Config::List is a special case Array with additional
           # values.
           #
-          # @deprecated Use the result of
-          # {Google::Cloud::Spanner::Admin::Instance#instance_admin Client#list_instance_configs}
-          # instead.
+          # @deprecated Use the result of the
+          #   {Google::Cloud::Spanner::Admin::Instance.instance_admin}.list_instance_configs instead.
           class List < DelegateClass(::Array)
             ##
             # If not empty, indicates that there are more records that match
