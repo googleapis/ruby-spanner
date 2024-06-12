@@ -60,6 +60,10 @@ module Google
             "true"
           end
 
+          def batch_write
+            "true"
+          end
+
           def execute_batch_dml
             "true"
           end

@@ -101,18 +101,23 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
       Google::Cloud::Spanner::V1::BatchWriteRequest::MutationGroup.new(mutations: admin_mutations)
     ]
   }
-  let(:results_grpc) {
-    Google::Cloud::Spanner::V1::BatchWriteResponse.new(
-      indexes: [5, 5],
-      status: Google::Rpc::Status.new(code: 0)
-    )
+  let(:responses_enum) {
+    [
+      Google::Cloud::Spanner::V1::BatchWriteResponse.new(
+        indexes: [2],
+        status: Google::Rpc::Status.new(code: 0)
+      ),
+      Google::Cloud::Spanner::V1::BatchWriteResponse.new(
+        indexes: [1, 3],
+        status: Google::Rpc::Status.new(code: 0)
+      )
+    ].to_enum
   }
-  let(:results_enum) { Array(results_grpc).to_enum }
 
   it "batch writes using groups of mutations" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-    mock.expect :batch_write, results_enum, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
+    mock.expect :batch_write, responses_enum, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
     spanner.service.mocked_service = mock
 
     results = client.batch_write do |b|
@@ -133,7 +138,13 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
     end
 
     _(results).must_be_kind_of Google::Cloud::Spanner::BatchWriteResults
-    _(results.indexes).must_be_kind_of Google::Protobuf::RepeatedField
+    _(results.ok?).must_equal true
+    _(results.error?).must_equal false
+    _(results.ok_indexes.sort).must_equal [1, 2, 3]
+    _(results.first.indexes).must_equal [2]
+    _(results.first.status.code).must_equal 0
+    _(results.to_a.last.indexes).must_equal [1, 3]
+    _(results.to_a.last.status.code).must_equal 0
 
     shutdown_client! client
 

@@ -12,39 +12,129 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require "google/cloud/errors"
+require "google/cloud/spanner/convert"
 
 module Google
   module Cloud
     module Spanner
       ##
-      # @private Helper class to process BatchWrite response
+      # Results of a batch write.
       #
-      # TODO: This class should be modified to handle responses as a stream through pagination.
-      # As of now, it only supports loading all data into memory at once, which is not
-      # a good idea for large datasets.
+      # This is a stream of {BatchWriteResults::BatchResult} objects, each of
+      # which represents a set of mutation groups applied together.
       #
-      # If the streaming is paginated, then the index() method should be changed to
-      # retrieve indexes as pages.
+      # Use the Ruby Enumerable module to iterate over the results.
+      #
       class BatchWriteResults
-        ## Object of type
-        # Google::Cloud::Spanner::V1::BatchWriteResponse
-        attr_reader :grpc
+        ##
+        # Result of a set of mutation groups applied together.
+        #
+        class BatchResult
+          # @private
+          def initialize grpc
+            @grpc = grpc
+          end
 
-        def initialize enum
-          @grpc = enum.peek
-          # TODO: Shoud this class handle error here similar to from_enum() in Results class?
+          ##
+          # The indexes of the mutation groups applied together.
+          #
+          # @return [::Array<::Integer>]
+          #
+          def indexes
+            @grpc.indexes.to_a
+          end
+
+          ##
+          # The result of this set of mutation groups.
+          #
+          # @return [::Google::Rpc::Status]
+          #
+          def status
+            @grpc.status
+          end
+
+          ##
+          # Whether these mutation groups were successful.
+          #
+          # @return [::Boolean]
+          #
+          def ok?
+            status.code.zero?
+          end
+
+          ##
+          # Whether these mutation groups were unsuccessful.
+          #
+          # @return [::Boolean]
+          #
+          def error?
+            !ok?
+          end
+
+          ##
+          # The timestamp of the commit.
+          #
+          # @return [::Time]
+          #
+          def commit_timestamp
+            Convert.timestamp_to_time @grpc.commit_timestamp
+          end
         end
 
-        def indexes
-          if @grpc.status.code.zero?
-            @grpc.indexes
+        # @private
+        def initialize enum
+          @enumerable = enum
+        end
+
+        ##
+        # Iterate over the results.
+        #
+        # @yield [::Google::Cloud::Spanner::BatchWriteResults::BatchResult]
+        #
+        def each &block
+          if defined? @results
+            @results.each(&block)
           else
-            begin
-              raise Google::Cloud::Error.from_error @grpc.status
-            rescue Google::Cloud::Error
-              raise Google::Cloud::Spanner::BatchUpdateError.from_grpc @grpc
+            results = []
+            @enumerable.each do |grpc|
+              result = BatchResult.new grpc
+              results << result
+              yield result
             end
+            @results = results
           end
+        rescue GRPC::BadStatus => e
+          raise Google::Cloud::Error.from_error(e)
+        end
+
+        include Enumerable
+
+        ##
+        # Whether all mutation groups were successful.
+        #
+        # @return [::Boolean]
+        #
+        def ok?
+          all? { |batch_result| batch_result.ok? }
+        end
+
+        ##
+        # Whether at least one mutation group encountered an error.
+        #
+        # @return [::Boolean]
+        #
+        def error?
+          !ok?
+        end
+
+        ##
+        # A list of the indexes of successful mutation groups.
+        #
+        # @return [::Array<::Integer>]
+        #
+        def ok_indexes
+          flat_map { |batch_result| batch_result.ok? ? batch_result.indexes : [] }
         end
       end
     end

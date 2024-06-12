@@ -36,11 +36,15 @@ describe "Spanner Client", :commit_timestamp, :spanner do
     results = db.batch_write do |b|
       b.mutation_group do |mg|
         mg.update "accounts", [{ account_id: 1, username: "Charlie", active: false }]
+      end
+      b.mutation_group do |mg|
         mg.insert "accounts", [{ account_id: 4, username: "Harvey",  active: true }]
       end
-
     end
+
     _(results).must_be_kind_of Google::Cloud::Spanner::BatchWriteResults
-    _(results.indexes).must_be_kind_of Google::Protobuf::RepeatedField
+    _(results.ok?).must_equal true
+    _(results.error?).must_equal false
+    _(results.ok_indexes.sort).must_equal [0, 1]
   end
 end

@@ -95,14 +95,6 @@ module Google
           end
         end
       end
-
-      class BatchWriteError < Google::Cloud::Error
-        # If this class is really needed (i.e; if errors are not handled in BatchWriteResults),
-        # then this class shoud handle the parital results.
-        def self.from_grpc grpc
-          new
-        end
-      end
     end
   end
 end

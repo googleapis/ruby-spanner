@@ -503,11 +503,10 @@ module Google
                         mutation_groups,
                         request_options: nil,
                         call_options: nil
+          route_to_leader = LARHeaders.batch_write
           opts = default_options session_name: session_name,
                                  call_options: call_options,
-                                 # TODO: The design spec doesn't mention what
-                                 # value is sent for leader aware routing.
-                                 route_to_leader: nil
+                                 route_to_leader: route_to_leader
           request = {
             session: session_name,
             request_options: request_options,
