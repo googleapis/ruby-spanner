@@ -34,9 +34,8 @@ module Google
         # @see https://cloud.google.com/spanner/reference/rpc/google.longrunning#google.longrunning.Operation
         #   Long-running Operation
         #
-        # @deprecated Use the long-running operation returned by
-        # {Google::Cloud::Spanner::Admin::Instance#instance_admin Client#create_instance}
-        # instead.
+        # @deprecated Use the long-running operation returned by the
+        #   {Google::Cloud::Spanner::Admin::Instance.instance_admin}.create_instance instead.
         #
         # @example
         #   require "google/cloud/spanner"
