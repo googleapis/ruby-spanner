@@ -32,19 +32,39 @@ describe "Spanner Client", :commit_timestamp, :spanner do
     end
   end
 
+focus
   it "performs batch operation" do
+    new_rows = [
+      { account_id: 1, username: "Charlie", active: false },
+      { account_id: 4, username: "Harvey",  active: true },
+      { account_id: 5, username: "Becky", active: false }
+    ]
     results = db.batch_write do |b|
-      b.mutation_group do |mg|
-        mg.update "accounts", [{ account_id: 1, username: "Charlie", active: false }]
-      end
-      b.mutation_group do |mg|
-        mg.insert "accounts", [{ account_id: 4, username: "Harvey",  active: true }]
+      new_rows.each do |new_row|
+        b.mutation_group do |mg|
+          mg.update "accounts", [new_row]
+        end
       end
     end
 
-    _(results).must_be_kind_of Google::Cloud::Spanner::BatchWriteResults
-    _(results.ok?).must_equal true
-    _(results.error?).must_equal false
-    _(results.ok_indexes.sort).must_equal [0, 1]
+    # Ensure returned indexes cover what was requested with no overlaps
+    _(results.ok_indexes.sort).must_equal [0, 1, 2]
+
+    # Ensure that all ok results have a timestamp
+    results.each do |result|
+      _(result.commit_timestamp).wont_be(:nil?) if result.ok?
+    end
+
+    # Ensure that the rows were updated correctly
+    read_result = db.read "accounts", [:account_id, :username, :active]
+    read_rows = read_result.rows.to_h { |row| [row[:account_id], row.to_h] }
+    results.each do |result|
+      next unless result.ok?
+      result.indexes.each do |index|
+        expected_row = new_rows[index]
+        actual_row = read_rows[expected_row[:account_id]]
+        _(actual_row).must_equal expected_row
+      end
+    end
   end
 end
