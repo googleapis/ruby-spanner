@@ -26,9 +26,8 @@ module Google
         # Database::List is a special case Array with additional
         # values.
         #
-        # @deprecated Use the result of
-        # {Google::Cloud::Spanner::Admin::Database#database_admin Client#list_databases}
-        # instead.
+        # @deprecated Use the result of {Google::Cloud::Spanner::Admin::Database.database_admin}.list_databases
+        #   instead.
         class List < DelegateClass(::Array)
           ##
           # If not empty, indicates that there are more records that match

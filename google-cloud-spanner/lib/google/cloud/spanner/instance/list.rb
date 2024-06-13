@@ -26,9 +26,8 @@ module Google
         # Instance::List is a special case Array with additional
         # values.
         #
-        # @deprecated Use the result of
-        # {Google::Cloud::Spanner::Admin::Instance#instance_admin Client#list_instances}
-        # instead.
+        # @deprecated Use the result of {Google::Cloud::Spanner::Admin::Instance.instance_admin}.list_instances
+        #   instead.
         class List < DelegateClass(::Array)
           ##
           # If not empty, indicates that there are more records that match
