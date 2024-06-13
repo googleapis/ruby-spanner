@@ -19,11 +19,9 @@ module Google
   module Cloud
     module Spanner
       ##
-      # # BatchWrite
-      #
-      # Accepts mutation groups a batch write of mutation.
-      #
-      # See {Google::Cloud::Spanner::Client#batch_write}.
+      # Part of the BatchWrite DSL. This object is passed as a parameter to the block
+      # passed to {Google::Cloud::Spanner::Client#batch_write}. Use this object to add
+      # mutation groups to the batch.
       #
       class BatchWrite
         # @private
@@ -53,6 +51,7 @@ module Google
         #       mg.update "Albums", [{ SingerId: 17, AlbumId: 1, AlbumTitle: "Go Go Go" }]
         #     end
         #   end
+        #
         def mutation_group
           mg = MutationGroup.new
           yield mg

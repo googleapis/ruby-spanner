@@ -16,11 +16,10 @@ module Google
   module Cloud
     module Spanner
       ##
-      # # MutationGroup
-      #
-      # Accepts a group of mutations to be used for BatchWrite operation.
-      # All writes will execute atomically at a single logical point in time
-      # across columns, rows, and tables in a database.
+      # Part of the BatchWrite DSL. This object defines a group of mutations
+      # to be included in a BatchWrite operation. All writes within a mutation
+      # group will execute atomically at a single logical point in time across
+      # columns, rows, and tables in a database.
       #
       # All changes are accumulated in memory until the block passed to
       # {Client#batch_write} completes.
@@ -44,6 +43,7 @@ module Google
       #       mg.update "Albums", [{ SingerId: 17, AlbumId: 1, AlbumTitle: "Go Go Go" }]
       #     end
       #   end
+      #
       class MutationGroup
         # @private
         def initialize
@@ -94,6 +94,7 @@ module Google
         #       mg.upsert "Singers", [{ SingerId: 16, FirstName: "Charlie", LastName: "Terry" }]
         #     end
         #   end
+        #
         def upsert table, *rows
           @commit.upsert table, rows
         end
@@ -142,6 +143,7 @@ module Google
         #       mg.insert "Singers", [{ SingerId: 16, FirstName: "Charlie", LastName: "Terry" }]
         #     end
         #   end
+        #
         def insert table, *rows
           @commit.insert table, rows
         end
@@ -189,6 +191,7 @@ module Google
         #       mg.update "Singers", [{ SingerId: 16, FirstName: "Charlie", LastName: "Terry" }]
         #     end
         #   end
+        #
         def update table, *rows
           @commit.update table, rows
         end
@@ -238,6 +241,7 @@ module Google
         #       mg.replace "Singers", [{ SingerId: 16, FirstName: "Charlie", LastName: "Terry" }]
         #     end
         #   end
+        #
         def replace table, *rows
           @commit.replace table, rows
         end
@@ -267,6 +271,7 @@ module Google
         #       mg.delete "Singers", [1, 2, 3]
         #     end
         #   end
+        #
         def delete table, keys = []
           @commit.delete table, keys
         end
