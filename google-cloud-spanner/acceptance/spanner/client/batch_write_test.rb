@@ -40,10 +40,14 @@ focus
       { account_id: 5, username: "Becky", active: false }
     ]
     results = db.batch_write do |b|
-      new_rows.each do |new_row|
-        b.mutation_group do |mg|
-          mg.update "accounts", [new_row]
-        end
+      b.mutation_group do |mg|
+        mg.update "accounts", [new_rows[0]]
+      end
+      b.mutation_group do |mg|
+        mg.insert "accounts", [new_rows[1]]
+      end
+      b.mutation_group do |mg|
+        mg.insert "accounts", [new_rows[2]]
       end
     end
 
