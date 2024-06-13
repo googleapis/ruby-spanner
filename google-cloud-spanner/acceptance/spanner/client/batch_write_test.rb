@@ -32,8 +32,10 @@ describe "Spanner Client", :commit_timestamp, :spanner do
     end
   end
 
-focus
   it "performs batch operation" do
+    # BatchWrite not yet supported by the emulator
+    skip if emulator_enabled?
+
     new_rows = [
       { account_id: 1, username: "Charlie", active: false },
       { account_id: 4, username: "Harvey",  active: true },
