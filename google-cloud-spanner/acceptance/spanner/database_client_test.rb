@@ -23,8 +23,7 @@ describe "Spanner Databases Client", :spanner do
   it "creates, gets, updates, and drops a database" do
     client = Google::Cloud::Spanner::Admin::Database.database_admin project_id: spanner.project
 
-    instance_path = \
-      client.instance_path project: spanner.project, instance: instance_id
+    instance_path = client.instance_path project: spanner.project, instance: instance_id
 
     db_path = client.database_path project: spanner.project,
                                    instance: instance_id,
@@ -66,8 +65,7 @@ describe "Spanner Databases Client", :spanner do
     skip if emulator_enabled?
     client = Google::Cloud::Spanner::Admin::Database.database_admin project_id: spanner.project
 
-    instance_path = \
-      client.instance_path project: spanner.project, instance: instance_id
+    instance_path = client.instance_path project: spanner.project, instance: instance_id
 
     db_path = client.database_path project: spanner.project,
                                    instance: instance_id,
@@ -109,8 +107,7 @@ describe "Spanner Databases Client", :spanner do
   it "lists databases" do
     client = Google::Cloud::Spanner::Admin::Database.database_admin project_id: spanner.project
 
-    instance_path = \
-      client.instance_path project: spanner.project, instance: instance_id
+    instance_path = client.instance_path project: spanner.project, instance: instance_id
     all_databases = client.list_databases parent: instance_path
     _(all_databases.response).wont_be :nil?
     all_databases.each do |database|

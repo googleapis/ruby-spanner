@@ -36,8 +36,7 @@ module Google
         #   Long-running Operation
         #
         # @deprecated Use the long-running operation returned by
-        # {Google::Cloud::Spanner::Admin::Database#database_admin Client#create_database}
-        # instead.
+        #   {Google::Cloud::Spanner::Admin::Database.database_admin}.create_database instead.
         #
         # @example
         #   require "google/cloud/spanner"
