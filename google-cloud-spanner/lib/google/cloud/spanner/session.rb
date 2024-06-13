@@ -661,6 +661,21 @@ module Google
         # Batches the supplied mutation groups in a collection of efficient
         # transactions.
         #
+        # All mutations in a group are committed atomically. However, mutations
+        # across groups can be committed non-atomically in an unspecified order
+        # and thus they must be independent of each other. Partial failure is
+        # possible, i.e., some groups may have been committed successfully,
+        # while others may have failed. The results of individual batches are
+        # streamed into the response as the batches are applied.
+        #
+        # BatchWrite requests are not replay protected, meaning that each mutation
+        # group may be applied more than once. Replays of non-idempotent mutations
+        # may have undesirable effects. For example, replays of an insert mutation
+        # may produce an already exists error or if you use generated or commit
+        # timestamp-based keys, it may result in additional rows being added to the
+        # mutation's table. We recommend structuring your mutation groups to be
+        # idempotent to avoid this issue.
+        #
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -692,7 +707,10 @@ module Google
         # @yieldparam [Google::Cloud::Spanner::BatchWrite] batch_write a batch
         #   write object used to add mutaion groups through {MutationGroup}.
         #
-        # @return [Google::Cloud::Spanner::BatchWriteResults] The results of the batch write operation.
+        # @return [Google::Cloud::Spanner::BatchWriteResults] The results of
+        #   the batch write operation. This is a stream of responses, each
+        #   covering a set of the mutation groups that were either applied or
+        #   failed together.
         #
         # @example
         #   require "google/cloud/spanner"
@@ -713,6 +731,11 @@ module Google
         #       mg.update "Albums", [{ SingerId: 17, AlbumId: 1, AlbumTitle: "Go Go Go" }]
         #     end
         #   end
+        #
+        #   results.each do |response|
+        #     puts "groups applied: #{response.indexes}" if response.ok?
+        #   end
+        #
         def batch_write request_options: nil, call_options: nil
           ensure_service!
           b = BatchWrite.new
