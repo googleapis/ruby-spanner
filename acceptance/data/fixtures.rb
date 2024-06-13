@@ -29,6 +29,7 @@ module Acceptance
               timestamp TIMESTAMP OPTIONS (allow_commit_timestamp=true),
               ints ARRAY<INT64>,
               floats ARRAY<FLOAT64>,
+              float32s ARRAY<FLOAT32>,
               bools ARRAY<BOOL>,
               strings ARRAY<STRING(MAX)>,
               bytes ARRAY<BYTES(MAX)>,
