@@ -83,6 +83,7 @@ module Google
         #   | `BOOL`      | `true`/`false` | |
         #   | `INT64`     | `Integer`      | |
         #   | `FLOAT64`   | `Float`        | |
+        #   | `FLOAT32`   | `Float`        | |
         #   | `NUMERIC`   | `BigDecimal`   | |
         #   | `STRING`    | `String`       | |
         #   | `DATE`      | `Date`         | |
@@ -109,6 +110,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:NUMERIC`
         #   * `:INT64`
         #   * `:STRING`
@@ -310,7 +312,7 @@ module Google
                                      transaction: tx_selector,
                                      query_options: query_options,
                                      call_options: call_options,
-                                     directed_read_options: (directed_read_options || @directed_read_options)
+                                     directed_read_options: directed_read_options || @directed_read_options
         end
         alias execute execute_query
         alias query execute_query
@@ -387,7 +389,7 @@ module Google
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
                                        call_options: call_options,
-                                       directed_read_options: (directed_read_options || @directed_read_options)
+                                       directed_read_options: directed_read_options || @directed_read_options
         end
 
         ##
@@ -416,6 +418,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:NUMERIC`
         #   * `:INT64`
         #   * `:STRING`

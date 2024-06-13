@@ -28,9 +28,7 @@ module Google
         # Google::Cloud::Spanner::Backup::List is a special case Array with
         # additional values.
         #
-        # @deprecated Use the result of
-        # {Google::Cloud::Spanner::Admin::Database#database_admin Client#list_backups}
-        # instead.
+        # @deprecated Use the result of {Google::Cloud::Spanner::Admin::Database.database_admin}.list_backups instead.
         #
         class List < DelegateClass(::Array)
           # @private

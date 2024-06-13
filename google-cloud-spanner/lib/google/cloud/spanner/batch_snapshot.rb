@@ -101,12 +101,13 @@ module Google
         # configured, although the values given may not necessarily be honored
         # depending on the query and options in the request.
         #
-        # The query must have a single [distributed
+        # The request will fail if the query is not root partitionable. For a
+        # query to be root partitionable, it needs to satisfy a few conditions.
+        # For example, if the query execution plan contains a [distributed
         # union](https://cloud.google.com/spanner/docs/query-execution-operators#distributed_union)
-        # operator at the root of the query plan. Such queries are
-        # root-partitionable. If a query cannot be partitioned at the root,
-        # Cloud Spanner cannot achieve the parallelism and in this case
-        # partition generation will fail.
+        # operator, then it must be the first operator in the plan. For more
+        # information about other conditions, see [Read data in
+        # parallel](https://cloud.google.com/spanner/docs/reads#read_data_in_parallel).
         #
         # @param [String] sql The SQL query string. See [Query
         #   syntax](https://cloud.google.com/spanner/docs/query-syntax).
@@ -128,6 +129,7 @@ module Google
         #   | `BOOL`      | `true`/`false` | |
         #   | `INT64`     | `Integer`      | |
         #   | `FLOAT64`   | `Float`        | |
+        #   | `FLOAT32`   | `Float`        | |
         #   | `STRING`    | `String`       | |
         #   | `DATE`      | `Date`         | |
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
@@ -153,6 +155,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
@@ -255,7 +258,7 @@ module Google
                 partition_token: grpc.partition_token,
                 query_options: query_options,
                 data_boost_enabled: data_boost_enabled,
-                directed_read_options: (directed_read_options || @directed_read_options)
+                directed_read_options: directed_read_options || @directed_read_options
               }.compact
             )
             Partition.from_execute_sql_grpc execute_sql_grpc
@@ -365,7 +368,7 @@ module Google
                 transaction: tx_selector,
                 partition_token: grpc.partition_token,
                 data_boost_enabled: data_boost_enabled,
-                directed_read_options: (directed_read_options || @directed_read_options)
+                directed_read_options: directed_read_options || @directed_read_options
               }.compact
             )
             Partition.from_read_grpc read_grpc
@@ -477,6 +480,7 @@ module Google
         #   | `BOOL`      | `true`/`false` | |
         #   | `INT64`     | `Integer`      | |
         #   | `FLOAT64`   | `Float`        | |
+        #   | `FLOAT32`   | `Float`        | |
         #   | `STRING`    | `String`       | |
         #   | `DATE`      | `Date`         | |
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
@@ -502,6 +506,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
@@ -704,7 +709,7 @@ module Google
                                 transaction: tx_selector,
                                 query_options: query_options,
                                 call_options: call_options,
-                                directed_read_options: (directed_read_options || @directed_read_options)
+                                directed_read_options: directed_read_options || @directed_read_options
         end
         alias execute execute_query
         alias query execute_query
@@ -780,7 +785,7 @@ module Google
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
                                        call_options: call_options,
-                                       directed_read_options: (directed_read_options || @directed_read_options)
+                                       directed_read_options: directed_read_options || @directed_read_options
         end
 
         ##

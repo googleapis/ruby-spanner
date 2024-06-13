@@ -59,6 +59,7 @@ module Google
         #   | `BOOL`      | `true`/`false` | |
         #   | `INT64`     | `Integer`      | |
         #   | `FLOAT64`   | `Float`        | |
+        #   | `FLOAT32`   | `Float`        | |
         #   | `STRING`    | `String`       | |
         #   | `DATE`      | `Date`         | |
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
@@ -85,6 +86,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
@@ -153,8 +155,7 @@ module Google
           end
 
           def to_grpc
-            converted_params, converted_types = \
-              Convert.to_input_params_and_types params, types
+            converted_params, converted_types = Convert.to_input_params_and_types params, types
             # param_types is a grpc map field, can't be nil
             converted_types ||= {}
             V1::ExecuteBatchDmlRequest::Statement.new(

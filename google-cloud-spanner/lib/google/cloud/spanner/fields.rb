@@ -63,6 +63,7 @@ module Google
         #   * `:BYTES`
         #   * `:DATE`
         #   * `:FLOAT64`
+        #   * `:FLOAT32`
         #   * `:NUMERIC`
         #   * `:INT64`
         #   * `:STRING`
@@ -173,7 +174,7 @@ module Google
         # @return [Boolean] Returns `true` if there are duplicate names.
         #
         def duplicate_names?
-          keys.group_by { |e| e }.select { |_k, v| v.size > 1 }.any?
+          keys.group_by { |e| e }.any? { |_k, v| v.size > 1 }
         end
 
         ##
