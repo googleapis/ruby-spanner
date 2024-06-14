@@ -140,34 +140,32 @@ db_job = instance.create_database $spanner_database_id, statements: fixture.sche
 db_job.wait_until_done!
 raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
-unless emulator_enabled?
-  instance_path = $spanner_db_admin.instance_path project: $spanner.project_id, instance: $spanner_instance_id
-  db_job = $spanner_db_admin.create_database parent: instance_path,
+instance_path = $spanner_db_admin.instance_path project: $spanner.project_id, instance: $spanner_instance_id
+db_job = $spanner_db_admin.create_database parent: instance_path,
                                              create_statement: "CREATE DATABASE \"#{$spanner_pg_database_id}\"",
                                              database_dialect: :POSTGRESQL
-  db_job.wait_until_done!
-  raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-  db_path = $spanner_db_admin.database_path project: $spanner.project_id,
+db_job.wait_until_done!
+raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+db_path = $spanner_db_admin.database_path project: $spanner.project_id,
                                             instance: $spanner_instance_id,
                                             database: $spanner_pg_database_id
 
-  db_job = $spanner_db_admin.update_database_ddl database: db_path, statements: fixture.schema_pg_ddl_statements
-  db_job.wait_until_done!
-  raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-end
+db_job = $spanner_db_admin.update_database_ddl database: db_path, statements: fixture.schema_pg_ddl_statements
+db_job.wait_until_done!
+raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
 # Create one client for all tests, to minimize resource usage
 $spanner_client = $spanner.client $spanner_instance_id, $spanner_database_id
-$spanner_pg_client = $spanner.client $spanner_instance_id, $spanner_pg_database_id unless emulator_enabled?
+$spanner_pg_client = $spanner.client $spanner_instance_id, $spanner_pg_database_id
 
 def clean_up_spanner_objects
   puts "Cleaning up instances and databases after spanner tests."
   $spanner.instance($spanner_instance_id).database($spanner_database_id).drop
-  $spanner.instance($spanner_instance_id).database($spanner_pg_database_id).drop unless emulator_enabled?
+  $spanner.instance($spanner_instance_id).database($spanner_pg_database_id).drop
 
   puts "Closing the Spanner Client."
   $spanner_client.close
-  $spanner_pg_client.close unless emulator_enabled?
+  $spanner_pg_client.close
 
   puts "Cleaning up instances databases and backups after spanner tests."
   instance = $spanner.instance $spanner_instance_id
