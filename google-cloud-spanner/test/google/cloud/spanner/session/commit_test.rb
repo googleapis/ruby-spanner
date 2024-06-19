@@ -24,6 +24,10 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
   let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
   let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
+  let(:tx_opts_with_change_stream_exclusion) {
+    Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+                                                       exclude_txn_from_change_streams: true
+  }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
 
   it "commits using a block" do
@@ -261,6 +265,25 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
     session.service.mocked_service = mock
 
     timestamp = session.delete "users"
+    _(timestamp).must_equal commit_time
+
+    mock.verify
+  end
+
+  it "passes exclude_txn_from_change_streams" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :commit, commit_resp, [{ session: session.path, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_with_change_stream_exclusion, request_options: nil }, default_options]
+    session.service.mocked_service = mock
+
+    timestamp = session.delete "users", exclude_txn_from_change_streams: true
     _(timestamp).must_equal commit_time
 
     mock.verify
