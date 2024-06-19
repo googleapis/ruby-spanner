@@ -142,13 +142,13 @@ raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.err
 
 instance_path = $spanner_db_admin.instance_path project: $spanner.project_id, instance: $spanner_instance_id
 db_job = $spanner_db_admin.create_database parent: instance_path,
-                                             create_statement: "CREATE DATABASE \"#{$spanner_pg_database_id}\"",
-                                             database_dialect: :POSTGRESQL
+                                           create_statement: "CREATE DATABASE \"#{$spanner_pg_database_id}\"",
+                                           database_dialect: :POSTGRESQL
 db_job.wait_until_done!
 raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 db_path = $spanner_db_admin.database_path project: $spanner.project_id,
-                                            instance: $spanner_instance_id,
-                                            database: $spanner_pg_database_id
+                                          instance: $spanner_instance_id,
+                                          database: $spanner_pg_database_id
 
 db_job = $spanner_db_admin.update_database_ddl database: db_path, statements: fixture.schema_pg_ddl_statements
 db_job.wait_until_done!
