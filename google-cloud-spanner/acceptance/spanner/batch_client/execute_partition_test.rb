@@ -18,11 +18,11 @@ describe "Spanner Batch Client", :execute_partition, :spanner do
   let(:db) { spanner_client }
   let(:pg_db) { spanner_pg_client }
   let(:batch_client) { $spanner.batch_client $spanner_instance_id, $spanner_database_id }
-  let(:pg_batch_client) { $spanner.batch_client $spanner_instance_id, $spanner_pg_database_id unless emulator_enabled? }
+  let(:pg_batch_client) { $spanner.batch_client $spanner_instance_id, $spanner_pg_database_id }
   let(:table_name) { "stuffs" }
   let(:table_index) { "IsStuffsIdPrime" }
   let(:batch_snapshot) { batch_client.batch_snapshot }
-  let(:pg_batch_snapshot) { pg_batch_client.batch_snapshot unless emulator_enabled? }
+  let(:pg_batch_snapshot) { pg_batch_client.batch_snapshot }
 
   before do
     db.delete table_name # remove all data
@@ -40,23 +40,21 @@ describe "Spanner Batch Client", :execute_partition, :spanner do
       { id: 11, bool: true },
       { id: 12, bool: false }
     ]
-    pg_db.delete table_name unless emulator_enabled?
-    unless emulator_enabled?
-      pg_db.insert table_name, [
-        { id: 1, bool: false },
-        { id: 2, bool: false },
-        { id: 3, bool: true },
-        { id: 4, bool: false },
-        { id: 5, bool: true },
-        { id: 6, bool: false },
-        { id: 7, bool: true },
-        { id: 8, bool: false },
-        { id: 9, bool: false },
-        { id: 10, bool: false },
-        { id: 11, bool: true },
-        { id: 12, bool: false }
-      ]
-    end
+    pg_db.delete table_name
+    pg_db.insert table_name, [
+      { id: 1, bool: false },
+      { id: 2, bool: false },
+      { id: 3, bool: true },
+      { id: 4, bool: false },
+      { id: 5, bool: true },
+      { id: 6, bool: false },
+      { id: 7, bool: true },
+      { id: 8, bool: false },
+      { id: 9, bool: false },
+      { id: 10, bool: false },
+      { id: 11, bool: true },
+      { id: 12, bool: false }
+    ]
   end
 
   after do
@@ -134,7 +132,6 @@ describe "Spanner Batch Client", :execute_partition, :spanner do
   end
 
   it "reads all by default in pg" do
-    skip if emulator_enabled?
     _(pg_batch_snapshot.timestamp).must_be_kind_of Time
     serialized_snapshot = pg_batch_snapshot.dump
 
@@ -226,7 +223,6 @@ describe "Spanner Batch Client", :execute_partition, :spanner do
   end
 
   it "queries all by default in pg" do
-    skip if emulator_enabled?
     pg_batch_snapshot = pg_batch_client.batch_snapshot
     serialized_snapshot = pg_batch_snapshot.dump
 
@@ -284,7 +280,6 @@ describe "Spanner Batch Client", :execute_partition, :spanner do
   end
 
   it "queries all by default with query options pg" do
-    skip if emulator_enabled?
     pg_batch_snapshot = pg_batch_client.batch_snapshot
     serialized_snapshot = pg_batch_snapshot.dump
 
