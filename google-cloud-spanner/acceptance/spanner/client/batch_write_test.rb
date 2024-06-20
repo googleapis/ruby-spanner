@@ -54,7 +54,7 @@ describe "Spanner Client", :commit_timestamp, :spanner do
     end
 
     # Ensure returned indexes cover what was requested with no overlaps
-    _(results.ok_indexes.sort).must_equal [0, 1, 2]
+    _(results.successful_indexes.sort).must_equal [0, 1, 2]
 
     # Ensure that all ok results have a timestamp
     results.each do |result|

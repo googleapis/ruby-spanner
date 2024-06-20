@@ -140,7 +140,7 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
     _(results).must_be_kind_of Google::Cloud::Spanner::BatchWriteResults
     _(results.ok?).must_equal true
     _(results.error?).must_equal false
-    _(results.ok_indexes.sort).must_equal [1, 2, 3]
+    _(results.successful_indexes.sort).must_equal [1, 2, 3]
     _(results.first.indexes).must_equal [2]
     _(results.first.status.code).must_equal 0
     _(results.to_a.last.indexes).must_equal [1, 3]

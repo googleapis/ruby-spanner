@@ -19,8 +19,10 @@ module Google
   module Cloud
     module Spanner
       ##
-      # Part of the BatchWrite DSL. This object is passed as a parameter to the block
-      # passed to {Google::Cloud::Spanner::Client#batch_write}. Use this object to add
+      # Part of the BatchWrite DSL.
+      #
+      # This object is passed as a parameter to the block passed to
+      # {Google::Cloud::Spanner::Client#batch_write}. Use this parameter to add
       # mutation groups to the batch.
       #
       class BatchWrite
@@ -30,7 +32,7 @@ module Google
         end
 
         ##
-        # Adds a groups of mutations
+        # Adds a group of mutations
         #
         # @example
         #   require "google/cloud/spanner"

@@ -133,7 +133,7 @@ module Google
         #
         # @return [::Array<::Integer>]
         #
-        def ok_indexes
+        def successful_indexes
           flat_map { |batch_result| batch_result.ok? ? batch_result.indexes : [] }
         end
       end
