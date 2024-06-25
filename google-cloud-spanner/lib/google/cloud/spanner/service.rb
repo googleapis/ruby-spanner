@@ -499,6 +499,22 @@ module Google
           service.begin_transaction request, opts
         end
 
+        def batch_write session_name,
+                        mutation_groups,
+                        request_options: nil,
+                        call_options: nil
+          route_to_leader = LARHeaders.batch_write
+          opts = default_options session_name: session_name,
+                                 call_options: call_options,
+                                 route_to_leader: route_to_leader
+          request = {
+            session: session_name,
+            request_options: request_options,
+            mutation_groups: mutation_groups
+          }
+          service.batch_write request, opts
+        end
+
         def create_snapshot session_name, strong: nil, timestamp: nil,
                             staleness: nil, call_options: nil
           tx_opts = V1::TransactionOptions.new(

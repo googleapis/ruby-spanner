@@ -25,6 +25,7 @@ require "google/cloud/spanner/column_value"
 require "google/cloud/spanner/convert"
 require "google/cloud/spanner/commit_response"
 require "google/cloud/spanner/lar_headers"
+require "google/cloud/spanner/batch_write_results"
 
 module Google
   module Cloud
@@ -1706,6 +1707,97 @@ module Google
             session.commit(
               commit_options: commit_options, request_options: request_options,
               call_options: call_options, &block
+            )
+          end
+        end
+
+        ##
+        # Batches the supplied mutation groups in a collection of efficient
+        # transactions.
+        #
+        # All mutations in a group are committed atomically. However, mutations
+        # across groups can be committed non-atomically in an unspecified order
+        # and thus they must be independent of each other. Partial failure is
+        # possible, i.e., some groups may have been committed successfully,
+        # while others may have failed. The results of individual batches are
+        # streamed into the response as the batches are applied.
+        #
+        # BatchWrite requests are not replay protected, meaning that each mutation
+        # group may be applied more than once. Replays of non-idempotent mutations
+        # may have undesirable effects. For example, replays of an insert mutation
+        # may produce an already exists error or if you use generated or commit
+        # timestamp-based keys, it may result in additional rows being added to the
+        # mutation's table. We recommend structuring your mutation groups to be
+        # idempotent to avoid this issue.
+        #
+        # @param [Hash] request_options Common request options.
+        #
+        #   * `:priority` (String) The relative priority for requests.
+        #     The priority acts as a hint to the Cloud Spanner scheduler
+        #     and does not guarantee priority or order of execution.
+        #     Valid values are `:PRIORITY_LOW`, `:PRIORITY_MEDIUM`,
+        #     `:PRIORITY_HIGH`. If priority not set then default is
+        #     `PRIORITY_UNSPECIFIED` is equivalent to `:PRIORITY_HIGH`.
+        #   * `:tag` (String) A per-request tag which can be applied to
+        #     queries or reads, used for statistics collection. Tag must be a
+        #     valid identifier of the form: `[a-zA-Z][a-zA-Z0-9_\-]` between 2
+        #     and 64 characters in length.
+        #
+        # @param [Hash] call_options A hash of values to specify the custom
+        #   call options, e.g., timeout, retries, etc. Call options are
+        #   optional. The following settings can be provided:
+        #
+        #   * `:timeout` (Numeric) A numeric value of custom timeout in seconds
+        #     that overrides the default setting.
+        #   * `:retry_policy` (Hash) A hash of values that overrides the default
+        #     setting of retry policy with the following keys:
+        #     * `:initial_delay` (`Numeric`) - The initial delay in seconds.
+        #     * `:max_delay` (`Numeric`) - The max delay in seconds.
+        #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
+        #     * `:retry_codes` (`Array<String>`) - The error codes that should
+        #       trigger a retry.
+        #
+        # @yield [batch_write] a batch write object
+        # @yieldparam [Google::Cloud::Spanner::BatchWrite] batch_write a batch
+        #   write object used to add mutaion groups through {MutationGroup}.
+        #
+        # @return [Google::Cloud::Spanner::BatchWriteResults] The results of
+        #   the batch write operation. This is a stream of responses, each
+        #   covering a set of the mutation groups that were either applied or
+        #   failed together.
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   results = db.batch_write do |b|
+        #     # First mutation group
+        #     b.mutation_group do |mg|
+        #       mg.upsert "Singers", [{ SingerId: 16, FirstName: "Charlie", LastName: "Terry" }]
+        #     end
+        #
+        #     # Second mutation group
+        #     b.mutation_group do |mg|
+        #       mg.upsert "Singers", [{ SingerId: 17, FirstName: "Catalina", LastName: "Smith" }]
+        #       mg.update "Albums", [{ SingerId: 17, AlbumId: 1, AlbumTitle: "Go Go Go" }]
+        #     end
+        #   end
+        #
+        #   results.each do |response|
+        #     puts "groups applied: #{response.indexes}" if response.ok?
+        #   end
+        #
+        def batch_write request_options: nil, call_options: nil, &block
+          raise ArgumentError, "Must provide a block" unless block_given?
+
+          @pool.with_session do |session|
+            session.batch_write(
+              request_options: request_options,
+              call_options: call_options,
+              &block
             )
           end
         end
