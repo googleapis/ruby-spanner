@@ -85,9 +85,13 @@ module Google
         # @private Transaction tag for statistics collection.
         attr_accessor :transaction_tag
 
+        # @private Whether to exclude from change streams.
+        attr_accessor :exclude_txn_from_change_streams
+
         def initialize
           @commit = Commit.new
           @seqno = 0
+          @exclude_txn_from_change_streams = false
 
           # Mutex to enfore thread safety for transaction creation and query executions.
           #
@@ -1152,10 +1156,11 @@ module Google
         ##
         # @private Creates a new Transaction instance from a
         # `Google::Cloud::Spanner::V1::Transaction`.
-        def self.from_grpc grpc, session
+        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false
           new.tap do |s|
             s.instance_variable_set :@grpc,    grpc
             s.instance_variable_set :@session, session
+            s.exclude_txn_from_change_streams = exclude_txn_from_change_streams
           end
         end
 
@@ -1216,11 +1221,12 @@ module Google
         #
         #   This method is expected to be called from within `safe_execute()` method's block,
         #   since it provides synchronization and gurantees thread safety.
-        def tx_selector
+        def tx_selector exclude_txn_from_change_streams: false
           return V1::TransactionSelector.new id: transaction_id if existing_transaction?
           V1::TransactionSelector.new(
             begin: V1::TransactionOptions.new(
-              read_write: V1::TransactionOptions::ReadWrite.new
+              read_write: V1::TransactionOptions::ReadWrite.new,
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams
             )
           )
         end

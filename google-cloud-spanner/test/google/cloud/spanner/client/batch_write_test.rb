@@ -117,10 +117,10 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
   it "batch writes using groups of mutations" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-    mock.expect :batch_write, responses_enum, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil }, default_options]
+    mock.expect :batch_write, responses_enum, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil, exclude_txn_from_change_streams: true }, default_options]
     spanner.service.mocked_service = mock
 
-    results = client.batch_write do |b|
+    results = client.batch_write exclude_txn_from_change_streams: true do |b|
       b.mutation_group do |mg|
         mg.update "users", [{ id: 1, name: "Charlie", active: false }]
         mg.insert "users", [{ id: 2, name: "Harvey",  active: true }]

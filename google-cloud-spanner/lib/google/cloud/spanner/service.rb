@@ -435,13 +435,15 @@ module Google
           service.partition_query request, opts
         end
 
-        def commit session_name, mutations = [], transaction_id: nil,
+        def commit session_name, mutations = [],
+                   transaction_id: nil, exclude_txn_from_change_streams: false,
                    commit_options: nil, request_options: nil, call_options: nil
           route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
             tx_opts = V1::TransactionOptions.new(
-              read_write: V1::TransactionOptions::ReadWrite.new
+              read_write: V1::TransactionOptions::ReadWrite.new,
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams
             )
           end
           opts = default_options session_name: session_name,
@@ -482,11 +484,14 @@ module Google
           service.rollback request, opts
         end
 
-        def begin_transaction session_name, request_options: nil,
+        def begin_transaction session_name,
+                              exclude_txn_from_change_streams: false,
+                              request_options: nil,
                               call_options: nil,
                               route_to_leader: nil
           tx_opts = V1::TransactionOptions.new(
-            read_write: V1::TransactionOptions::ReadWrite.new
+            read_write: V1::TransactionOptions::ReadWrite.new,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams
           )
           opts = default_options session_name: session_name,
                                  call_options: call_options,
@@ -501,6 +506,7 @@ module Google
 
         def batch_write session_name,
                         mutation_groups,
+                        exclude_txn_from_change_streams: false,
                         request_options: nil,
                         call_options: nil
           route_to_leader = LARHeaders.batch_write
@@ -510,7 +516,8 @@ module Google
           request = {
             session: session_name,
             request_options: request_options,
-            mutation_groups: mutation_groups
+            mutation_groups: mutation_groups,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams
           }
           service.batch_write request, opts
         end
@@ -533,9 +540,12 @@ module Google
           service.begin_transaction request, opts
         end
 
-        def create_pdml session_name, call_options: nil
+        def create_pdml session_name,
+                        exclude_txn_from_change_streams: false,
+                        call_options: nil
           tx_opts = V1::TransactionOptions.new(
-            partitioned_dml: V1::TransactionOptions::PartitionedDml.new
+            partitioned_dml: V1::TransactionOptions::PartitionedDml.new,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams
           )
           route_to_leader = LARHeaders.begin_transaction true
           opts = default_options session_name: session_name,

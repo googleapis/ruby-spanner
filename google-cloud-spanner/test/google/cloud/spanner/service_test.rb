@@ -15,56 +15,124 @@
 require "helper"
 
 describe Google::Cloud::Spanner::Service, :mock_spanner  do
-    let(:instance_id) { "my-instance-id" }
-    let(:database_id) { "my-database-id" }
-    let(:session_id) { "session123" }
-    let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-    let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
+  let(:instance_id) { "my-instance-id" }
+  let(:database_id) { "my-database-id" }
+  let(:session_id) { "session123" }
+  let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
+  let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
+  let(:basic_service) { Google::Cloud::Spanner::Service.new "test_project", nil }
+  let(:expected_call_opts) {
+    metadata = {
+      "google-cloud-resource-prefix" => session_id
+    }
+    Gapic::CallOptions.new metadata: metadata
+  }
 
-    describe ".new" do
-      it "sets quota_project with given value" do
-        expected_quota_project = "test_quota_project"
-        service = Google::Cloud::Spanner::Service.new(
-          "test_project", nil, quota_project: expected_quota_project
-        )
-        assert_equal expected_quota_project, service.quota_project
-      end
-
-      it "sets quota_project from credentials if not given from config" do 
-        expected_quota_project = "test_quota_project"
-        service = Google::Cloud::Spanner::Service.new(
-          "test_project", OpenStruct.new(quota_project_id: expected_quota_project)
-        )
-        assert_equal expected_quota_project, service.quota_project
-      end
-
+  describe ".new" do
+    it "sets quota_project with given value" do
+      expected_quota_project = "test_quota_project"
+      service = Google::Cloud::Spanner::Service.new(
+        "test_project", nil, quota_project: expected_quota_project
+      )
+      assert_equal expected_quota_project, service.quota_project
     end
 
-    describe ".create_session" do
-      it "creates session with given database role" do
-        mock = Minitest::Mock.new
-        session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
-        mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: session }, default_options]
-        service = Google::Cloud::Spanner::Service.new(
-            "test_project", OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new{""}))
-        )
-        service.mocked_service = mock  
-        service.create_session database_path(instance_id, database_id), database_role: "test_role"
-        mock.verify
-      end
+    it "sets quota_project from credentials if not given from config" do 
+      expected_quota_project = "test_quota_project"
+      service = Google::Cloud::Spanner::Service.new(
+        "test_project", OpenStruct.new(quota_project_id: expected_quota_project)
+      )
+      assert_equal expected_quota_project, service.quota_project
     end
 
-    describe ".batch_create_sessions" do
-      it "batch creates session with given database role" do
-        mock = Minitest::Mock.new
-        session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
-        mock.expect :batch_create_sessions, OpenStruct.new(session: Array.new(10) { session_grpc }), [{database: database_path(instance_id, database_id), session_count: 10, session_template: session }, default_options]
-        service = Google::Cloud::Spanner::Service.new(
-            "test_project", OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new{""}))
-        )
-        service.mocked_service = mock  
-        service.batch_create_sessions database_path(instance_id, database_id), 10, database_role: "test_role"
-        mock.verify
-      end
+  end
+
+  describe ".create_session" do
+    it "creates session with given database role" do
+      mock = Minitest::Mock.new
+      session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
+      mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: session }, default_options]
+      service = Google::Cloud::Spanner::Service.new(
+          "test_project", OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new{""}))
+      )
+      service.mocked_service = mock  
+      service.create_session database_path(instance_id, database_id), database_role: "test_role"
+      mock.verify
     end
+  end
+
+  describe ".batch_create_sessions" do
+    it "batch creates session with given database role" do
+      mock = Minitest::Mock.new
+      session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
+      mock.expect :batch_create_sessions, OpenStruct.new(session: Array.new(10) { session_grpc }), [{database: database_path(instance_id, database_id), session_count: 10, session_template: session }, default_options]
+      service = Google::Cloud::Spanner::Service.new(
+          "test_project", OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new{""}))
+      )
+      service.mocked_service = mock  
+      service.batch_create_sessions database_path(instance_id, database_id), 10, database_role: "test_role"
+      mock.verify
+    end
+  end
+
+  describe "#begin_transaction" do
+    it "sets the exclude_txn_from_change_streams field" do
+      mocked_service = Minitest::Mock.new
+      expected_request = {
+        session: session_id,
+        options: Google::Cloud::Spanner::V1::TransactionOptions.new(
+          read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+          exclude_txn_from_change_streams: true
+        ),
+        request_options: nil
+      }
+      expected_result = Object.new
+      mocked_service.expect :begin_transaction, expected_result, [expected_request, expected_call_opts]
+      basic_service.mocked_service = mocked_service
+      result = basic_service.begin_transaction session_id, exclude_txn_from_change_streams: true
+      mocked_service.verify
+      assert_equal expected_result, result
+    end
+  end
+
+  describe "#commit" do
+    it "sets the exclude_txn_from_change_streams field" do
+      mocked_service = Minitest::Mock.new
+      expected_request = {
+        session: session_id,
+        transaction_id: nil,
+        single_use_transaction: Google::Cloud::Spanner::V1::TransactionOptions.new(
+          read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+          exclude_txn_from_change_streams: true
+        ),
+        mutations: [],
+        request_options: nil
+      }
+      expected_result = Object.new
+      mocked_service.expect :commit, expected_result, [expected_request, expected_call_opts]
+      basic_service.mocked_service = mocked_service
+      result = basic_service.commit session_id, [], exclude_txn_from_change_streams: true
+      mocked_service.verify
+      assert_equal expected_result, result
+    end
+  end
+
+  describe "#create_pdml" do
+    it "sets the exclude_txn_from_change_streams field" do
+      mocked_service = Minitest::Mock.new
+      expected_request = {
+        session: session_id,
+        options: Google::Cloud::Spanner::V1::TransactionOptions.new(
+          partitioned_dml: Google::Cloud::Spanner::V1::TransactionOptions::PartitionedDml.new,
+          exclude_txn_from_change_streams: true
+        )
+      }
+      expected_result = Object.new
+      mocked_service.expect :begin_transaction, expected_result, [expected_request, expected_call_opts]
+      basic_service.mocked_service = mocked_service
+      result = basic_service.create_pdml session_id, exclude_txn_from_change_streams: true
+      mocked_service.verify
+      assert_equal expected_result, result
+    end
+  end
 end

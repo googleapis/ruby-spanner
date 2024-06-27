@@ -625,6 +625,9 @@ module Google
         #     `[:INT64]`.
         #   * {Fields} - Nested Structs are specified by providing a Fields
         #     object.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] query_options A hash of values to specify the custom
         #   query options for executing SQL query. Query options are optional.
         #   The following settings can be provided:
@@ -736,6 +739,7 @@ module Google
         #     request_options: request_options
         #
         def execute_partition_update sql, params: nil, types: nil,
+                                     exclude_txn_from_change_streams: false,
                                      query_options: nil, request_options: nil,
                                      call_options: nil
           ensure_service!
@@ -746,9 +750,10 @@ module Google
           route_to_leader = LARHeaders.partition_query
           results = nil
           @pool.with_session do |session|
+            transaction = pdml_transaction session, exclude_txn_from_change_streams: exclude_txn_from_change_streams
             results = session.execute_query \
               sql, params: params, types: types,
-              transaction: pdml_transaction(session),
+              transaction: transaction,
               query_options: query_options, request_options: request_options,
               call_options: call_options, route_to_leader: route_to_leader
           end
@@ -1021,6 +1026,9 @@ module Google
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
         #
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1043,6 +1051,20 @@ module Google
         #   * `:tag` (String) A tag used for statistics collection
         #     about transaction. A tag must be a valid identifier of the format:
         #     `[a-zA-Z][a-zA-Z0-9_\-]{0,49}`.
+        # @param [Hash] call_options A hash of values to specify the custom
+        #   call options, e.g., timeout, retries, etc. Call options are
+        #   optional. The following settings can be provided:
+        #
+        #   * `:timeout` (Numeric) A numeric value of custom timeout in seconds
+        #     that overrides the default setting.
+        #   * `:retry_policy` (Hash) A hash of values that overrides the default
+        #     setting of retry policy with the following keys:
+        #     * `:initial_delay` (`Numeric`) - The initial delay in seconds.
+        #     * `:max_delay` (`Numeric`) - The max delay in seconds.
+        #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
+        #     * `:retry_codes` (`Array<String>`) - The error codes that should
+        #       trigger a retry.
+        #
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1096,13 +1118,18 @@ module Google
         #                       { id: 2, name: "Harvey",  active: true }],
         #                       request_options: request_options
         #
-        def upsert table, rows, commit_options: nil, request_options: nil
+        def upsert table, rows,
+                   exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
-            session.upsert table, rows, commit_options: commit_options,
-                           request_options: request_options
+            session.upsert table, rows,
+                           exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           commit_options: commit_options,
+                           request_options: request_options,
+                           call_options: call_options
           end
         end
         alias save upsert
@@ -1145,6 +1172,9 @@ module Google
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1167,6 +1197,20 @@ module Google
         #   * `:tag` (String) A tag used for statistics collection
         #     about transaction. A tag must be a valid identifier of the
         #     format: `[a-zA-Z][a-zA-Z0-9_\-]{0,49}`.
+        # @param [Hash] call_options A hash of values to specify the custom
+        #   call options, e.g., timeout, retries, etc. Call options are
+        #   optional. The following settings can be provided:
+        #
+        #   * `:timeout` (Numeric) A numeric value of custom timeout in seconds
+        #     that overrides the default setting.
+        #   * `:retry_policy` (Hash) A hash of values that overrides the default
+        #     setting of retry policy with the following keys:
+        #     * `:initial_delay` (`Numeric`) - The initial delay in seconds.
+        #     * `:max_delay` (`Numeric`) - The max delay in seconds.
+        #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
+        #     * `:retry_codes` (`Array<String>`) - The error codes that should
+        #       trigger a retry.
+        #
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1220,13 +1264,18 @@ module Google
         #                       { id: 2, name: "Harvey",  active: true }],
         #                       request_options: request_options
         #
-        def insert table, rows, commit_options: nil, request_options: nil
+        def insert table, rows,
+                   exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
-            session.insert table, rows, commit_options: commit_options,
-                           request_options: request_options
+            session.insert table, rows,
+                           exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           commit_options: commit_options,
+                           request_options: request_options,
+                           call_options: call_options
           end
         end
 
@@ -1268,6 +1317,9 @@ module Google
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1290,6 +1342,20 @@ module Google
         #   * `:tag` (String) A tag used for statistics collection
         #     about transaction. A tag must be a valid identifier of the
         #     format: `[a-zA-Z][a-zA-Z0-9_\-]{0,49}`.
+        # @param [Hash] call_options A hash of values to specify the custom
+        #   call options, e.g., timeout, retries, etc. Call options are
+        #   optional. The following settings can be provided:
+        #
+        #   * `:timeout` (Numeric) A numeric value of custom timeout in seconds
+        #     that overrides the default setting.
+        #   * `:retry_policy` (Hash) A hash of values that overrides the default
+        #     setting of retry policy with the following keys:
+        #     * `:initial_delay` (`Numeric`) - The initial delay in seconds.
+        #     * `:max_delay` (`Numeric`) - The max delay in seconds.
+        #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
+        #     * `:retry_codes` (`Array<String>`) - The error codes that should
+        #       trigger a retry.
+        #
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1342,13 +1408,18 @@ module Google
         #                       { id: 2, name: "Harvey",  active: true }],
         #                      request_options: request_options
         #
-        def update table, rows, commit_options: nil, request_options: nil
+        def update table, rows,
+                   exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
-            session.update table, rows, commit_options: commit_options,
-                           request_options: request_options
+            session.update table, rows,
+                           exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           commit_options: commit_options,
+                           request_options: request_options,
+                           call_options: call_options
           end
         end
 
@@ -1392,6 +1463,9 @@ module Google
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1414,6 +1488,20 @@ module Google
         #   * `:tag` (String) A tag used for statistics collection
         #     about transaction. A tag must be a valid identifier of the
         #     format: `[a-zA-Z][a-zA-Z0-9_\-]{0,49}`.
+        # @param [Hash] call_options A hash of values to specify the custom
+        #   call options, e.g., timeout, retries, etc. Call options are
+        #   optional. The following settings can be provided:
+        #
+        #   * `:timeout` (Numeric) A numeric value of custom timeout in seconds
+        #     that overrides the default setting.
+        #   * `:retry_policy` (Hash) A hash of values that overrides the default
+        #     setting of retry policy with the following keys:
+        #     * `:initial_delay` (`Numeric`) - The initial delay in seconds.
+        #     * `:max_delay` (`Numeric`) - The max delay in seconds.
+        #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
+        #     * `:retry_codes` (`Array<String>`) - The error codes that should
+        #       trigger a retry.
+        #
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1466,10 +1554,15 @@ module Google
         #                        { id: 2, name: "Harvey",  active: true }],
         #                       request_options: request_options
         #
-        def replace table, rows, commit_options: nil, request_options: nil
+        def replace table, rows,
+                    exclude_txn_from_change_streams: false,
+                    commit_options: nil, request_options: nil, call_options: nil
           @pool.with_session do |session|
-            session.replace table, rows, commit_options: commit_options,
-                            request_options: request_options
+            session.replace table, rows,
+                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                            commit_options: commit_options,
+                            request_options: request_options,
+                            call_options: call_options
           end
         end
 
@@ -1493,6 +1586,9 @@ module Google
         # @param [Object, Array<Object>] keys A single, or list of keys or key
         #   ranges to match returned data to. Values should have exactly as many
         #   elements as there are columns in the primary key.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1574,13 +1670,16 @@ module Google
         #   request_options = { tag: "BulkDelete-Users" }
         #   db.delete "users", [1, 2, 3], request_options: request_options
         #
-        def delete table, keys = [], commit_options: nil, request_options: nil,
-                   call_options: nil
+        def delete table, keys = [],
+                   exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
-            session.delete table, keys, commit_options: commit_options,
+            session.delete table, keys,
+                           exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options
           end
@@ -1601,6 +1700,9 @@ module Google
         # this method may be appropriate for latency sensitive and/or high
         # throughput blind changes.
         #
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1696,8 +1798,9 @@ module Google
         #     c.insert "users", [{ id: 2, name: "Harvey",  active: true }]
         #   end
         #
-        def commit commit_options: nil, request_options: nil,
-                   call_options: nil, &block
+        def commit exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil,
+                   &block
           raise ArgumentError, "Must provide a block" unless block_given?
 
           request_options = Convert.to_request_options \
@@ -1705,6 +1808,7 @@ module Google
 
           @pool.with_session do |session|
             session.commit(
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams,
               commit_options: commit_options, request_options: request_options,
               call_options: call_options, &block
             )
@@ -1730,6 +1834,9 @@ module Google
         # mutation's table. We recommend structuring your mutation groups to be
         # idempotent to avoid this issue.
         #
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -1790,11 +1897,15 @@ module Google
         #     puts "groups applied: #{response.indexes}" if response.ok?
         #   end
         #
-        def batch_write request_options: nil, call_options: nil, &block
+        def batch_write exclude_txn_from_change_streams: false,
+                        request_options: nil,
+                        call_options: nil,
+                        &block
           raise ArgumentError, "Must provide a block" unless block_given?
 
           @pool.with_session do |session|
             session.batch_write(
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams,
               request_options: request_options,
               call_options: call_options,
               &block
@@ -1823,6 +1934,9 @@ module Google
         #
         # @param [Numeric] deadline The total amount of time in seconds the
         #   transaction has to succeed. The default is `120`.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1962,8 +2076,8 @@ module Google
         #     tx.insert "users", [{ id: 2, name: "Harvey",  active: true }]
         #   end
         #
-        def transaction deadline: 120, commit_options: nil,
-                        request_options: nil, call_options: nil
+        def transaction deadline: 120, exclude_txn_from_change_streams: false,
+                        commit_options: nil, request_options: nil, call_options: nil
           ensure_service!
           unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested transactions are not allowed"
@@ -1977,7 +2091,7 @@ module Google
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
-            tx = session.create_empty_transaction
+            tx = session.create_empty_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
             end
@@ -1990,6 +2104,7 @@ module Google
               commit_resp = @project.service.commit \
                 tx.session.path, tx.mutations,
                 transaction_id: transaction_id,
+                exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                 commit_options: commit_options,
                 request_options: request_options,
                 call_options: call_options
@@ -2003,7 +2118,7 @@ module Google
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
               # Create new transaction on the session and retry the block
-              tx = session.create_transaction
+              tx = session.create_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
@@ -2398,8 +2513,9 @@ module Google
               }.compact)))
         end
 
-        def pdml_transaction session
-          pdml_tx_grpc = @project.service.create_pdml session.path
+        def pdml_transaction session, exclude_txn_from_change_streams: false
+          pdml_tx_grpc = @project.service.create_pdml session.path,
+                                                      exclude_txn_from_change_streams: exclude_txn_from_change_streams
           V1::TransactionSelector.new id: pdml_tx_grpc.id
         end
 

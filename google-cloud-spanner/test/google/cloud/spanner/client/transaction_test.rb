@@ -34,11 +34,18 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     )
   end
   let(:tx_no_dml_options) do
-    # Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id 
     Google::Cloud::Spanner::V1::TransactionOptions.new(
       read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(
           read_lock_mode: :READ_LOCK_MODE_UNSPECIFIED
       )
+    )
+  end
+  let(:tx_no_dml_options_excluding_from_change_streams) do
+    Google::Cloud::Spanner::V1::TransactionOptions.new(
+      read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(
+        read_lock_mode: :READ_LOCK_MODE_UNSPECIFIED
+      ),
+      exclude_txn_from_change_streams: true
     )
   end
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
@@ -419,6 +426,33 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     spanner.service.mocked_service = mock
 
     timestamp = client.transaction do |tx|
+      tx.delete "users"
+    end
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "deletes while excluding from change streams" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :commit, commit_resp, [{
+      session: session_grpc.name, mutations: mutations, transaction_id: nil,
+      single_use_transaction: tx_no_dml_options_excluding_from_change_streams, request_options: nil
+    }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.transaction(exclude_txn_from_change_streams: true) do |tx|
       tx.delete "users"
     end
     _(timestamp).must_equal commit_time

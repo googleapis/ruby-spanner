@@ -565,6 +565,9 @@ module Google
         # @param [String] transaction_id The identifier of previously-started
         #   transaction to be used instead of starting a new transaction.
         #   Optional.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`. Used if starting a new transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -642,13 +645,14 @@ module Google
         #   puts commit_resp.timestamp
         #   puts commit_resp.stats.mutation_count
         #
-        def commit transaction_id: nil, commit_options: nil,
-                   request_options: nil, call_options: nil
+        def commit transaction_id: nil, exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           ensure_service!
           commit = Commit.new
           yield commit
           commit_resp = service.commit path, commit.mutations,
                                        transaction_id: transaction_id,
+                                       exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                                        commit_options: commit_options,
                                        request_options: request_options,
                                        call_options: call_options
@@ -676,6 +680,9 @@ module Google
         # mutation's table. We recommend structuring your mutation groups to be
         # idempotent to avoid this issue.
         #
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
         # @param [Hash] request_options Common request options.
         #
         #   * `:priority` (String) The relative priority for requests.
@@ -736,11 +743,14 @@ module Google
         #     puts "groups applied: #{response.indexes}" if response.ok?
         #   end
         #
-        def batch_write request_options: nil, call_options: nil
+        def batch_write exclude_txn_from_change_streams: false,
+                        request_options: nil,
+                        call_options: nil
           ensure_service!
           b = BatchWrite.new
           yield b
           response = service.batch_write path, b.mutation_groups_grpc,
+                                         exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                                          request_options: request_options,
                                          call_options: call_options
           results = BatchWriteResults.new response
@@ -777,6 +787,12 @@ module Google
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
         #
+        # @param [String] transaction_id The identifier of previously-started
+        #   transaction to be used instead of starting a new transaction.
+        #   Optional.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`. Used if starting a new transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -847,10 +863,12 @@ module Google
         #   puts commit_resp.timestamp
         #   puts commit_resp.stats.mutation_count
         #
-        def upsert table, *rows, transaction_id: nil, commit_options: nil,
-                   request_options: nil, call_options: nil
+        def upsert table, *rows,
+                   transaction_id: nil, exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           opts = {
             transaction_id: transaction_id,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
             commit_options: commit_options,
             request_options: request_options,
             call_options: call_options
@@ -889,6 +907,12 @@ module Google
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
         #
+        # @param [String] transaction_id The identifier of previously-started
+        #   transaction to be used instead of starting a new transaction.
+        #   Optional.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`. Used if starting a new transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -959,10 +983,12 @@ module Google
         #   puts commit_resp.timestamp
         #   puts commit_resp.stats.mutation_count
         #
-        def insert table, *rows, transaction_id: nil, commit_options: nil,
-                   request_options: nil, call_options: nil
+        def insert table, *rows,
+                   transaction_id: nil, exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           opts = {
             transaction_id: transaction_id,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
             commit_options: commit_options,
             request_options: request_options,
             call_options: call_options
@@ -1000,6 +1026,12 @@ module Google
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
         #
+        # @param [String] transaction_id The identifier of previously-started
+        #   transaction to be used instead of starting a new transaction.
+        #   Optional.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`. Used if starting a new transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1070,10 +1102,12 @@ module Google
         #   puts commit_resp.timestamp
         #   puts commit_resp.stats.mutation_count
         #
-        def update table, *rows, transaction_id: nil, commit_options: nil,
-                   request_options: nil, call_options: nil
+        def update table, *rows,
+                   transaction_id: nil, exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           opts = {
             transaction_id: transaction_id,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
             commit_options: commit_options,
             request_options: request_options,
             call_options: call_options
@@ -1113,6 +1147,12 @@ module Google
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
         #
+        # @param [String] transaction_id The identifier of previously-started
+        #   transaction to be used instead of starting a new transaction.
+        #   Optional.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`. Used if starting a new transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1184,10 +1224,12 @@ module Google
         #   puts commit_resp.timestamp
         #   puts commit_resp.stats.mutation_count
         #
-        def replace table, *rows, transaction_id: nil, commit_options: nil,
-                    request_options: nil, call_options: nil
+        def replace table, *rows,
+                    transaction_id: nil, exclude_txn_from_change_streams: false,
+                    commit_options: nil, request_options: nil, call_options: nil
           opts = {
             transaction_id: transaction_id,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
             commit_options: commit_options,
             request_options: request_options,
             call_options: call_options
@@ -1206,6 +1248,12 @@ module Google
         # @param [Object, Array<Object>] keys A single, or list of keys or key
         #   ranges to match returned data to. Values should have exactly as many
         #   elements as there are columns in the primary key.
+        # @param [String] transaction_id The identifier of previously-started
+        #   transaction to be used instead of starting a new transaction.
+        #   Optional.
+        # @param [Boolean] exclude_txn_from_change_streams If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`. Used if starting a new transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1273,10 +1321,12 @@ module Google
         #   puts commit_resp.timestamp
         #   puts commit_resp.stats.mutation_count
         #
-        def delete table, keys = [], transaction_id: nil, commit_options: nil,
-                   request_options: nil, call_options: nil
+        def delete table, keys = [],
+                   transaction_id: nil, exclude_txn_from_change_streams: false,
+                   commit_options: nil, request_options: nil, call_options: nil
           opts = {
             transaction_id: transaction_id,
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
             commit_options: commit_options,
             request_options: request_options,
             call_options: call_options
@@ -1297,18 +1347,20 @@ module Google
         ##
         # @private
         # Creates a new transaction object every time.
-        def create_transaction
+        def create_transaction exclude_txn_from_change_streams: false
           route_to_leader = LARHeaders.begin_transaction true
-          tx_grpc = service.begin_transaction path, route_to_leader: route_to_leader
-          Transaction.from_grpc tx_grpc, self
+          tx_grpc = service.begin_transaction path,
+                                              route_to_leader: route_to_leader,
+                                              exclude_txn_from_change_streams: exclude_txn_from_change_streams
+          Transaction.from_grpc tx_grpc, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
         end
 
         ##
         # @private
         # Creates a new transaction object without the grpc object
         # within it. Use it for inline-begin of a transaction.
-        def create_empty_transaction
-          Transaction.from_grpc nil, self
+        def create_empty_transaction exclude_txn_from_change_streams: false
+          Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
         end
 
         ##

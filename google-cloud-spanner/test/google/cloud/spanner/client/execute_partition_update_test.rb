@@ -25,6 +25,10 @@ describe Google::Cloud::Spanner::Client, :execute_partition_update, :mock_spanne
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
   let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:pdml_tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(partitioned_dml: Google::Cloud::Spanner::V1::TransactionOptions::PartitionedDml.new) }
+  let(:pdml_tx_opts_with_change_stream_exclusion) {
+    Google::Cloud::Spanner::V1::TransactionOptions.new partitioned_dml: Google::Cloud::Spanner::V1::TransactionOptions::PartitionedDml.new,
+                                                       exclude_txn_from_change_streams: true
+  }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let(:results_grpc) {
@@ -350,6 +354,20 @@ describe Google::Cloud::Spanner::Client, :execute_partition_update, :mock_spanne
                                  options: default_options
 
     row_count = client.execute_partition_update "UPDATE users SET active = true", request_options: { tag: "Tag-2" }
+
+    mock.verify
+
+    _(row_count).must_equal 1
+  end
+
+  it "can execute a PDML statement while excluding from change streams" do
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{session: session_grpc.name, options: pdml_tx_opts_with_change_stream_exclusion }, default_options]
+    spanner.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session_grpc.name, "UPDATE users SET active = true", transaction: tx_selector, options: default_options
+
+    row_count = client.execute_partition_update "UPDATE users SET active = true", exclude_txn_from_change_streams: true
 
     mock.verify
 
