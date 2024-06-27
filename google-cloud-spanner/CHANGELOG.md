@@ -1,5 +1,18 @@
 # Release History
 
+### 2.23.0 (2024-06-27)
+
+#### Features
+
+* Support BatchWrite API ([#99](https://github.com/googleapis/ruby-spanner/issues/99)) 
+* Support exclude_txn_from_change_streams ([#108](https://github.com/googleapis/ruby-spanner/issues/108)) 
+#### Bug Fixes
+
+* Resolve BigDecimal warning in Ruby 3.4 ([#103](https://github.com/googleapis/ruby-spanner/issues/103)) 
+#### Documentation
+
+* Update documentation regarding root partitionability ([#101](https://github.com/googleapis/ruby-spanner/issues/101)) 
+
 ### 2.22.0 (2024-04-01)
 
 #### Features
