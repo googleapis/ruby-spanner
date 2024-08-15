@@ -21,7 +21,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "bigdecimal", "~> 3.0"
   gem.add_dependency "concurrent-ruby", "~> 1.0"
   gem.add_dependency "google-cloud-core", "~> 1.5"
-  gem.add_dependency "google-cloud-spanner-admin-database-v1", "~> 0.1"
-  gem.add_dependency "google-cloud-spanner-admin-instance-v1", "~> 0.1"
-  gem.add_dependency "google-cloud-spanner-v1", "~> 0.2"
+  gem.add_dependency "google-cloud-spanner-admin-database-v1", ">= 0.19.0", "< 2.a"
+  gem.add_dependency "google-cloud-spanner-admin-instance-v1", ">= 0.16.0", "< 2.a"
+  gem.add_dependency "google-cloud-spanner-v1", ">= 0.27.0", "< 2.a"
 end
