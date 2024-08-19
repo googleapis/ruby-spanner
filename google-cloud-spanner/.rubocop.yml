@@ -16,6 +16,7 @@ Documentation:
 Metrics/BlockLength:
   Exclude:
     - "acceptance/**/*"
+    - ".toys.rb"
 Metrics/MethodLength:
   Exclude:
     - "acceptance/**/*"
