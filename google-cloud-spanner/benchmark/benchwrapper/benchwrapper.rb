@@ -20,7 +20,7 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'optparse'
 require 'grpc'
-require 'spanner_services_pb'
+require 'spanner_bench/spanner_services_pb'
 require "google/cloud/spanner"
 
 include SpannerBench

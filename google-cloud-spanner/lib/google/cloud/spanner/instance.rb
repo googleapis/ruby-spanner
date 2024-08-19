@@ -258,12 +258,13 @@ module Google
           ensure_service!
 
           field_mask = []
-          @current_values.each do |field, value|
-            field_mask << field unless @grpc[field.to_s] == value
+          new_values = @grpc.to_h
+          (@current_values.keys + new_values.keys).uniq.each do |field|
+            field_mask << field unless new_values[field] == @current_values[field]
           end
 
           job_grpc = service.update_instance @grpc, field_mask: field_mask
-          @current_values = @grpc.to_h
+          @current_values = new_values
           Instance::Job.from_grpc job_grpc, service
         end
         alias update save
