@@ -1,5 +1,14 @@
 # Release History
 
+### 2.24.0 (2024-08-27)
+
+#### Features
+
+* Support 1.x versions of low-level spanner clients ([#113](https://github.com/googleapis/ruby-spanner/issues/113)) 
+#### Bug Fixes
+
+* Correct the field mask when adding labels to an instance that had none previously ([#114](https://github.com/googleapis/ruby-spanner/issues/114)) 
+
 ### 2.23.0 (2024-06-27)
 
 #### Features
