@@ -125,6 +125,7 @@ module Google
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
         #   | `STRUCT`    | `Hash`, {Data} | |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).

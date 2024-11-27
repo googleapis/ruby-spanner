@@ -1022,10 +1022,10 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
-        #
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
@@ -1169,6 +1169,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -1314,6 +1315,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -1460,6 +1462,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).

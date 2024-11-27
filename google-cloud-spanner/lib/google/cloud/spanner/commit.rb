@@ -76,6 +76,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -96,12 +97,19 @@ module Google
           rows = Array(rows).flatten
           return rows if rows.empty?
           rows.compact
-          rows.delete_if(&:empty?)
+          rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
           @mutations += rows.map do |row|
+            if row.class.respond_to?(:descriptor)
+              columns = row.class.descriptor.map(&:name)
+              values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
+            else
+              columns = row.keys.map(&:to_s)
+              values = [Convert.object_to_grpc_value(row.values).list_value]
+            end
             V1::Mutation.new(
               insert_or_update: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
+                table: table, columns: columns,
+                values: values
               )
             )
           end
@@ -136,6 +144,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -156,12 +165,19 @@ module Google
           rows = Array(rows).flatten
           return rows if rows.empty?
           rows.compact
-          rows.delete_if(&:empty?)
+          rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
           @mutations += rows.map do |row|
+            if row.class.respond_to?(:descriptor)
+              columns = row.class.descriptor.map(&:name)
+              values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
+            else
+              columns = row.keys.map(&:to_s)
+              values = [Convert.object_to_grpc_value(row.values).list_value]
+            end
             V1::Mutation.new(
               insert: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
+                table: table, columns: columns,
+                values: values
               )
             )
           end
@@ -195,6 +211,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -215,12 +232,19 @@ module Google
           rows = Array(rows).flatten
           return rows if rows.empty?
           rows.compact
-          rows.delete_if(&:empty?)
+          rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
           @mutations += rows.map do |row|
+            if row.class.respond_to?(:descriptor)
+              columns = row.class.descriptor.map(&:name)
+              values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
+            else
+              columns = row.keys.map(&:to_s)
+              values = [Convert.object_to_grpc_value(row.values).list_value]
+            end
             V1::Mutation.new(
               update: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
+                table: table, columns: columns,
+                values: values
               )
             )
           end
@@ -256,6 +280,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | `Google::Protobuf::MessageExts` | Determined by proto_fqn |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -276,12 +301,19 @@ module Google
           rows = Array(rows).flatten
           return rows if rows.empty?
           rows.compact
-          rows.delete_if(&:empty?)
+          rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
           @mutations += rows.map do |row|
+            if row.class.respond_to?(:descriptor)
+              columns = row.class.descriptor.map(&:name)
+              values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
+            else
+              columns = row.keys.map(&:to_s)
+              values = [Convert.object_to_grpc_value(row.values).list_value]
+            end
             V1::Mutation.new(
               replace: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
+                table: table, columns: columns,
+                values: values
               )
             )
           end
