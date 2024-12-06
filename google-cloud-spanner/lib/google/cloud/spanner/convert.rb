@@ -112,11 +112,6 @@ module Google
                 content = obj.read.force_encoding("ASCII-8BIT")
                 encoded_content = Base64.strict_encode64(content)
                 Google::Protobuf::Value.new string_value: encoded_content
-              elsif field == :PROTO || obj.class.respond_to?(:descriptor)
-                proto_class = obj.class
-                content = proto_class.encode obj
-                encoded_content = Base64.strict_encode64(content)
-                Google::Protobuf::Value.new string_value: encoded_content
               else
                 raise ArgumentError,
                       "A value of type #{obj.class} is not supported."
