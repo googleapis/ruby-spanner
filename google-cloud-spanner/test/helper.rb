@@ -23,6 +23,7 @@ require "json"
 require "base64"
 require "google/cloud/spanner"
 require "grpc"
+require "data/user_pb"
 
 class MockSpanner < Minitest::Spec
   let(:project) { "test" }
