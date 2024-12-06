@@ -101,6 +101,11 @@ module Google
               else
                 Google::Protobuf::Value.new string_value: obj.to_json
               end
+            when Google::Protobuf::MessageExts && field == :PROTO
+                proto_class = obj.class
+                content = proto_class.encode obj
+                encoded_content = Base64.strict_encode64(content)
+                Google::Protobuf::Value.new string_value: encoded_content
             else
               if obj.respond_to?(:read) && obj.respond_to?(:rewind)
                 obj.rewind
@@ -166,11 +171,11 @@ module Google
               Fields.new Hash[raw_type_pairs]
             when Data
               obj.fields
+            when Google::Protobuf::MessageExts
+              :PROTO
             else
               if obj.respond_to?(:read) && obj.respond_to?(:rewind)
                 :BYTES
-              elsif obj.class.respond_to?(:descriptor)
-                :PROTO
               else
                 raise ArgumentError,
                       "Cannot determine type for #{obj.class} values."
