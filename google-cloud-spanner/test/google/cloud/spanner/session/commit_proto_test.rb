@@ -42,25 +42,25 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
       Google::Cloud::Spanner::V1::Mutation.new(
         update: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[1])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[1], :PROTO)])]
         )
       ),
       Google::Cloud::Spanner::V1::Mutation.new(
         insert: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[2])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[2], :PROTO)])]
         )
       ),
       Google::Cloud::Spanner::V1::Mutation.new(
         insert_or_update: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[3])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[3], :PROTO)])]
         )
       ),
       Google::Cloud::Spanner::V1::Mutation.new(
         replace: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[4])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[4], :PROTO)])]
         )
       ),
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -98,7 +98,7 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
       Google::Cloud::Spanner::V1::Mutation.new(
         update: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[1])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[1], :PROTO)])]
         )
       )
     ]
@@ -117,7 +117,7 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
       Google::Cloud::Spanner::V1::Mutation.new(
         insert: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[2])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[2], :PROTO)])]
         )
       )
     ]
@@ -137,7 +137,7 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
       Google::Cloud::Spanner::V1::Mutation.new(
         insert_or_update: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[3])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[3], :PROTO)])]
         )
       )
     ]
@@ -157,7 +157,7 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
       Google::Cloud::Spanner::V1::Mutation.new(
         replace: Google::Cloud::Spanner::V1::Mutation::Write.new(
           table: "users", columns: %w(id name active),
-          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[3])])]
+          values: [Google::Protobuf::ListValue.new(values: [Google::Cloud::Spanner::Convert.object_to_grpc_value(users[3], :PROTO)])]
         )
       )
     ]
