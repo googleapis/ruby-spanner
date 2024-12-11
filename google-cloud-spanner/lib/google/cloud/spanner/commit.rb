@@ -287,6 +287,7 @@ module Google
         protected
 
         ##
+        # @private
         # Generates mutations from `rows` to be performed on a given table. It also converts objects for :PROTO types
         # specified within the table DDL.
         #
@@ -297,7 +298,7 @@ module Google
         #   table's values.
         # @param [String] type The type of mutation to be performed.
         #
-        def mutations_from_rows table, *rows, type
+        def mutations_from_rows table, rows, type
           rows = Array(rows).flatten
           return rows if rows.empty?
           rows.compact
