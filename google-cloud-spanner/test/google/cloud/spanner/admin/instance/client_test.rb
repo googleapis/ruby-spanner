@@ -19,6 +19,24 @@ require "gapic/common"
 require "gapic/grpc"
 
 class Google::Cloud::Spanner::AdminInstanceClientConstructionMinitest < Minitest::Test
+  class DummyStub
+    def endpoint
+      "endpoint.example.com"
+    end
+
+    def universe_domain
+      "example.com"
+    end
+
+    def stub_logger
+      nil
+    end
+
+    def logger
+      nil
+    end
+  end
+
   def test_instance_admin
     emulator_host = "localhost:4567"
     channel_args = { "grpc.service_config_disable_resolution" => 1 }
@@ -35,7 +53,7 @@ class Google::Cloud::Spanner::AdminInstanceClientConstructionMinitest < Minitest
 
     # Clear all environment variables, except SPANNER_EMULATOR_HOST
     ENV.stub :[], emulator_check do
-      Gapic::ServiceStub.stub :new, :stub do
+      Gapic::ServiceStub.stub :new, DummyStub.new do
         GRPC::Core::Channel.stub :new, channel_check do
           client = Google::Cloud::Spanner::Admin::Instance.instance_admin project_id: "1234"
           assert_kind_of Google::Cloud::Spanner::Admin::Instance::V1::InstanceAdmin::Client, client
