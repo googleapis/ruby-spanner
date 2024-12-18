@@ -225,6 +225,20 @@ class MockSpanner < Minitest::Spec
 
     _(expected.stats.mutation_count).must_equal actual.commit_stats.mutation_count
   end
+
+  def parse_descriptor_from_proto_string proto_string
+      import_path = File.expand_path("data", __dir__)
+      binfile = Tempfile.new
+      Tempfile.create do |f|
+        f.write proto_string
+        f.flush
+        system "protoc -o #{binfile.path} -I/:'#{import_path}' #{f.path}"
+      end
+      binfile.rewind
+      Google::Protobuf::FileDescriptorSet.decode(binfile.read)
+    ensure
+      binfile.unlink
+  end
 end
 
 # This is used to raise errors in an enumerator

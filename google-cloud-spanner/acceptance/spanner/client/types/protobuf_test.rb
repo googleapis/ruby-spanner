@@ -13,56 +13,57 @@
 # limitations under the License.
 
 require "spanner_helper"
-require "data/protos/simple/user_pb"
-require "data/protos/simple/user_descriptors.pb"
+require "data/protos/complex/user_pb"
 
-describe "Spanner Client", :types, :proto, :spanner do
-  let(:db) { spanner }
-  let(:db_client) { spanner_client }
+describe "Spanner Client", :types, :protobuf, :spanner do
+  let(:db) { spanner_client }
+  let(:database) { spanner_client.database }
+  let(:table_name) { "Users" }
+  let(:column_name) { "User" }
   let(:admin) { $spanner_db_admin }
   let(:instance_id) { $spanner_instance_id }
   let(:database_id) { $spanner_database_id }
-  let(:db_path) { admin.database_path project: spanner.project_id, instance: instance_id, database: database_id } 
-
-  it "creates a table using proto bundle" do
-    db_path = admin.database_path project: spanner.project_id,
-                             instance: instance_id,
-                             database: database_id
-
-    ddl_proto_statement = 
-      <<~CREATE_PROTO
+  let(:db_path) { admin.database_path project: spanner.project_id, instance: instance_id, database: database_id }
+  let(:ddl_proto_statement) { <<~CREATE_PROTO
       CREATE PROTO BUNDLE (
         spanner.testing.data.User 
       )
-      CREATE_PROTO
+    CREATE_PROTO
+  }
+  let (:ddl_table_statement) { <<~CREATE_TABLE
+      CREATE TABLE Users (
+        Id INT64 NOT NULL,
+        #{column_name} `spanner.testing.data.User` NOT NULL, 
+      )
+    CREATE_TABLE
+  }
 
-    job = admin.update_database_ddl database: db_path, statements: [ddl_proto_statement]
-    _(job).wont_be :done? unless emulator_enabled?
-    job.wait_until_done!
-
-    _(job).must_be :done?
-    raise Google::Cloud::Error.from_error(job.error) if job.error?
-
-    ddl_table_statement = 
-      <<~CREATE_TABLE
-        CREATE TABLE Users (
-          Id INT64 NOT NULL,
-          User `spanner.testing.data.User` NOT NULL, 
-        )
-      CREATE_TABLE
-
-    job2 = admin.update_database_ddl database: db_path, statements: [ddl_table_statement]
-
-    _(job2).must_be_kind_of Google::Cloud::Spanner::Database::Job
-    _(job2).wont_be :done? unless emulator_enabled?
-    job2.wait_until_done!
-
-    _(job2).must_be :done?
-    raise Google::Cloud::Error.from_error(job.error) if job.error?
-
-    ddl = db_client.ddl
-
-    # TODO: Add clean up. 
+  before do
+    database.update statements: [ddl_proto_statement], 
+      descriptor_set: "#{__dir__}/../../../data/protos/simple/user_descriptors.pb"
   end
 
+  focus
+  it "writes and reads custom PROTO types" do
+    puts "HERE"
+    address = Spanner::Testing::Data::User::Address.new(city: "Seattle", state: "WA")
+    user = Spanner::Testing::Data::User.new(id: 1, name: "Charlie", active: false, address: address)
+    db.upsert table_name, [user]
+    results = db.read table_name, [column_name]
+
+    _(results).must_be_kind_of Google::Cloud::Spanner::Results
+    _(results.fields.to_h).must_equal({ user: :PROTO })
+    first_user = results.row.first
+    _(first_user.name).must_equal "Charlie"
+  end
+
+  it "writes and queries custom PROTO types" do
+    db.upsert table_name, [user]
+    results = db.execute_sql "SELECT #{column_name} FROM #{table_name}"
+
+    _(results).must_be_kind_of Google::Cloud::Spanner::Results
+    _(results.fields.to_h).must_equal({ user: :PROTO })
+    first_user = results.rows.first
+    _(first_user.name).must_equal "Charlie"
+  end
 end
