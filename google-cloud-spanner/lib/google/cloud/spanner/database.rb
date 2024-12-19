@@ -265,7 +265,7 @@ module Google
         # @example
         #   require "google/cloud/spanner"
         #
-        #   spanner = Google::Cloud::Spanner.new 
+        #   spanner = Google::Cloud::Spanner.new
         #   database = spanner.database "my-instance", "my-database"
         #
         #   create_proto_bundle_sql = %q(
@@ -278,7 +278,7 @@ module Google
         #     CREATE TABLE users (
         #       id INT64 NOT NULL,
         #       user `examples.User` NOT NULL
-        #     )
+        #     ) PRIMARY KEY (id)
         #   )
         #
         #   database.update statements: [create_proto_bundle_sql, create_users_table_sql],

@@ -24,29 +24,30 @@ describe "Spanner Client", :spanner do
 
   it "creates a table using `CREATE PROTO BUNDLE` via descriptor set path" do
     db_path = admin.database_path project: spanner.project_id,
-                             instance: instance_id,
-                             database: database_id
+                                  instance: instance_id,
+                                  database: database_id
     descriptor_path = "#{__dir__}/../data/protos/simple/user_descriptors.pb"
 
-    ddl_proto_statement = 
+    ddl_proto_statement =
       <<~CREATE_PROTO
-      CREATE PROTO BUNDLE (
-        spanner.testing.data.User 
-      )
+        CREATE PROTO BUNDLE (
+          spanner.testing.data.User#{' '}
+        )
       CREATE_PROTO
 
-    job = admin.update_database_ddl database: db_path, statements: [ddl_proto_statement], descriptor_set: descriptor_path
+    job = admin.update_database_ddl database: db_path, statements: [ddl_proto_statement],
+                                    descriptor_set: descriptor_path
     _(job).wont_be :done? unless emulator_enabled?
     job.wait_until_done!
 
-   _(job).must_be :done?
-   raise Google::Cloud::Error.from_error(job.error) if job.error?
+    _(job).must_be :done?
+    raise Google::Cloud::Error.from_error(job.error) if job.error?
 
-    ddl_table_statement = 
+    ddl_table_statement =
       <<~CREATE_TABLE
         CREATE TABLE Users (
           Id INT64 NOT NULL,
-          User `spanner.testing.data.User` NOT NULL, 
+          User `spanner.testing.data.User` NOT NULL,#{' '}
         )
       CREATE_TABLE
 
@@ -59,28 +60,29 @@ describe "Spanner Client", :spanner do
     _(job2).must_be :done?
     raise Google::Cloud::Error.from_error(job.error) if job.error?
 
-    ddl = db_client.ddl
+    db_client.ddl
   end
 
   it "updates a table DDL using `ALTER PROTO BUNDLE UPDATE` via descriptor set path" do
     db_path = admin.database_path project: spanner.project_id,
-                             instance: instance_id,
-                             database: database_id
+                                  instance: instance_id,
+                                  database: database_id
     descriptor_path = "#{__dir__}/../data/protos/complex/user_descriptors.pb"
 
-    ddl_proto_statement = 
+    ddl_proto_statement =
       <<~UPDATE_PROTO
-      ALTER PROTO BUNDLE UPDATE (
-        spanner.testing.data.User 
-      )
+        ALTER PROTO BUNDLE UPDATE (
+          spanner.testing.data.User#{' '}
+        )
       UPDATE_PROTO
 
-    job = admin.update_database_ddl database: db_path, statements: [ddl_proto_statement], descriptor_set: descriptor_path
+    job = admin.update_database_ddl database: db_path, statements: [ddl_proto_statement],
+                                    descriptor_set: descriptor_path
     _(job).wont_be :done? unless emulator_enabled?
     job.wait_until_done!
 
     _(job).must_be :done?
     raise Google::Cloud::Error.from_error(job.error) if job.error?
-    ddl = db_client.ddl
+    db_client.ddl
   end
 end

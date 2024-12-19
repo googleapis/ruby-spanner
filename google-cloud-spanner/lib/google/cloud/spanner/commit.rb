@@ -304,7 +304,7 @@ module Google
           rows.compact
           rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
           @mutations += rows.map do |row|
-            if row.class.respond_to?(:descriptor)
+            if row.class.respond_to? :descriptor
               columns = row.class.descriptor.map(&:name)
               values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
             else

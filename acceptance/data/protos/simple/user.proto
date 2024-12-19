@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package spanner.testing.data;
+package testing.data;
 
 message User {
 

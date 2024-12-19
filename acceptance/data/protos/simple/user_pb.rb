@@ -5,7 +5,7 @@
 require 'google/protobuf'
 
 
-descriptor_data = "\n\nuser.proto\x12\x14spanner.testing.data\"0\n\x04User\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06\x61\x63tive\x18\x03 \x01(\x08\x62\x06proto3"
+descriptor_data = "\n\nuser.proto\x12\x0ctesting.data\"0\n\x04User\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06\x61\x63tive\x18\x03 \x01(\x08\x62\x06proto3"
 
 pool = Google::Protobuf::DescriptorPool.generated_pool
 
@@ -31,10 +31,8 @@ rescue TypeError
   warn "This will become an error in the next major version."
 end
 
-module Spanner
-  module Testing
-    module Data
-      User = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("spanner.testing.data.User").msgclass
-    end
+module Testing
+  module Data
+    User = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("testing.data.User").msgclass
   end
 end
