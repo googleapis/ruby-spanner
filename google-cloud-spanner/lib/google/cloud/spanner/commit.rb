@@ -76,6 +76,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | Determined by proto_fqn | |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -93,19 +94,7 @@ module Google
         #   end
         #
         def upsert table, *rows
-          rows = Array(rows).flatten
-          return rows if rows.empty?
-          rows.compact
-          rows.delete_if(&:empty?)
-          @mutations += rows.map do |row|
-            V1::Mutation.new(
-              insert_or_update: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
-          end
-          rows
+          mutations_from_rows table, rows, "insert_or_update"
         end
         alias save upsert
 
@@ -136,6 +125,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | Determined by proto_fqn | |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -153,19 +143,7 @@ module Google
         #   end
         #
         def insert table, *rows
-          rows = Array(rows).flatten
-          return rows if rows.empty?
-          rows.compact
-          rows.delete_if(&:empty?)
-          @mutations += rows.map do |row|
-            V1::Mutation.new(
-              insert: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
-          end
-          rows
+          mutations_from_rows table, rows, "insert"
         end
 
         ##
@@ -195,6 +173,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | Determined by proto_fqn | |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -212,19 +191,7 @@ module Google
         #   end
         #
         def update table, *rows
-          rows = Array(rows).flatten
-          return rows if rows.empty?
-          rows.compact
-          rows.delete_if(&:empty?)
-          @mutations += rows.map do |row|
-            V1::Mutation.new(
-              update: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
-          end
-          rows
+          mutations_from_rows table, rows, "update"
         end
 
         ##
@@ -256,6 +223,7 @@ module Google
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
         #   | `ARRAY`     | `Array` | Nested arrays are not supported. |
+        #   | `PROTO`     | Determined by proto_fqn | |
         #
         #   See [Data
         #   types](https://cloud.google.com/spanner/docs/data-definition-language#data_types).
@@ -273,19 +241,7 @@ module Google
         #   end
         #
         def replace table, *rows
-          rows = Array(rows).flatten
-          return rows if rows.empty?
-          rows.compact
-          rows.delete_if(&:empty?)
-          @mutations += rows.map do |row|
-            V1::Mutation.new(
-              replace: V1::Mutation::Write.new(
-                table: table, columns: row.keys.map(&:to_s),
-                values: [Convert.object_to_grpc_value(row.values).list_value]
-              )
-            )
-          end
-          rows
+          mutations_from_rows table, rows, "replace"
         end
 
         ##
@@ -329,6 +285,41 @@ module Google
         end
 
         protected
+
+        ##
+        # @private
+        # Generates mutations from `rows` to be performed on a given table. It also converts objects for :PROTO types
+        # specified within the table DDL.
+        #
+        # @param [String] table The name of the table in the database to be
+        #   modified.
+        # @param [Array<Hash>] rows One or more hash objects with the hash keys
+        #   matching the table's columns, and the hash values matching the
+        #   table's values.
+        # @param [String] type The type of mutation to be performed.
+        #
+        def mutations_from_rows table, rows, type
+          rows = Array(rows).flatten
+          return rows if rows.empty?
+          rows.compact
+          rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
+          @mutations += rows.map do |row|
+            if row.class.respond_to? :descriptor
+              columns = row.class.descriptor.map(&:name)
+              values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
+            else
+              columns = row.keys.map(&:to_s)
+              values = [Convert.object_to_grpc_value(row.values).list_value]
+            end
+            V1::Mutation.new(
+              "#{type}": V1::Mutation::Write.new(
+                table: table, columns: columns,
+                values: values
+              )
+            )
+          end
+          rows
+        end
 
         def key_set keys
           return V1::KeySet.new all: true if keys.nil?

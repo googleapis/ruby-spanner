@@ -103,4 +103,12 @@ describe Google::Cloud::Spanner::Convert, :grpc_type_for_field, :mock_spanner do
     assert_equal type.code, :NUMERIC
     assert_equal type.type_annotation, :PG_NUMERIC
   end
+
+  it "converts a PROTO value" do
+    field = :PROTO
+    user = Spanner::Testing::Data::User.new id: 1, name: "Bob", active: false
+    type = Google::Cloud::Spanner::Convert.grpc_type_for_field field, user
+    assert_equal type.code, :PROTO
+    assert_equal type.proto_type_fqn, "spanner.testing.data.User"
+  end
 end

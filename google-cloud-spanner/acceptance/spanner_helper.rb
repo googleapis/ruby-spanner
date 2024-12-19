@@ -17,7 +17,6 @@ require "simplecov"
 gem "minitest"
 require "minitest/autorun"
 require "minitest/focus"
-require "minitest/rg"
 
 require "google/cloud/spanner"
 require "google/cloud/spanner/admin/database"
