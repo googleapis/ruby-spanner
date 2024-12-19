@@ -13,10 +13,10 @@
 # limitations under the License.
 
 require "spanner_helper"
-require "data/protos/simple/user_pb"
+#require "data/protos/simple/user_pb"
 
 describe "Spanner Client", :types, :protobuf, :spanner do
-  let(:db) { spanner_client }
+  let(:client) { spanner_client }
   let(:database) { spanner_client.database }
   let(:table_name) { "Users" }
   let(:column_name) { "user" }
@@ -61,8 +61,8 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   it "writes and reads custom PROTO types" do
     user = Testing::Data::User.new id: 1, name: "Charlie", active: false
-    db.upsert table_name, [{ userid: 1, user: user }]
-    results = db.read table_name, [column_name]
+    client.upsert table_name, [{ userid: 1, user: user }]
+    results = client.read table_name, [column_name]
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields.to_h).must_equal({ user: :PROTO })
@@ -72,8 +72,8 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   it "writes and queries custom PROTO types" do
     user = Testing::Data::User.new id: 2, name: "Harvey", active: false
-    db.upsert table_name, [{ userid: 2, user: user }]
-    results = db.execute_sql "SELECT #{column_name} FROM #{table_name} WHERE userid = @id", params: { id: 2 }
+    client.upsert table_name, [{ userid: 2, user: user }]
+    results = client.execute_sql "SELECT #{column_name} FROM #{table_name} WHERE userid = @id", params: { id: 2 }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields.to_h).must_equal({ user: :PROTO })

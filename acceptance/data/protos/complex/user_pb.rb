@@ -5,7 +5,7 @@
 require 'google/protobuf'
 
 
-descriptor_data = "\n\nuser.proto\x12\x14spanner.testing.data\"\x8d\x01\n\x04User\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06\x61\x63tive\x18\x03 \x01(\x08\x12\x33\n\x07\x61\x64\x64ress\x18\x04 \x01(\x0b\x32\".spanner.testing.data.User.Address\x1a&\n\x07\x41\x64\x64ress\x12\x0c\n\x04\x63ity\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\tb\x06proto3"
+descriptor_data = "\n\nuser.proto\x12\x0ctesting.data\"\x85\x01\n\x04User\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06\x61\x63tive\x18\x03 \x01(\x08\x12+\n\x07\x61\x64\x64ress\x18\x04 \x01(\x0b\x32\x1a.testing.data.User.Address\x1a&\n\x07\x41\x64\x64ress\x12\x0c\n\x04\x63ity\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\tb\x06proto3"
 
 pool = Google::Protobuf::DescriptorPool.generated_pool
 
@@ -31,11 +31,9 @@ rescue TypeError
   warn "This will become an error in the next major version."
 end
 
-module Spanner
-  module Testing
-    module Data
-      User = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("spanner.testing.data.User").msgclass
-      User::Address = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("spanner.testing.data.User.Address").msgclass
-    end
+module Testing
+  module Data
+    User = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("testing.data.User").msgclass
+    User::Address = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("testing.data.User.Address").msgclass
   end
 end

@@ -13,44 +13,40 @@
 # limitations under the License.
 
 require "spanner_helper"
+require "#{__dir__}/../data/protos/complex/user_pb" 
 
 describe "Spanner Client", :spanner do
-  let(:db) { spanner_client }
+  let(:client) { spanner_client }
   let(:database) { spanner_client.database }
   let(:descriptor_path_simple) { "#{__dir__}/../data/protos/simple/user_descriptors.pb" }
-  let(:descriptor_path_complex) { "#{__dir__}/../data/protos/complex/user_descriptors.pb"}
+  let(:descriptor_path_complex) { "#{__dir__}/../data/protos/complex/user_descriptors.pb" }
   let(:table_name) { "User" }
   let(:column_name) { "user" }
   let :create_proto do
-      <<~CREATE_PROTO
-        CREATE PROTO BUNDLE (
-          testing.data.User,
-          testing.data.User.Address
-        )
-      CREATE_PROTO
+    <<~CREATE_PROTO
+      CREATE PROTO BUNDLE (
+        testing.data.User,
+        testing.data.User.Address
+      )
+    CREATE_PROTO
   end
   let :delete_proto do
     <<~DELETE_PROTO
       ALTER PROTO BUNDLE DELETE (
-        testing.data.User
+        testing.data.User,
+        testing.data.User.Address
       )
     DELETE_PROTO
   end
   let :create_table do
     <<~CREATE_TABLE
       CREATE TABLE #{table_name} (
-          userid INT64 NOT NULL,
-          user testing.data.User NOT NULL
+        userid INT64 NOT NULL,
+        user testing.data.User NOT NULL
       ) PRIMARY KEY (userid)
     CREATE_TABLE
   end
   let(:drop_table) { "DROP TABLE #{table_name}" }
-
-  #before do
-  #  db_job = database.update statements: [create_proto], descriptor_set: descriptor_path_complex
-  #  db_job.wait_until_done!
-  #  raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-  #end
 
   after do
     db_job = database.update statements: [drop_table]
@@ -58,7 +54,6 @@ describe "Spanner Client", :spanner do
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
 
-  focus
   it "creates a table using `CREATE PROTO BUNDLE` proto schema" do
     db_job = database.update statements: [create_proto, create_table], descriptor_set: descriptor_path_complex
     db_job.wait_until_done!
@@ -70,13 +65,13 @@ describe "Spanner Client", :spanner do
   end
 
   it "updates a table DDL using `ALTER PROTO BUNDLE UPDATE`" do
-    db_job = database.update statements: [create_table]
+    db_job = database.update statements: [create_proto, create_table], descriptor_set: descriptor_path_complex
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
     address = Testing::Data::User::Address.new city: "Seattle", state: "WA"
     user = Testing::Data::User.new id: 1, name: "Charlie", active: false, address: address
-    database.upsert table_name, [{userid: 1, user: user}]
+    client.upsert table_name, [{userid: 1, user: user}]
 
     update_proto =
       <<~UPDATE_PROTO
@@ -88,11 +83,12 @@ describe "Spanner Client", :spanner do
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
-    results = db.read table_name, [column_name]
+    results = client.read table_name, [column_name]
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     updated_user = results.rows.first[:user]
     _(updated_user.name).must_equal "Charlie"
+    puts updated_user
     _(updated_user.address).must_be :nil?
 
     db_job = database.update statements: [delete_proto], descriptor_set: descriptor_path_simple
