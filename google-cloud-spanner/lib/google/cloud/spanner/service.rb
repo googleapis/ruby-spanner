@@ -263,7 +263,7 @@ module Google
             when Google::Protobuf::FileDescriptorSet
               Google::Protobuf::FileDescriptorSet.encode descriptor_set
             when String
-              File.binread(descriptor_set)
+              File.binread descriptor_set
             when NilClass
               nil
             else

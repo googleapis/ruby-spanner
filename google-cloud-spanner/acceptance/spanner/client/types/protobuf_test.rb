@@ -19,12 +19,12 @@ describe "Spanner Client", :types, :protobuf, :spanner do
   let(:db) { spanner_client }
   let(:database) { spanner_client.database }
   let(:table_name) { "Users" }
-  let(:column_name) { "User" }
+  let(:column_name) { "user" }
   let(:descriptor_set) { "#{__dir__}/../../../data/protos/simple/user_descriptors.pb" }
   let :create_proto_statement do
     <<~CREATE_PROTO
       CREATE PROTO BUNDLE (
-        testing.data.User#{' '}
+        testing.data.User
       )
     CREATE_PROTO
   end
@@ -59,10 +59,9 @@ describe "Spanner Client", :types, :protobuf, :spanner do
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
 
-  focus
   it "writes and reads custom PROTO types" do
     user = Testing::Data::User.new id: 1, name: "Charlie", active: false
-    db.upsert table_name, [{ user: user }]
+    db.upsert table_name, [{ userid: 1, user: user }]
     results = db.read table_name, [column_name]
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
@@ -73,7 +72,7 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   it "writes and queries custom PROTO types" do
     user = Testing::Data::User.new id: 2, name: "Harvey", active: false
-    db.upsert table_name, { userid: 2, user: user }
+    db.upsert table_name, [{ userid: 2, user: user }]
     results = db.execute_sql "SELECT #{column_name} FROM #{table_name} WHERE userid = @id", params: { id: 2 }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
