@@ -13,7 +13,7 @@
 # limitations under the License.
 
 require "spanner_helper"
-#require "data/protos/simple/user_pb"
+require "data/protos/simple/user_pb"
 
 describe "Spanner Client", :types, :protobuf, :spanner do
   let(:client) { spanner_client }
