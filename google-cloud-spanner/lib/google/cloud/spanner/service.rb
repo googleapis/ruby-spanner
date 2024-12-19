@@ -257,12 +257,27 @@ module Google
         end
 
         def update_database_ddl instance_id, database_id, statements: [],
-                                operation_id: nil, call_options: nil
+                                operation_id: nil, call_options: nil, descriptor_set: nil
+          bin_data =
+            case descriptor_set
+            when Google::Protobuf::FileDescriptorSet
+              Google::Protobuf::FileDescriptorSet.encode descriptor_set
+            when String
+              File.binread descriptor_set
+            when NilClass
+              nil
+            else
+              raise ArgumentError,
+                    "A value of type #{descriptor_set.class} is not supported."
+            end
+
+          proto_descriptors = bin_data unless bin_data.nil?
           opts = default_options call_options: call_options
           request = {
             database: database_path(instance_id, database_id),
             statements: Array(statements),
-            operation_id: operation_id
+            operation_id: operation_id,
+            proto_descriptors: proto_descriptors
           }
           databases.update_database_ddl request, opts
         end

@@ -9,6 +9,7 @@ AllCops:
     - "test/**/*"
     - "benchmark/**/*"
     - "vendor/**/*"
+    - "acceptance/data/protos/**/*"
 
 Documentation:
   Enabled: false

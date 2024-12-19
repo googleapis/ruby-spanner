@@ -171,4 +171,14 @@ describe Google::Cloud::Spanner::Convert, :grpc_value_to_object, :mock_spanner d
     raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
     _(raw).must_equal venue_detail
   end
+
+  it "converts a PROTO value" do
+    user = Spanner::Testing::Data::User.new id: 1, name: "Bob", active: true
+    type = Google::Cloud::Spanner::V1::Type.new(code: :PROTO, proto_type_fqn: "spanner.testing.data.User")
+    proto_data = Spanner::Testing::Data::User.encode user
+    encoded_data = Base64.encode64 proto_data
+    value = Google::Protobuf::Value.new(string_value: encoded_data)
+    raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
+    _(raw).must_equal user
+  end
 end
