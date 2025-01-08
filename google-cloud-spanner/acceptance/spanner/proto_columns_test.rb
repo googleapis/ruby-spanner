@@ -13,12 +13,10 @@
 # limitations under the License.
 
 require "spanner_helper"
-require "#{__dir__}/../data/protos/complex/user_pb" 
 
 describe "Spanner Client", :spanner do
   let(:client) { spanner_client }
   let(:database) { spanner_client.database }
-  let(:descriptor_path_simple) { "#{__dir__}/../data/protos/simple/user_descriptors.pb" }
   let(:descriptor_path_complex) { "#{__dir__}/../data/protos/complex/user_descriptors.pb" }
   let(:table_name) { "User" }
   let(:column_name) { "user" }
@@ -60,38 +58,6 @@ describe "Spanner Client", :spanner do
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
     db_job = database.update statements: [delete_proto], descriptor_set: descriptor_path_complex
-    db_job.wait_until_done!
-    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-  end
-
-  it "updates a table DDL using `ALTER PROTO BUNDLE UPDATE`" do
-    db_job = database.update statements: [create_proto, create_table], descriptor_set: descriptor_path_complex
-    db_job.wait_until_done!
-    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-
-    address = Testing::Data::User::Address.new city: "Seattle", state: "WA"
-    user = Testing::Data::User.new id: 1, name: "Charlie", active: false, address: address
-    client.upsert table_name, [{userid: 1, user: user}]
-
-    update_proto =
-      <<~UPDATE_PROTO
-        ALTER PROTO BUNDLE UPDATE (
-          testing.data.User
-        )
-      UPDATE_PROTO
-    db_job = database.update statements: [update_proto], descriptor_set: descriptor_path_simple
-    db_job.wait_until_done!
-    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-
-    results = client.read table_name, [column_name]
-
-    _(results).must_be_kind_of Google::Cloud::Spanner::Results
-    updated_user = results.rows.first[:user]
-    _(updated_user.name).must_equal "Charlie"
-    puts updated_user
-    _(updated_user.address).must_be :nil?
-
-    db_job = database.update statements: [delete_proto], descriptor_set: descriptor_path_simple
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end

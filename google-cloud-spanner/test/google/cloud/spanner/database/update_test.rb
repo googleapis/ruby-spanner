@@ -30,7 +30,7 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
   end
 
   it "updates with single statement" do
-    update_res = \
+    update_res =
       Gapic::Operation.new(
         job_grpc, Object.new,
         result_type: Google::Cloud::Spanner::Admin::Database::V1::Database,
@@ -50,7 +50,7 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
   end
 
   it "updates with multiple statements" do
-    update_res = \
+    update_res =
       Gapic::Operation.new(
         job_grpc, Object.new,
         result_type: Google::Cloud::Spanner::Admin::Database::V1::Database,
@@ -70,7 +70,7 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
   end
 
   it "updates with operation_id" do
-    update_res = \
+    update_res =
       Gapic::Operation.new(
         job_grpc, Object.new,
         result_type: Google::Cloud::Spanner::Admin::Database::V1::Database,
@@ -89,7 +89,7 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
     _(job).wont_be :done?
   end
 
-  it "updates with PROTO BUNDLE and file descriptor set" do
+  it "updates with CREATE PROTO BUNDLE and file descriptor set" do
     proto_string = <<~PROTO
       syntax = "proto3";
       package examples;
@@ -115,7 +115,7 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
         )
       CREATE_TABLE
 
-    update_res = \
+    update_res =
       Gapic::Operation.new(
         job_grpc, Object.new,
         result_type: Google::Cloud::Spanner::Admin::Database::V1::Database,
