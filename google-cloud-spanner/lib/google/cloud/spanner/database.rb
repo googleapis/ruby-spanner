@@ -238,6 +238,10 @@ module Google
         #   valid identifier: `[a-z][a-z0-9_]*`. Will raise
         #   {Google::Cloud::AlreadyExistsError} if the named operation already
         #   exists. Optional.
+        # @param [Google::Protobuf::FileDescriptorSet, String] descriptor_set The file
+        #   descriptor set object to be used in the update, or alternatively, an absolute
+        #   path to the generated file descriptor set. The descriptor set is only used
+        #   during DDL statements, such as `CREATE PROTO BUNDLE`.
         #
         # @return [Database::Job] The job representing the long-running,
         #   asynchronous processing of a database schema update operation.
@@ -248,22 +252,48 @@ module Google
         #   spanner = Google::Cloud::Spanner.new
         #   database = spanner.database "my-instance", "my-database"
         #
-        #   add_users_table_sql = %q(
-        #     CREATE TABLE users (
-        #       id INT64 NOT NULL,
-        #       username STRING(25) NOT NULL,
-        #       name STRING(45) NOT NULL,
-        #       email STRING(128),
-        #     ) PRIMARY KEY(id)
-        #   )
+        #   add_users_table_sql =
+        #     <<~SQL
+        #       CREATE TABLE users (
+        #         id INT64 NOT NULL,
+        #         username STRING(25) NOT NULL,
+        #         name STRING(45) NOT NULL,
+        #         email STRING(128),
+        #       ) PRIMARY KEY(id)
+        #     SQL
         #
         #   database.update statements: [add_users_table_sql]
         #
-        def update statements: [], operation_id: nil
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #   database = spanner.database "my-instance", "my-database"
+        #
+        #   create_proto_bundle_sql =
+        #     <<~SQL
+        #       CREATE PROTO BUNDLE (
+        #         `examples.User`
+        #       )
+        #     SQL
+        #
+        #   create_users_table_sql =
+        #     <<~SQL
+        #       CREATE TABLE users (
+        #         id INT64 NOT NULL,
+        #         user `examples.User` NOT NULL
+        #       ) PRIMARY KEY (id)
+        #     SQL
+        #
+        #   database.update statements: [create_proto_bundle_sql, create_users_table_sql],
+        #                   descriptor_set: "/usr/local/user_descriptors.pb"
+        #
+        def update statements: [], operation_id: nil, descriptor_set: nil
           ensure_service!
           grpc = service.update_database_ddl instance_id, database_id,
                                              statements: statements,
-                                             operation_id: operation_id
+                                             operation_id: operation_id,
+                                             descriptor_set: descriptor_set
           Database::Job.from_grpc grpc, service
         end
 

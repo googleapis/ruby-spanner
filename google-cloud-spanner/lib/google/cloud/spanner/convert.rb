@@ -101,12 +101,22 @@ module Google
               else
                 Google::Protobuf::Value.new string_value: obj.to_json
               end
+            when Google::Protobuf::MessageExts
+              if field == :PROTO
+                proto_class = obj.class
+                content = proto_class.encode obj
+                encoded_content = Base64.strict_encode64(content)
+                Google::Protobuf::Value.new string_value: encoded_content
+              else
+                raise ArgumentError,
+                "A Protobuf object of type #{obj.class} is not supported without :PROTO field."
+              end
             else
               if obj.respond_to?(:read) && obj.respond_to?(:rewind)
                 obj.rewind
                 content = obj.read.force_encoding("ASCII-8BIT")
                 encoded_content = Base64.strict_encode64(content)
-                Google::Protobuf::Value.new(string_value: encoded_content)
+                Google::Protobuf::Value.new string_value: encoded_content
               else
                 raise ArgumentError,
                       "A value of type #{obj.class} is not supported."
@@ -161,6 +171,8 @@ module Google
               Fields.new Hash[raw_type_pairs]
             when Data
               obj.fields
+            when Google::Protobuf::MessageExts
+              :PROTO
             else
               if obj.respond_to?(:read) && obj.respond_to?(:rewind)
                 :BYTES
@@ -171,7 +183,7 @@ module Google
             end
           end
 
-          def grpc_type_for_field field
+          def grpc_type_for_field field, obj = nil
             return field.to_grpc_type if field.respond_to? :to_grpc_type
 
             case field
@@ -184,11 +196,20 @@ module Google
               V1::Type.new(code: :NUMERIC, type_annotation: :PG_NUMERIC)
             when :PG_JSONB
               V1::Type.new(code: :JSON, type_annotation: :PG_JSONB)
+            when :PROTO
+              V1::Type.new(code: :PROTO, proto_type_fqn: obj.class.descriptor.name)
             else
               V1::Type.new(code: field)
             end
           end
 
+          ##
+          # Converts a gRPC value to a Ruby object.
+          #
+          # @param [Google::Protobuf::Value] value The gRPC value to convert.
+          # @param [Google::Spanner::V1::Type] type The underlying type for data.
+          # @return [::Object] The Ruby object that represents the value, converted to the closest
+          #   matching Ruby class based on the gRPC type.
           def grpc_value_to_object value, type
             return nil if value.kind == :null_value
 
@@ -229,6 +250,10 @@ module Google
               BigDecimal value.string_value
             when :JSON
               JSON.parse value.string_value
+            when :PROTO
+              descriptor = Google::Protobuf::DescriptorPool.generated_pool.lookup(type.proto_type_fqn).msgclass
+              content = Base64.decode64 value.string_value
+              descriptor.decode content
             end
           end
 
