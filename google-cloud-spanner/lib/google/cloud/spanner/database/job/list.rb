@@ -156,7 +156,7 @@ module Google
             # object. Operation object is a database operation.
             #
             def self.from_grpc grpc, service
-              operations_client = \
+              operations_client =
                 service.databases.instance_variable_get "@operations_client"
               jobs = new(Array(grpc.response.operations).map do |job_grpc|
                 Job.from_grpc \

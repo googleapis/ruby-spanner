@@ -288,7 +288,7 @@ module Google
 
         ##
         # @private
-        # Generates mutations from `rows` to be performed on a given table, converting 
+        # Generates mutations from `rows` to be performed on a given table, converting
         # given rows to their corresponding column and gRPC values.
         #
         # @param [String] table The name of the table in the database to be
