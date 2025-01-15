@@ -17,7 +17,7 @@ require "spanner_helper"
 describe "Spanner Client", :spanner do
   let(:client) { spanner_client }
   let(:database) { spanner_client.database }
-  let(:descriptor_path_complex) { "#{__dir__}/../data/protos/complex/user_descriptors.pb" }
+  let(:descriptor_path_complex) { "#{__dir__}/../data/protos/user_descriptors.pb" }
   let(:table_name) { "User" }
   let(:column_name) { "user" }
   let :create_proto do

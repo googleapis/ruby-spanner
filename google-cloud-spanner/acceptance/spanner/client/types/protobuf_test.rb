@@ -13,14 +13,14 @@
 # limitations under the License.
 
 require "spanner_helper"
-require "data/protos/simple/user_pb"
+require "data/protos/user_pb"
 
 describe "Spanner Client", :types, :protobuf, :spanner do
   let(:client) { spanner_client }
   let(:database) { spanner_client.database }
   let(:table_name) { "Users" }
   let(:column_name) { "user" }
-  let(:descriptor_set) { "#{__dir__}/../../../data/protos/simple/user_descriptors.pb" }
+  let(:descriptor_set) { "#{__dir__}/../../../data/protos/user_descriptors.pb" }
   let :create_proto_statement do
     <<~CREATE_PROTO
       CREATE PROTO BUNDLE (
