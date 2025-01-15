@@ -1,12 +1,8 @@
 
-Ò
+f
 
-user.prototesting.data"­
+user.prototesting.data"B
 User
 id (Rid
 name (	Rname
-active (Ractive4
-address (2.testing.data.User.AddressRaddress3
-Address
-city (	Rcity
-state (	Rstatebproto3
+active (Ractivebproto3

@@ -23,16 +23,14 @@ describe "Spanner Client", :spanner do
   let :create_proto do
     <<~CREATE_PROTO
       CREATE PROTO BUNDLE (
-        testing.data.User,
-        testing.data.User.Address
+        testing.data.User
       )
     CREATE_PROTO
   end
   let :delete_proto do
     <<~DELETE_PROTO
       ALTER PROTO BUNDLE DELETE (
-        testing.data.User,
-        testing.data.User.Address
+        testing.data.User
       )
     DELETE_PROTO
   end
