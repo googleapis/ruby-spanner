@@ -261,7 +261,7 @@ module Google
           bin_data =
             case descriptor_set
             when Google::Protobuf::FileDescriptorSet
-              Google::Protobuf::FileDescriptorSet.encode descriptor_set
+              descriptor_set
             when String
               File.binread descriptor_set
             when NilClass

@@ -100,7 +100,6 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
     PROTO
 
     descriptor_set = parse_descriptor_from_proto_string(proto_string)
-    encoded_data = Base64.encode64(Google::Protobuf::FileDescriptorSet.encode(descriptor_set))
 
     ddl_proto_statement = <<~CREATE_PROTO
         CREATE PROTO BUNDLE (
@@ -123,7 +122,7 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
       )
     mock = Minitest::Mock.new
     mock.expect :update_database_ddl, update_res, 
-                [{ database: database_path(instance_id, database_id), statements: [ddl_proto_statement, ddl_table_statement], operation_id: nil, proto_descriptors: encoded_data }, ::Gapic::CallOptions]
+                [{ database: database_path(instance_id, database_id), statements: [ddl_proto_statement, ddl_table_statement], operation_id: nil, proto_descriptors: descriptor_set }, ::Gapic::CallOptions]
     spanner.service.mocked_databases = mock
 
     job = database.update statements: [ddl_proto_statement, ddl_table_statement], descriptor_set: descriptor_set

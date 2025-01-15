@@ -45,9 +45,16 @@ module Google
             end
 
             field ||= field_for_object obj
-            [object_to_grpc_value(obj, field), grpc_type_for_field(field)]
+            [object_to_grpc_value(obj, field), grpc_type_for_field(field, obj)]
           end
 
+          ##
+          # @private
+          # Convert objects to their corresponding gRPC values.
+          #
+          # `field` is used to determine whether the object itself is a value or
+          # a collection of values.
+          #
           def object_to_grpc_value obj, field = nil
             obj = obj.to_column_value if obj.respond_to? :to_column_value
 
@@ -102,15 +109,10 @@ module Google
                 Google::Protobuf::Value.new string_value: obj.to_json
               end
             when Google::Protobuf::MessageExts
-              if field == :PROTO
-                proto_class = obj.class
-                content = proto_class.encode obj
-                encoded_content = Base64.strict_encode64(content)
-                Google::Protobuf::Value.new string_value: encoded_content
-              else
-                raise ArgumentError,
-                "A Protobuf object of type #{obj.class} is not supported without :PROTO field."
-              end
+              proto_class = obj.class
+              content = proto_class.encode obj
+              encoded_content = Base64.strict_encode64(content)
+              Google::Protobuf::Value.new string_value: encoded_content
             else
               if obj.respond_to?(:read) && obj.respond_to?(:rewind)
                 obj.rewind
@@ -197,7 +199,7 @@ module Google
             when :PG_JSONB
               V1::Type.new(code: :JSON, type_annotation: :PG_JSONB)
             when :PROTO
-              V1::Type.new(code: :PROTO, proto_type_fqn: obj.class.descriptor.name)
+              V1::Type.new(code: :PROTO, proto_type_fqn: obj.nil? ? "" : obj.class.descriptor.name)
             else
               V1::Type.new(code: field)
             end

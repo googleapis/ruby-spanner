@@ -111,4 +111,12 @@ describe Google::Cloud::Spanner::Convert, :grpc_type_for_field, :mock_spanner do
     assert_equal type.code, :PROTO
     assert_equal type.proto_type_fqn, "spanner.testing.data.User"
   end
+
+  it "converts a PROTO value without proto_type_fqn for nil objects" do
+    field = :PROTO
+    obj = nil
+    type = Google::Cloud::Spanner::Convert.grpc_type_for_field field, obj
+    assert_equal type.code, :PROTO
+    assert_equal type.proto_type_fqn, ""
+  end
 end

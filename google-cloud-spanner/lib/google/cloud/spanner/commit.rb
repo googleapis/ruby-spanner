@@ -288,8 +288,8 @@ module Google
 
         ##
         # @private
-        # Generates mutations from `rows` to be performed on a given table. It also converts objects for :PROTO types
-        # specified within the table DDL.
+        # Generates mutations from `rows` to be performed on a given table, converting 
+        # given rows to their corresponding column and gRPC values.
         #
         # @param [String] table The name of the table in the database to be
         #   modified.
@@ -304,6 +304,7 @@ module Google
           rows.compact
           rows.delete_if { |row| row.respond_to?(:empty?) && row.empty? }
           @mutations += rows.map do |row|
+            # This case applies whenever a Protobuf object is the row itself, and not part of individual column fields.
             if row.class.respond_to? :descriptor
               columns = row.class.descriptor.map(&:name)
               values = [Google::Protobuf::ListValue.new(values: [Convert.object_to_grpc_value(row, :PROTO)])]
