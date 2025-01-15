@@ -175,7 +175,6 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_hash[8]).must_equal [1, 2, 3]
     _(data_hash[9]).must_equal user_proto
 
-
     data_array = data.to_a
     _(data_array[0]).must_equal 1
     _(data_array[1]).must_equal "Charlie"
@@ -188,7 +187,6 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_array[7].read).must_equal "image"
     _(data_array[8]).must_equal [1, 2, 3]
     _(data_array[9]).must_equal user_proto
-
 
     _(data.to_s).wont_be :empty?
     _(data.inspect).must_match /Google::Cloud::Spanner::Data/
@@ -220,7 +218,6 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_values[8]).must_equal [1, 2, 3]
     _(data_values[9]).must_equal user_proto
 
-
     _(data[:id]).must_equal 1
     _(data[:name]).must_equal "Charlie"
     _(data[:active]).must_equal true
@@ -245,7 +242,6 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data[8]).must_equal [1, 2, 3]
     _(data[9]).must_equal user_proto
 
-
     data_hash = data.to_h
     _(data_hash[:id]).must_equal 1
     _(data_hash[:name]).must_equal "Charlie"
@@ -258,7 +254,6 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_hash[:avatar].read).must_equal "image"
     _(data_hash[:project_ids]).must_equal [1, 2, 3]
     _(data_hash[:user_proto]).must_equal user_proto
-
 
     data_array = data.to_a
     _(data_array[0]).must_equal 1
