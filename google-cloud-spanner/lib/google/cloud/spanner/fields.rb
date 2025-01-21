@@ -311,7 +311,7 @@ module Google
           grpc_types&.each_with_index do |grpc_type, index|
             @grpc_fields[index].type = grpc_type
           end
-          return Data.from_grpc values, @grpc_fields
+          Data.from_grpc values, @grpc_fields
         end
         alias data struct
         alias new struct
