@@ -16,9 +16,11 @@ require "spanner_helper"
 require "data/protos/user_pb"
 
 describe "Spanner Client", :types, :protobuf, :spanner do
+  include Minitest::Hooks
+
   let(:client) { spanner_client }
   let(:database) { spanner_client.database }
-  let(:table_name) { "Users" }
+  let(:table_name) { "user_protobuf_test" }
   let(:column_name) { "user" }
   let(:descriptor_set) { "#{__dir__}/../../../data/protos/user_descriptors.pb" }
   let :create_proto_statement do
@@ -45,19 +47,19 @@ describe "Spanner Client", :types, :protobuf, :spanner do
   end
   let(:delete_table_statement) { "DROP TABLE #{table_name}" }
 
-  before do
+  before(:all) do
     db_job = database.update statements: [create_proto_statement, create_table_statement],
                              descriptor_set: descriptor_set
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
 
-  after do
-    db_job = database.update statements: [delete_proto_statement, delete_table_statement],
-                             descriptor_set: descriptor_set
+  after(:all) do
+    db_job = database.update statements: [delete_proto_statement, drop_table], descriptor_set: descriptor_set
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
+
 
   it "writes and reads custom PROTO types" do
     user = Testing::Data::User.new id: 1, name: "Charlie", active: false

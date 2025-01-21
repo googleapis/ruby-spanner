@@ -18,7 +18,7 @@ describe "Spanner Client", :spanner do
   let(:client) { spanner_client }
   let(:database) { spanner_client.database }
   let(:descriptor_path_complex) { "#{__dir__}/../data/protos/user_descriptors.pb" }
-  let(:table_name) { "User" }
+  let(:table_name) { "user_proto_columns_test" }
   let(:column_name) { "user" }
   let :create_proto do
     <<~CREATE_PROTO
@@ -44,18 +44,12 @@ describe "Spanner Client", :spanner do
   end
   let(:drop_table) { "DROP TABLE #{table_name}" }
 
-  after do
-    db_job = database.update statements: [drop_table]
-    db_job.wait_until_done!
-    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-  end
-
   it "creates a table using `CREATE PROTO BUNDLE` proto schema" do
     db_job = database.update statements: [create_proto, create_table], descriptor_set: descriptor_path_complex
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
-    db_job = database.update statements: [delete_proto], descriptor_set: descriptor_path_complex
+    db_job = database.update statements: [delete_proto, drop_table], descriptor_set: descriptor_path_complex
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
