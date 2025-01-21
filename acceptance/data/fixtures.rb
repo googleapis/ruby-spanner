@@ -86,6 +86,23 @@ module Acceptance
       STUFFS
     end
 
+    def create_proto_ddl_statement
+      <<~CREATE_PROTO
+        CREATE PROTO BUNDLE (
+          testing.data.User
+        )
+      CREATE_PROTO
+    end
+
+    def create_proto_table_statement
+      <<~CREATE_TABLE
+        CREATE TABLE proto_users (
+          userid INT64 NOT NULL,
+          user testing.data.User NOT NULL
+        ) PRIMARY KEY (userid)
+      CREATE_TABLE
+    end
+
     def stuffs_index_statement
       "CREATE INDEX IsStuffsIdPrime ON stuffs(bool, id)"
     end
@@ -178,6 +195,13 @@ module Acceptance
         lists_ddl_statement,
         items_ddl_statement,
         commit_timestamp_test_ddl_statement
+      ].compact
+    end
+
+    def schema_proto_ddl_statements
+      [
+        create_proto_ddl_statement,
+        create_proto_table_statement
       ].compact
     end
 
