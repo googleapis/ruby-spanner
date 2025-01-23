@@ -17,7 +17,6 @@ require "simplecov"
 gem "minitest"
 require "minitest/autorun"
 require "minitest/focus"
-require "minitest/hooks/default"
 
 require "google/cloud/spanner"
 require "google/cloud/spanner/admin/database"
@@ -157,13 +156,6 @@ raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.err
 # Create one client for all tests, to minimize resource usage
 $spanner_client = $spanner.client $spanner_instance_id, $spanner_database_id
 $spanner_pg_client = $spanner.client $spanner_instance_id, $spanner_pg_database_id
-
-# Setup DDL for protobuf column tests.
-descriptor_set = "#{__dir__}/data/protos/user_descriptors.pb"
-database = $spanner_client.database
-db_job = database.update statements: fixture.schema_proto_ddl_statements, descriptor_set: descriptor_set
-db_job.wait_until_done!
-raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
 
 def clean_up_spanner_objects
   puts "Cleaning up instances and databases after spanner tests."

@@ -14,11 +14,31 @@
 
 require "spanner_helper"
 require "data/protos/user_pb"
+require File.expand_path("../../../data/fixtures", __dir__)
 
 describe "Spanner Client", :types, :protobuf, :spanner do
   let(:client) { spanner_client }
+  let(:database) { spanner_client.database }
   let(:table_name) { "proto_users" }
   let(:column_name) { "user" }
+  let(:descriptor_set_path) { "#{__dir__}/../../../data/protos/user_descriptors.pb" }
+
+
+  # Creates the User proto bundle and a table with `user` column.
+  before do
+    db_job = database.update statements: user_proto_create_statements,
+                             descriptor_set: descriptor_set_path
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+  end
+
+  # Deletes the User proto bundle and drops the table.
+  after do
+    db_job = database.update statements: user_proto_delete_statements,
+                             descriptor_set: descriptor_set_path
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+  end
 
   it "writes and reads custom PROTO types" do
     user = Testing::Data::User.new id: 1, name: "Charlie", active: false

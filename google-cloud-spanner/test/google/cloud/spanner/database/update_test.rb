@@ -99,8 +99,8 @@ describe Google::Cloud::Spanner::Database, :update, :mock_spanner do
       } 
     PROTO
 
-    descriptor_set = parse_descriptor_from_proto_string(proto_string)
-    encoded_descriptor = Base64.encode64(Google::Protobuf::FileDescriptorSet.encode(descriptor_set))
+    descriptor_set = parse_descriptor_from_proto_string proto_string
+    encoded_descriptor = Google::Protobuf::FileDescriptorSet.encode descriptor_set
 
     ddl_proto_statement = <<~CREATE_PROTO
         CREATE PROTO BUNDLE (
