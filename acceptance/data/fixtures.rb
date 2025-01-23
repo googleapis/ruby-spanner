@@ -216,14 +216,14 @@ module Acceptance
       [
         create_user_proto_bundle_statement,
         create_user_proto_table_statement
-      ].compact
+      ]
     end
 
     def user_proto_delete_statements
       [
         delete_user_proto_bundle_statement,
         drop_user_proto_table_statement
-      ].compact
+      ]
     end
 
     def stuffs_table_types

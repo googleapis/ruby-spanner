@@ -14,7 +14,7 @@
 
 require "spanner_helper"
 require "data/protos/user_pb"
-require File.expand_path("../../../data/fixtures", __dir__)
+require_relative "../../../data/fixtures"
 
 describe "Spanner Client", :types, :protobuf, :spanner do
   let(:client) { spanner_client }
