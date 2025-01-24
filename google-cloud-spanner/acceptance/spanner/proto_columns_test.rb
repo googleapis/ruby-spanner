@@ -58,6 +58,7 @@ describe "Spanner Client", :spanner do
   end
 
   it "performs proto bundle updates" do
+    puts "PROTO COLUMNS TEST"
     # Create proto bundle with `User` and new table.
     db_job = database.update statements: [create_book_proto, create_book_table], descriptor_set: book_descriptor_set
     db_job.wait_until_done!

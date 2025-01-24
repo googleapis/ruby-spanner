@@ -26,6 +26,7 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   # Creates the User proto bundle and a table with `user` column.
   before do
+    puts "PROTOBUF_TEST BEFORE"
     db_job = database.update statements: user_proto_create_statements,
                              descriptor_set: descriptor_set_path
     db_job.wait_until_done!
@@ -34,6 +35,7 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   # Deletes the User proto bundle and drops the table.
   after do
+    puts "PROTOBUF_TEST AFTER"
     db_job = database.update statements: user_proto_delete_statements,
                              descriptor_set: descriptor_set_path
     db_job.wait_until_done!
@@ -41,6 +43,7 @@ describe "Spanner Client", :types, :protobuf, :spanner do
   end
 
   it "writes and reads custom PROTO types" do
+    puts "START WRITES+READ TEST"
     user = Testing::Data::User.new id: 1, name: "Charlie", active: false
     client.upsert table_name, [{ userid: 1, user: user }]
     results = client.read table_name, [column_name]
@@ -49,9 +52,11 @@ describe "Spanner Client", :types, :protobuf, :spanner do
     _(results.fields.to_h).must_equal({ user: :PROTO })
     first_user = results.rows.first[:user]
     _(first_user.name).must_equal "Charlie"
+    puts "END WRITES+READ TEST"
   end
 
   it "writes and queries custom PROTO types" do
+    puts "START WRITES+QUERIES TEST"
     user = Testing::Data::User.new id: 2, name: "Harvey", active: false
     client.upsert table_name, [{ userid: 2, user: user }]
     results = client.execute_sql "SELECT #{column_name} FROM #{table_name} WHERE userid = @id", params: { id: 2 }
@@ -60,5 +65,6 @@ describe "Spanner Client", :types, :protobuf, :spanner do
     _(results.fields.to_h).must_equal({ user: :PROTO })
     first_user = results.rows.first[:user]
     _(first_user.name).must_equal "Harvey"
+    puts "END WRITES+QUERIES TEST"
   end
 end
