@@ -58,16 +58,6 @@ describe "Spanner Client", :spanner do
   end
 
   it "performs proto bundle updates" do
-    # Create proto bundle with `User` and new table.
-    db_job = database.update statements: [create_book_proto, create_book_table], descriptor_set: book_descriptor_set
-    db_job.wait_until_done!
-    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-
-    # Insert `Book` schema into the database's proto bundle.
-    db_job = database.update statements: [insert_user_proto], descriptor_set: user_descriptor_set
-    db_job.wait_until_done!
-    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
-
     descriptor_set = Google::Protobuf::FileDescriptorSet.new
     book_descriptor_set.file.each do |file|
       descriptor_set.file << file
@@ -76,8 +66,27 @@ describe "Spanner Client", :spanner do
       descriptor_set.file << file
     end
 
+    # Create proto bundle with `User` and new table.
+    db_job = database.update statements: [create_book_proto], descriptor_set: book_descriptor_set
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+    db_job = database.update statements: [create_book_table], descriptor_set: book_descriptor_set
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+
+    # Insert `Book` schema into the database's proto bundle.
+    db_job = database.update statements: [insert_user_proto], descriptor_set: descriptor_set
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
     # Deletes the entire proto bundle and drops the table.
-    db_job = database.update statements: [delete_proto_bundle, drop_table], descriptor_set: descriptor_set
+    db_job = database.update statements: [drop_table], descriptor_set: descriptor_set
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+    db_job = database.update statements: [delete_proto_bundle], descriptor_set: descriptor_set
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end

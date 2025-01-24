@@ -26,7 +26,12 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   # Creates the User proto bundle and a table with `user` column.
   before do
-    db_job = database.update statements: user_proto_create_statements,
+    db_job = database.update statements: [create_user_proto_bundle_statement],
+                             descriptor_set: descriptor_set_path
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+    db_job = database.update statements: [create_user_proto_table_statement],
                              descriptor_set: descriptor_set_path
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
@@ -34,7 +39,12 @@ describe "Spanner Client", :types, :protobuf, :spanner do
 
   # Deletes the User proto bundle and drops the table.
   after do
-    db_job = database.update statements: user_proto_delete_statements,
+    db_job = database.update statements: [drop_user_proto_table_statement],
+                             descriptor_set: descriptor_set_path
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+    db_job = database.update statements: [delete_user_proto_bundle_statement],
                              descriptor_set: descriptor_set_path
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
