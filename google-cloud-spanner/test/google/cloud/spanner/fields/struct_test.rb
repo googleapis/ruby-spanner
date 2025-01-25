@@ -15,13 +15,14 @@
 require "helper"
 
 describe Google::Cloud::Spanner::Fields, :struct do
-  let(:fields_unnamed_array) { [:INT64, :STRING, :BOOL, :INT64, :FLOAT64, :TIMESTAMP, :DATE, :BYTES, [:INT64]] }
-  let(:fields_named_array) { [[:id, :INT64], [:name, :STRING], [:active, :BOOL], [:age, :INT64], [:score, :FLOAT64], [:updated_at, :TIMESTAMP], [:birthday, :DATE], [:avatar, :BYTES], [:project_ids, [:INT64]]] }
-  let(:fields_named_hash) { { id: :INT64, name: :STRING, active: :BOOL, age: :INT64, score: :FLOAT64, updated_at: :TIMESTAMP, birthday: :DATE, avatar: :BYTES, project_ids: [:INT64] } }
-  let(:fields_unnamed_hash) { { 0 => :INT64, 1 => :STRING, 2 => :BOOL, 3 => :INT64, 4 => :FLOAT64, 5 => :TIMESTAMP, 6 => :DATE, 7 => :BYTES, 8 => [:INT64] } }
-  let(:data_array) { [1, "Charlie", true, 29, 0.9, Time.parse("2017-01-02T03:04:05.060000000Z"), Date.parse("1950-01-01"), StringIO.new("image"), [1, 2, 3]] }
-  let(:data_named_hash) { { id: 1, name: "Charlie", active: true, age: 29, score: 0.9, updated_at: Time.parse("2017-01-02T03:04:05.060000000Z"), birthday: Date.parse("1950-01-01"), avatar: StringIO.new("image"), project_ids: [1, 2, 3] } }
-  let(:data_unnamed_hash) { { 0 => 1, 1 => "Charlie", 2 => true, 3 => 29, 4 => 0.9, 5 => Time.parse("2017-01-02T03:04:05.060000000Z"), 6 => Date.parse("1950-01-01"), 7 => StringIO.new("image"), 8 => [1, 2, 3] } }
+  let(:user_proto) {Spanner::Testing::Data::User.new(id: 1, name: "Bob", active: false)}
+  let(:fields_unnamed_array) { [:INT64, :STRING, :BOOL, :INT64, :FLOAT64, :TIMESTAMP, :DATE, :BYTES, [:INT64], :PROTO] }
+  let(:fields_named_array) { [[:id, :INT64], [:name, :STRING], [:active, :BOOL], [:age, :INT64], [:score, :FLOAT64], [:updated_at, :TIMESTAMP], [:birthday, :DATE], [:avatar, :BYTES], [:project_ids, [:INT64]], [:user_proto, :PROTO]] }
+  let(:fields_named_hash) { { id: :INT64, name: :STRING, active: :BOOL, age: :INT64, score: :FLOAT64, updated_at: :TIMESTAMP, birthday: :DATE, avatar: :BYTES, project_ids: [:INT64], user_proto: :PROTO } }
+  let(:fields_unnamed_hash) { { 0 => :INT64, 1 => :STRING, 2 => :BOOL, 3 => :INT64, 4 => :FLOAT64, 5 => :TIMESTAMP, 6 => :DATE, 7 => :BYTES, 8 => [:INT64], 9 => :PROTO } }
+  let(:data_array) { [1, "Charlie", true, 29, 0.9, Time.parse("2017-01-02T03:04:05.060000000Z"), Date.parse("1950-01-01"), StringIO.new("image"), [1, 2, 3], user_proto] }
+  let(:data_named_hash) { { id: 1, name: "Charlie", active: true, age: 29, score: 0.9, updated_at: Time.parse("2017-01-02T03:04:05.060000000Z"), birthday: Date.parse("1950-01-01"), avatar: StringIO.new("image"), project_ids: [1, 2, 3], user_proto: user_proto } }
+  let(:data_unnamed_hash) { { 0 => 1, 1 => "Charlie", 2 => true, 3 => 29, 4 => 0.9, 5 => Time.parse("2017-01-02T03:04:05.060000000Z"), 6 => Date.parse("1950-01-01"), 7 => StringIO.new("image"), 8 => [1, 2, 3], 9 => user_proto } }
 
   it "creates with an unnamed array of fields and an array of values" do
     fields = Google::Cloud::Spanner::Fields.new fields_unnamed_array
@@ -128,14 +129,14 @@ describe Google::Cloud::Spanner::Fields, :struct do
 
     _(data.fields).wont_be :nil?
     _(data.fields).must_be_kind_of Google::Cloud::Spanner::Fields
-    _(data.fields.keys.count).must_equal 9
+    _(data.fields.keys.count).must_equal 10
     _(data.fields.to_a).must_equal fields_unnamed_array
     _(data.fields.to_h).must_equal fields_unnamed_hash
 
     _(data.fields.to_s).wont_be :empty?
     _(data.fields.inspect).must_match /Google::Cloud::Spanner::Fields/
 
-    _(data.keys).must_equal [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    _(data.keys).must_equal [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     data_values = data.values
     _(data_values[0]).must_equal 1
     _(data_values[1]).must_equal "Charlie"
@@ -147,6 +148,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_values[7]).must_be_kind_of StringIO
     _(data_values[7].read).must_equal "image"
     _(data_values[8]).must_equal [1, 2, 3]
+    _(data_values[9]).must_equal user_proto
 
     _(data[0]).must_equal 1
     _(data[1]).must_equal "Charlie"
@@ -158,6 +160,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data[7]).must_be_kind_of StringIO
     _(data[7].read).must_equal "image"
     _(data[8]).must_equal [1, 2, 3]
+    _(data[9]).must_equal user_proto
 
     data_hash = data.to_h
     _(data_hash[0]).must_equal 1
@@ -170,6 +173,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_hash[7]).must_be_kind_of StringIO
     _(data_hash[7].read).must_equal "image"
     _(data_hash[8]).must_equal [1, 2, 3]
+    _(data_hash[9]).must_equal user_proto
 
     data_array = data.to_a
     _(data_array[0]).must_equal 1
@@ -182,6 +186,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_array[7]).must_be_kind_of StringIO
     _(data_array[7].read).must_equal "image"
     _(data_array[8]).must_equal [1, 2, 3]
+    _(data_array[9]).must_equal user_proto
 
     _(data.to_s).wont_be :empty?
     _(data.inspect).must_match /Google::Cloud::Spanner::Data/
@@ -192,14 +197,14 @@ describe Google::Cloud::Spanner::Fields, :struct do
 
     _(data.fields).wont_be :nil?
     _(data.fields).must_be_kind_of Google::Cloud::Spanner::Fields
-    _(data.fields.keys.count).must_equal 9
+    _(data.fields.keys.count).must_equal 10
     _(data.fields.to_a).must_equal fields_unnamed_array
     _(data.fields.to_h).must_equal fields_named_hash
 
     _(data.fields.to_s).wont_be :empty?
     _(data.fields.inspect).must_match /Google::Cloud::Spanner::Fields/
 
-    _(data.keys).must_equal [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+    _(data.keys).must_equal [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids, :user_proto]
     data_values = data.values
     _(data_values[0]).must_equal 1
     _(data_values[1]).must_equal "Charlie"
@@ -211,6 +216,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_values[7]).must_be_kind_of StringIO
     _(data_values[7].read).must_equal "image"
     _(data_values[8]).must_equal [1, 2, 3]
+    _(data_values[9]).must_equal user_proto
 
     _(data[:id]).must_equal 1
     _(data[:name]).must_equal "Charlie"
@@ -222,6 +228,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data[:avatar]).must_be_kind_of StringIO
     _(data[:avatar].read).must_equal "image"
     _(data[:project_ids]).must_equal [1, 2, 3]
+    _(data[:user_proto]).must_equal user_proto
 
     _(data[0]).must_equal 1
     _(data[1]).must_equal "Charlie"
@@ -233,6 +240,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data[7]).must_be_kind_of StringIO
     _(data[7].read).must_equal "image"
     _(data[8]).must_equal [1, 2, 3]
+    _(data[9]).must_equal user_proto
 
     data_hash = data.to_h
     _(data_hash[:id]).must_equal 1
@@ -245,6 +253,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_hash[:avatar]).must_be_kind_of StringIO
     _(data_hash[:avatar].read).must_equal "image"
     _(data_hash[:project_ids]).must_equal [1, 2, 3]
+    _(data_hash[:user_proto]).must_equal user_proto
 
     data_array = data.to_a
     _(data_array[0]).must_equal 1
@@ -257,6 +266,7 @@ describe Google::Cloud::Spanner::Fields, :struct do
     _(data_array[7]).must_be_kind_of StringIO
     _(data_array[7].read).must_equal "image"
     _(data_array[8]).must_equal [1, 2, 3]
+    _(data_array[9]).must_equal user_proto
 
     _(data.to_s).wont_be :empty?
     _(data.inspect).must_match /Google::Cloud::Spanner::Data/

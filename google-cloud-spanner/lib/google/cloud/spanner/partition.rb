@@ -173,7 +173,7 @@ module Google
           # TODO: raise if hash[:execute_query].nil? && hash[:read].nil?
           new.tap do |p|
             if data[:execute]
-              execute_sql_grpc = \
+              execute_sql_grpc =
                 V1::ExecuteSqlRequest.decode(
                   Base64.decode64(data[:execute])
                 )

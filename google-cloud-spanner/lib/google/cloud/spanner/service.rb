@@ -74,7 +74,7 @@ module Google
 
         def service
           return mocked_service if mocked_service
-          @service ||= \
+          @service ||=
             V1::Spanner::Client.new do |config|
               config.credentials = channel
               config.quota_project = @quota_project
@@ -89,7 +89,7 @@ module Google
 
         def instances
           return mocked_instances if mocked_instances
-          @instances ||= \
+          @instances ||=
             Admin::Instance::V1::InstanceAdmin::Client.new do |config|
               config.credentials = channel
               config.quota_project = @quota_project
@@ -104,7 +104,7 @@ module Google
 
         def databases
           return mocked_databases if mocked_databases
-          @databases ||= \
+          @databases ||=
             Admin::Database::V1::DatabaseAdmin::Client.new do |config|
               config.credentials = channel
               config.quota_project = @quota_project

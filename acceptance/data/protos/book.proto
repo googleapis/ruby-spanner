@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,20 +16,9 @@ syntax = "proto3";
 
 package testing.data;
 
-message User {
+message Book {
 
-  int64 id = 1;
-
-  string name = 2;
-
-  bool active = 3;
-
-  message Address {
-
-    string city = 1;
-
-    string state = 2;
-  }
-
-  Address address = 4;
+  string title = 1;
+  
+  string author = 2;
 }

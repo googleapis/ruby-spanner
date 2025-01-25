@@ -68,6 +68,7 @@ module Google
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
+        #   * `:PROTO`
         #   * `Array` - Lists are specified by providing the type code in an
         #     array. For example, an array of integers are specified as
         #     `[:INT64]`.
@@ -275,24 +276,23 @@ module Google
             return Data.from_grpc nil, @grpc_fields
           elsif data.is_a? Array
             # Convert data in the order it was recieved
-            values = data.map.with_index do |datum, index|
-              Convert.object_to_grpc_value_and_type(datum, cached_types[index]).first
+            values_and_types = data.map.with_index do |datum, index|
+              Convert.object_to_grpc_value_and_type(datum, cached_types[index])
             end
-            return Data.from_grpc values, @grpc_fields
           elsif data.is_a? Hash
             # Pull values from hash in order of the fields,
             # we can't always trust the Hash to be in order.
-            values = @grpc_fields.map.with_index do |field, index|
+            values_and_types = @grpc_fields.map.with_index do |field, index|
               if data.key? index
                 Convert.object_to_grpc_value_and_type(data[index],
-                                              cached_types[index]).first
+                                              cached_types[index])
               elsif !field.name.to_s.empty?
                 if data.key? field.name.to_s
                   Convert.object_to_grpc_value_and_type(data[field.name.to_s],
-                                                cached_types[index]).first
+                                                cached_types[index])
                 elsif data.key? field.name.to_s.to_sym
                   Convert.object_to_grpc_value_and_type(data[field.name.to_s.to_sym],
-                                                cached_types[index]).first
+                                                cached_types[index])
                 else
                   raise "data value for field #{field.name} missing"
                 end
@@ -300,9 +300,18 @@ module Google
                 raise "data value for field #{index} missing"
               end
             end
-            return Data.from_grpc values, @grpc_fields
+          else
+            raise ArgumentError, "can only accept Array or Hash"
           end
-          raise ArgumentError, "can only accept Array or Hash"
+
+          # This is not ideal since we loop through `@grpc_fields` a second time after
+          # initialization. Refactoring can be done to perform this step later on when
+          # all information for the type is available.
+          values, grpc_types = values_and_types.transpose
+          grpc_types&.each_with_index do |grpc_type, index|
+            @grpc_fields[index].type = grpc_type
+          end
+          Data.from_grpc values, @grpc_fields
         end
         alias data struct
         alias new struct

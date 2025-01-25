@@ -13,48 +13,39 @@
 # limitations under the License.
 
 require "spanner_helper"
-require "data/protos/simple/user_pb"
+require "data/protos/user_pb"
+require_relative "../../../data/fixtures"
 
 describe "Spanner Client", :types, :protobuf, :spanner do
   let(:client) { spanner_client }
   let(:database) { spanner_client.database }
-  let(:table_name) { "Users" }
+  let(:table_name) { "proto_users" }
   let(:column_name) { "user" }
-  let(:descriptor_set) { "#{__dir__}/../../../data/protos/simple/user_descriptors.pb" }
-  let :create_proto_statement do
-    <<~CREATE_PROTO
-      CREATE PROTO BUNDLE (
-        testing.data.User
-      )
-    CREATE_PROTO
-  end
-  let :create_table_statement do
-    <<~CREATE_TABLE
-      CREATE TABLE #{table_name} (
-        userid INT64 NOT NULL,
-        #{column_name} testing.data.User NOT NULL
-      ) PRIMARY KEY (userid)
-    CREATE_TABLE
-  end
-  let :delete_proto_statement do
-    <<~DELETE_PROTO
-      ALTER PROTO BUNDLE DELETE (
-        testing.data.User
-      )
-    DELETE_PROTO
-  end
-  let(:delete_table_statement) { "DROP TABLE #{table_name}" }
+  let(:descriptor_set_path) { "#{__dir__}/../../../data/protos/user_descriptors.pb" }
 
+
+  # Creates the User proto bundle and a table with `user` column.
   before do
-    db_job = database.update statements: [create_proto_statement, create_table_statement],
-                             descriptor_set: descriptor_set
+    db_job = database.update statements: [create_user_proto_bundle_statement],
+                             descriptor_set: descriptor_set_path
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+    db_job = database.update statements: [create_user_proto_table_statement],
+                             descriptor_set: descriptor_set_path
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
 
+  # Deletes the User proto bundle and drops the table.
   after do
-    db_job = database.update statements: [delete_proto_statement, delete_table_statement],
-                             descriptor_set: descriptor_set
+    db_job = database.update statements: [drop_user_proto_table_statement],
+                             descriptor_set: descriptor_set_path
+    db_job.wait_until_done!
+    raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+
+    db_job = database.update statements: [delete_user_proto_bundle_statement],
+                             descriptor_set: descriptor_set_path
     db_job.wait_until_done!
     raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
   end
