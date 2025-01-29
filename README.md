@@ -153,7 +153,7 @@ on these and other methods of providing credentials.
 
 ## Supported Ruby Versions
 
-These libraries are currently supported on Ruby 2.6 through Ruby 3.1. Older
+These libraries are currently supported on Ruby 3.0 through Ruby 3.3. Older
 versions of Ruby _may_ still work, but are unsupported and not recommended.
 
 In general, Google provides official support for Ruby versions that are actively
