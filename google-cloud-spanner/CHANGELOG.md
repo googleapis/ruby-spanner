@@ -1,5 +1,12 @@
 # Release History
 
+### 2.25.0 (2025-01-29)
+
+#### Features
+
+* Support Protobuf Columns ([#124](https://github.com/googleapis/ruby-spanner/issues/124)) 
+* Update minimum Ruby version to 3.0 ([#140](https://github.com/googleapis/ruby-spanner/issues/140))
+
 ### 2.24.0 (2024-08-27)
 
 #### Features
