@@ -261,6 +261,8 @@ module Google
               descriptor = Google::Protobuf::DescriptorPool.generated_pool.lookup(type.proto_type_fqn).msgclass
               content = Base64.decode64 value.string_value
               descriptor.decode content
+            when :UUID
+              value.string_value
             end
           end
 

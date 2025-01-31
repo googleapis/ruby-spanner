@@ -14,6 +14,7 @@
 
 require "helper"
 require "bigdecimal"
+require "securerandom"
 
 describe Google::Cloud::Spanner::Convert, :to_query_params, :mock_spanner do
   # This tests is a sanity check on the implementation of the conversion method.
@@ -247,7 +248,7 @@ describe Google::Cloud::Spanner::Convert, :to_query_params, :mock_spanner do
                                                 Google::Cloud::Spanner::V1::Type.new(code: :STRUCT, struct_type: Google::Cloud::Spanner::V1::StructType.new(fields: [ Google::Cloud::Spanner::V1::StructType::Field.new(name: "env", type: Google::Cloud::Spanner::V1::Type.new(code: :STRING)), Google::Cloud::Spanner::V1::StructType::Field.new(name: "score", type: Google::Cloud::Spanner::V1::Type.new(code: :FLOAT64)), Google::Cloud::Spanner::V1::StructType::Field.new(name: "project_ids", type: Google::Cloud::Spanner::V1::Type.new(code: :ARRAY, array_element_type: Google::Cloud::Spanner::V1::Type.new(code: :INT64))) ] ))] })
   end
 
-  it "converts an emtpy Hash value" do
+  it "converts an empty Hash value" do
     combined_params = Google::Cloud::Spanner::Convert.to_query_params settings: {}
     _(combined_params).must_equal({ "settings" => [Google::Protobuf::Value.new(list_value: Google::Protobuf::ListValue.new(values: [])),
                                                 Google::Cloud::Spanner::V1::Type.new(code: :STRUCT, struct_type: Google::Cloud::Spanner::V1::StructType.new(fields: []))] })
@@ -293,6 +294,19 @@ describe Google::Cloud::Spanner::Convert, :to_query_params, :mock_spanner do
       "venue_detail" => [ Google::Protobuf::Value.new(string_value: value.to_json),
                           Google::Spanner::V1::Type.new(code: :JSON)]
     })
+  end
+
+  it "converts an UUID value" do
+    uuid = SecureRandom.uuid
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({uuid: uuid}, {uuid: :UUID})
+    _(combined_params).must_equal({ "uuid" => [Google::Protobuf::Value.new(string_value: uuid),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :UUID)] })
+  end
+
+  it "converts a nil UUID value" do
+    combined_params = Google::Cloud::Spanner::Convert.to_query_params({uuid: nil}, {uuid: :UUID})
+    _(combined_params).must_equal({ "uuid" => [Google::Protobuf::Value.new(null_value: :NULL_VALUE),
+                                             Google::Cloud::Spanner::V1::Type.new(code: :UUID)] })
   end
 
   describe "Struct Parameters Query Examples" do

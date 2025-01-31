@@ -138,6 +138,7 @@ module Google
         #   | `FLOAT64`   | `Float`        | |
         #   | `FLOAT32`   | `Float`        | |
         #   | `STRING`    | `String`       | |
+        #   | `UUID`      | `String`       | |
         #   | `DATE`      | `Date`         | |
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
@@ -166,6 +167,7 @@ module Google
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
+        #   * `:UUID`
         #   * `Array` - Lists are specified by providing the type code in an
         #     array. For example, an array of integers are specified as
         #     `[:INT64]`.
@@ -489,6 +491,7 @@ module Google
         #   | `FLOAT64`   | `Float`        | |
         #   | `FLOAT32`   | `Float`        | |
         #   | `STRING`    | `String`       | |
+        #   | `UUID`      | `String`       | |
         #   | `DATE`      | `Date`         | |
         #   | `TIMESTAMP` | `Time`, `DateTime` | |
         #   | `BYTES`     | `File`, `IO`, `StringIO`, or similar | |
@@ -517,6 +520,7 @@ module Google
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
+        #   * `:UUID`
         #   * `Array` - Lists are specified by providing the type code in an
         #     array. For example, an array of integers are specified as
         #     `[:INT64]`.
