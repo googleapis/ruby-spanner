@@ -42,6 +42,11 @@ def make_params dialect, value
   { key => value }
 end
 
+# Used for testing `:UUID` feature.
+Google::Cloud::Spanner.configure do |config|
+  config.endpoint = "staging-wrenchworks.sandbox.googleapis.com"
+end
+
 # Create shared spanner object so we don't create new for each test
 $spanner = Google::Cloud::Spanner.new
 $spanner_db_admin = Google::Cloud::Spanner::Admin::Database.database_admin

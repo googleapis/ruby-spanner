@@ -181,4 +181,12 @@ describe Google::Cloud::Spanner::Convert, :grpc_value_to_object, :mock_spanner d
     raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
     _(raw).must_equal user
   end
+
+  it "converts an UUID value" do
+    uuid = "9d4da323-4c20-360f-bd9b-ec54feec54f0"
+    value = Google::Protobuf::Value.new string_value: uuid
+    type = Google::Cloud::Spanner::V1::Type.new(code: :UUID)
+    raw = Google::Cloud::Spanner::Convert.grpc_value_to_object value, type
+    _(raw).must_equal uuid
+  end
 end
