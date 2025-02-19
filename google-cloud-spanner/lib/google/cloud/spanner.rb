@@ -84,6 +84,7 @@ module Google
       #   with version.
       # @param enable_leader_aware_routing [Boolean] Specifies whether Leader
       #   Aware Routing should be enabled. Defaults to true.
+      # @param universe_domain [String] A custom universe domain. Optional.
       #
       # @return [Google::Cloud::Spanner::Project]
       #
@@ -95,7 +96,7 @@ module Google
       def self.new project_id: nil, credentials: nil, scope: nil, timeout: nil,
                    endpoint: nil, project: nil, keyfile: nil,
                    emulator_host: nil, lib_name: nil, lib_version: nil,
-                   enable_leader_aware_routing: true
+                   enable_leader_aware_routing: true, universe_domain: nil
         project_id    ||= project || default_project_id
         scope         ||= configure.scope
         timeout       ||= configure.timeout
@@ -104,6 +105,7 @@ module Google
         credentials   ||= keyfile
         lib_name      ||= configure.lib_name
         lib_version   ||= configure.lib_version
+        universe_domain ||= configure.universe_domain
 
         if emulator_host
           credentials = :this_channel_is_insecure
@@ -125,7 +127,7 @@ module Google
           Spanner::Service.new(
             project_id, credentials, quota_project: configure.quota_project,
             host: endpoint, timeout: timeout, lib_name: lib_name,
-            lib_version: lib_version,
+            lib_version: lib_version, universe_domain: universe_domain,
             enable_leader_aware_routing: enable_leader_aware_routing
           ),
           query_options: configure.query_options

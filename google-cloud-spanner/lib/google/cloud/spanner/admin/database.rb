@@ -85,6 +85,7 @@ module Google
           #
           def self.database_admin project_id: nil,
                                   credentials: nil,
+                                  universe_domain: nil,
                                   scope: nil,
                                   timeout: nil,
                                   endpoint: nil,
@@ -93,14 +94,23 @@ module Google
                                   emulator_host: nil,
                                   lib_name: nil,
                                   lib_version: nil
-            project_id    ||= project || default_project_id
-            scope         ||= configure.scope
-            timeout       ||= configure.timeout
+            project_id ||= project || default_project_id
+            scope ||= configure.scope
+            timeout ||= configure.timeout
             emulator_host ||= configure.emulator_host
-            endpoint      ||= emulator_host || configure.endpoint
-            credentials   ||= keyfile
-            lib_name      ||= configure.lib_name
-            lib_version   ||= configure.lib_version
+            # TODO: This logic is part of UniverseDomainConcerns in gapic-common
+            # but is being copied here because we need to determine the host up
+            # front in order to build a gRPC channel. We should refactor this
+            # somehow to allow this logic to live where it is supposed to.
+            universe_domain ||= configure.universe_domain || ENV["GOOGLE_CLOUD_UNIVERSE_DOMAIN"] || "googleapis.com"
+            endpoint ||= emulator_host || configure.endpoint
+            endpoint ||=
+              Google::Cloud::Spanner::Admin::Database::V1::DatabaseAdmin::Client::DEFAULT_ENDPOINT_TEMPLATE.sub(
+                Gapic::UniverseDomainConcerns::ENDPOINT_SUBSTITUTION, universe_domain
+              )
+            credentials ||= keyfile
+            lib_name ||= configure.lib_name
+            lib_version ||= configure.lib_version
 
             if emulator_host
               credentials = :this_channel_is_insecure
@@ -121,10 +131,11 @@ module Google
             configure.quota_project ||= credentials.quota_project_id if credentials.respond_to? :quota_project_id
 
             Admin::Database::V1::DatabaseAdmin::Client.new do |config|
+              config.universe_domain = universe_domain
               config.credentials = channel endpoint, credentials
               config.quota_project = configure.quota_project
               config.timeout = timeout if timeout
-              config.endpoint = endpoint if endpoint
+              config.endpoint = endpoint
               config.lib_name = lib_name_with_prefix lib_name, lib_version
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{project_id}" }
@@ -290,7 +301,7 @@ module Google
           class Configuration
             extend ::Gapic::Config
 
-            config_attr :endpoint,      "spanner.googleapis.com", ::String
+            config_attr :endpoint,      nil, ::String
             config_attr :credentials,   nil do |value|
               allowed = [::String, ::Hash, ::Google::Auth::Credentials, ::Signet::OAuth2::Client, nil]
               allowed += [::GRPC::Core::Channel, ::GRPC::Core::ChannelCredentials] if defined? ::GRPC
@@ -307,6 +318,7 @@ module Google
             config_attr :query_options, nil, ::Hash,    nil
             config_attr :metadata,      nil, ::Hash,    nil
             config_attr :retry_policy,  nil, ::Hash,    nil
+            config_attr :universe_domain, nil, ::String, nil
 
             # @private
             def initialize parent_config = nil
