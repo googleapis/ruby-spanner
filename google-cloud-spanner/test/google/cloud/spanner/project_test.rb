@@ -31,6 +31,17 @@ describe Google::Cloud::Spanner::Project, :mock_spanner do
     _(spanner.project_id).must_equal project
   end
 
+  it "returns the default universe domain" do
+    _(spanner.universe_domain).must_equal "googleapis.com"
+  end
+
+  it "returns a custom universe domain" do
+    universe = "myuniverse.com"
+    service = Google::Cloud::Spanner::Service.new project, credentials, universe_domain: universe
+    spanner = Google::Cloud::Spanner::Project.new service
+    _(spanner.universe_domain).must_equal universe
+  end
+
   it "creates client with database role" do
     mock = Minitest::Mock.new
     request_session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"

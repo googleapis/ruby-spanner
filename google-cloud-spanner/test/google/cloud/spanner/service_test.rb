@@ -20,7 +20,7 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
   let(:session_id) { "session123" }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
-  let(:basic_service) { Google::Cloud::Spanner::Service.new "test_project", nil }
+  let(:basic_service) { Google::Cloud::Spanner::Service.new "test_project", :this_channel_is_insecure }
   let(:expected_call_opts) {
     metadata = {
       "google-cloud-resource-prefix" => session_id
@@ -32,7 +32,7 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
     it "sets quota_project with given value" do
       expected_quota_project = "test_quota_project"
       service = Google::Cloud::Spanner::Service.new(
-        "test_project", nil, quota_project: expected_quota_project
+        "test_project", :this_channel_is_insecure, quota_project: expected_quota_project
       )
       assert_equal expected_quota_project, service.quota_project
     end
@@ -45,6 +45,16 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
       assert_equal expected_quota_project, service.quota_project
     end
 
+    it "uses the default universe domain" do
+      assert_equal "googleapis.com", basic_service.universe_domain
+      assert_equal "spanner.googleapis.com", basic_service.host
+    end
+
+    it "sets a custom universe domain" do
+      service = Google::Cloud::Spanner::Service.new "test_project", :this_channel_is_insecure, universe_domain: "myuniverse.com"
+      assert_equal "myuniverse.com", service.universe_domain
+      assert_equal "spanner.myuniverse.com", service.host
+    end
   end
 
   describe ".create_session" do

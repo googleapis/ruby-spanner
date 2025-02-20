@@ -96,6 +96,15 @@ module Google
         alias project project_id
 
         ##
+        # The universe domain the client is connected to
+        #
+        # @return [String]
+        #
+        def universe_domain
+          service.universe_domain
+        end
+
+        ##
         # Retrieves the list of Cloud Spanner instances for the project.
         #
         # @param [String] token The `token` value returned by the last call to

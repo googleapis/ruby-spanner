@@ -38,6 +38,8 @@ module Google
         attr_accessor :quota_project
         attr_accessor :enable_leader_aware_routing
 
+        attr_reader :universe_domain
+
         RST_STREAM_INTERNAL_ERROR = "Received RST_STREAM".freeze
         EOS_INTERNAL_ERROR = "Received unexpected EOS on DATA frame from server".freeze
 
@@ -45,11 +47,19 @@ module Google
         # Creates a new Service instance.
         def initialize project, credentials, quota_project: nil,
                        host: nil, timeout: nil, lib_name: nil, lib_version: nil,
-                       enable_leader_aware_routing: nil
+                       enable_leader_aware_routing: nil, universe_domain: nil
           @project = project
           @credentials = credentials
           @quota_project = quota_project || (credentials.quota_project_id if credentials.respond_to? :quota_project_id)
-          @host = host
+          # TODO: This logic is part of UniverseDomainConcerns in gapic-common
+          # but is being copied here because we need to determine the host up
+          # front in order to build a gRPC channel. We should refactor this
+          # somehow to allow this logic to live where it is supposed to.
+          @universe_domain = universe_domain || ENV["GOOGLE_CLOUD_UNIVERSE_DOMAIN"] || "googleapis.com"
+          @host = host ||
+                  Google::Cloud::Spanner::V1::Spanner::Client::DEFAULT_ENDPOINT_TEMPLATE.sub(
+                    Gapic::UniverseDomainConcerns::ENDPOINT_SUBSTITUTION, @universe_domain
+                  )
           @timeout = timeout
           @lib_name = lib_name
           @lib_version = lib_version
@@ -80,6 +90,7 @@ module Google
               config.quota_project = @quota_project
               config.timeout = timeout if timeout
               config.endpoint = host if host
+              config.universe_domain = @universe_domain
               config.lib_name = lib_name_with_prefix
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{@project}" }
@@ -95,6 +106,7 @@ module Google
               config.quota_project = @quota_project
               config.timeout = timeout if timeout
               config.endpoint = host if host
+              config.universe_domain = @universe_domain
               config.lib_name = lib_name_with_prefix
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{@project}" }
@@ -110,6 +122,7 @@ module Google
               config.quota_project = @quota_project
               config.timeout = timeout if timeout
               config.endpoint = host if host
+              config.universe_domain = @universe_domain
               config.lib_name = lib_name_with_prefix
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{@project}" }
