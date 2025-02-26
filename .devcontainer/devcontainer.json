@@ -1,0 +1,11 @@
+{
+    "name": "Ruby Container",
+    "build" : {
+      "dockerfile": "Dockerfile",
+      "args" : {
+        "VARIANT": "bullseye"
+      }
+    },
+    "postCreateCommand": "bash .devcontainer/postCreate.sh",
+    "remoteUser": "vscode"
+  }
