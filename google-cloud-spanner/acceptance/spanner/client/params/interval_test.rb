@@ -21,7 +21,7 @@ describe "Spanner Client", :params, :interval, :spanner do
   it "queries and returns an :INTERVAL parameter" do
     skip if emulator_enabled?
 
-    interval = Interval.fromIso8601("P1Y2M3D")
+    interval = Interval.fromIso8601 "P1Y2M3D"
     results = db.execute_query "SELECT @value as value", params: { value: interval }, types: { value: :INTERVAL }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Interval
