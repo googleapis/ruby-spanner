@@ -17,9 +17,15 @@ require "helper"
 describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
-  let(:session_id) { "session123" }
+  let(:session_id) { "session1" }
+  let(:session_id_2) { "session2" }
+  let(:session_id_3) { "session3" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
+  let(:session_grpc_2) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id_2) }
+  let(:session_grpc_3) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id_3) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
+  let(:session2) { Google::Cloud::Spanner::Session.from_grpc session_grpc_2, spanner.service }
+  let(:session3) { Google::Cloud::Spanner::Session.from_grpc session_grpc_3, spanner.service }
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
@@ -57,6 +63,7 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     # set the session in the pool
     pool.sessions_available = [session]
     pool.sessions_in_use = {}
+    pool.instance_variable_set :@min, 1
 
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -75,6 +82,7 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     # set the session in the pool
     pool.sessions_available = [session]
     pool.sessions_in_use = {}
+    pool.instance_variable_set :@min, 1
 
     mock = Minitest::Mock.new
     session.service.mocked_service = mock
@@ -84,5 +92,66 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     shutdown_pool! pool
 
     mock.verify
+  end
+
+  it "releases sessions above the min" do
+    # Set up 3 sessions: session is recently used, but session2 and session3
+    # are eligible for release/keepalive.
+    # Because the min is 2, we expect one of [session2, session3] to be
+    # released and the other to be pinged.
+    pool.sessions_available = [session, session2, session3]
+    pool.instance_variable_set :@thread_pool, Concurrent::ImmediateExecutor.new
+    pool.instance_variable_set :@min, 2
+    session.instance_variable_set :@last_updated_at, Time.now
+    session2.instance_variable_set :@last_updated_at, Time.now - 2000
+    session3.instance_variable_set :@last_updated_at, Time.now - 2000
+
+    keepalive_log = []
+    release_log = []
+    session2.stub(:keepalive!, proc { keepalive_log << session2 }) do
+      session3.stub(:keepalive!, proc { keepalive_log << session3 }) do
+        session2.stub(:release!, proc { release_log << session2 }) do
+          session3.stub(:release!, proc { release_log << session3 }) do
+            pool.keepalive_or_release!
+          end
+        end
+      end
+    end
+
+    _(keepalive_log.count).must_equal 1
+    _([session2, session3]).must_include(keepalive_log.first)
+    _(release_log.count).must_equal 1
+    _([session2, session3]).must_include(release_log.first)
+    _(release_log.first).wont_equal keepalive_log.first
+    _(pool.sessions_available.count).must_equal 2
+    _(pool.sessions_available).must_include session
+    _([session2, session3]).must_include((pool.sessions_available - [session]).first)
+
+    shutdown_pool! pool
+  end
+
+  it "doesn't release sessions under the min" do
+    # Set up 2 sessions: session is recently used, but session2 is stale and
+    # eligible for keepalive. Min is 3 so it won't be released. If something
+    # is released incorrectly this will error because the release will fail due
+    # to no credentials.
+    pool.sessions_available = [session, session2]
+    pool.instance_variable_set :@thread_pool, Concurrent::ImmediateExecutor.new
+    pool.instance_variable_set :@min, 3
+    session.instance_variable_set :@last_updated_at, Time.now
+    session2.instance_variable_set :@last_updated_at, Time.now - 2000
+
+    keepalive_log = []
+    session2.stub(:keepalive!, proc { keepalive_log << session2 }) do
+      pool.keepalive_or_release!
+    end
+
+    _(keepalive_log.count).must_equal 1
+    _(keepalive_log).must_include session2
+    _(pool.sessions_available.count).must_equal 2
+    _(pool.sessions_available).must_include session
+    _(pool.sessions_available).must_include session2
+
+    shutdown_pool! pool
   end
 end
