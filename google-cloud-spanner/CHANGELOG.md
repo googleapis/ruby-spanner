@@ -1,5 +1,14 @@
 # Release History
 
+### 2.26.0 (2025-03-24)
+
+#### Features
+
+* Support setting the universe domain ([#144](https://github.com/googleapis/ruby-spanner/issues/144)) 
+#### Bug Fixes
+
+* Corrected algorithm that releases stale sessions in the pool ([#156](https://github.com/googleapis/ruby-spanner/issues/156)) 
+
 ### 2.25.0 (2025-01-29)
 
 #### Features
