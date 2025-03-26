@@ -27,19 +27,19 @@ module Google
         MIN_NANOSECONDS = -316224000000000000000;
 
         IntervalParsingState = Struct.new(
-          :afterP,
-          :afterY,
-          :afterMonth,
-          :afterD,
-          :afterT,
-          :afterH,
-          :afterMins,
-          :nextAllowed,
+          :after_p,
+          :after_y,
+          :after_month,
+          :after_d,
+          :after_t,
+          :after_h,
+          :after_mins,
+          :next_allowed,
           :start,
-          :isTime,
-          :mayBeTerminal,
-          :isTerminal,
-          :isValidResolution,
+          :is_time,
+          :may_be_terminal,
+          :is_terminal,
+          :is_valid_resolution,
           :years,
           :months,
           :days,
@@ -79,116 +79,116 @@ module Google
 
             current = -1
 
-            while state.start < text.length && !state.isTerminal do
-              current = text.index state.nextAllowed, state.start
+            while state.start < text.length && !state.is_terminal do
+              current = text.index state.next_allowed, state.start
 
               if current.nil?
-                raise ArgumentError, "Unsupported Format: #{text}"
+                raise ArgumentError, "unsupported format: #{text}"
               end
 
               case text[current]
               when 'P'
-                state.mayBeTerminal = false
-                state.isTerminal = false
-                state.isTime = false
-                state.isValidResolution = true
-                state.nextAllowed = state.afterP
+                state.may_be_terminal = false
+                state.is_terminal = false
+                state.is_time = false
+                state.is_valid_resolution = true
+                state.next_allowed = state.after_p
               when 'Y'
-                state.mayBeTerminal = true;
-                state.isTerminal = false;
-                state.isValidResolution = true;
+                state.may_be_terminal = true;
+                state.is_terminal = false;
+                state.is_valid_resolution = true;
                 state.years = Integer text[state.start, current - state.start]
-                state.nextAllowed = state.afterY;
+                state.next_allowed = state.after_y;
               when 'M'
-                if state.isTime
-                  state.mayBeTerminal = true;
-                  state.isTerminal = false;
-                  state.isValidResolution = true;
+                if state.is_time
+                  state.may_be_terminal = true;
+                  state.is_terminal = false;
+                  state.is_valid_resolution = true;
                   state.minutes = Integer text[state.start, current - state.start]
-                  state.nextAllowed = state.afterMins;
+                  state.next_allowed = state.after_mins;
                 else
-                  state.mayBeTerminal = true;
-                  state.isTerminal = false;
-                  state.isValidResolution = true;
+                  state.may_be_terminal = true;
+                  state.is_terminal = false;
+                  state.is_valid_resolution = true;
                   state.months = Integer text[state.start, current - state.start]
-                  state.nextAllowed = state.afterMonth;
+                  state.next_allowed = state.after_month;
                 end
               when 'D'
-                state.mayBeTerminal = true;
-                state.isTerminal = false;
-                state.isValidResolution = true;
+                state.may_be_terminal = true;
+                state.is_terminal = false;
+                state.is_valid_resolution = true;
                 state.days = Integer text[state.start, current - state.start]
-                state.nextAllowed = state.afterD;
+                state.next_allowed = state.after_d;
               when 'T'
-                state.mayBeTerminal = false;
-                state.isTerminal = false;
-                state.isTime = true;
-                state.isValidResolution = true;
-                state.nextAllowed = state.afterT;
+                state.may_be_terminal = false;
+                state.is_terminal = false;
+                state.is_time = true;
+                state.is_valid_resolution = true;
+                state.next_allowed = state.after_t;
               when 'H'
-                state.mayBeTerminal = true
-                state.isTerminal = false
-                state.isValidResolution = true
+                state.may_be_terminal = true
+                state.is_terminal = false
+                state.is_valid_resolution = true
                 state.hours = Integer text[state.start, current - state.start]
-                state.nextAllowed = state.afterH
+                state.next_allowed = state.after_h
               when 'S'
-                state.mayBeTerminal = true
-                state.isTerminal = true
-                state.isValidResolution = self.isValidResolution text[state.start, current - state.start]
+                state.may_be_terminal = true
+                state.is_terminal = true
+                state.is_valid_resolution = self.is_valid_resolution text[state.start, current - state.start]
                 state.seconds = Float text[state.start, current - state.start]
-                state.nextAllowed = nil;
+                state.next_allowed = nil;
               else
-                raise ArgumentError, "Unsupported Format: #{text}"
+                raise ArgumentError, "unsupported format: #{text}"
               end
 
               state.start = current + 1
             end
 
-            if state.isTerminal && state.start < text.length
-              raise ArgumentError, "Unsupported format: #{text}"
+            if state.is_terminal && state.start < text.length
+              raise ArgumentError, "unsupported format: #{text}"
             end
 
-            unless state.mayBeTerminal
-              raise ArgumentError, "Unsupported format: #{text}"
+            unless state.may_be_terminal
+              raise ArgumentError, "unsupported format: #{text}"
             end
 
-            unless state.isValidResolution
-              raise ArgumentError, 'The interval class only supports a resolution up to nanoseconds'
+            unless state.is_valid_resolution
+              raise ArgumentError, 'the interval class only supports a resolution up to nanoseconds'
             end
 
-            totalMonths = self.yearsToMonths(state.years) + state.months
-            totalNanoseconds = self.hoursToNanoseconds(state.hours) + self.minutesToNanoseconds(state.minutes) + self.secondsToNanoseconds(state.seconds)
+            total_months = self.years_to_months(state.years) + state.months
+            total_nanoseconds = self.hours_to_nanoseconds(state.hours) + self.minutes_to_nanoseconds(state.minutes) + self.seconds_to_nanoseconds(state.seconds)
 
-            Interval.new totalMonths, state.days, totalNanoseconds
+            Interval.new total_months, state.days, total_nanoseconds
           end
 
           private
 
-          def yearsToMonths years
+          def years_to_months years
             years * 12
           end
 
-          def hoursToNanoseconds hours
+          def hours_to_nanoseconds hours
             hours * self::NANOSECONDS_IN_AN_HOUR
           end
 
-          def minutesToNanoseconds minutes
+          def minutes_to_nanoseconds minutes
             minutes * self::NANOSECONDS_IN_A_MINUTE
           end
 
-          def secondsToNanoseconds seconds
+          def seconds_to_nanoseconds seconds
             seconds * self::NANOSECONDS_IN_A_SECOND
           end
 
-          def isValidResolution textValue
-            integer_value, decimal_value = textValue.gsub(',', '.').split('.')
+          def is_valid_resolution text_value
+            integer_value, decimal_value = text_value.gsub(',', '.').split('.')
 
-            # Not a decimal, so is valid
+            # not a decimal, so is valid
             if decimal_value.nil? || decimal_value.empty?
               return true
             end
 
-            # More than 9 digits after the decimal point, not supported
+            # more than 9 digits after the decimal point, not supported
             if decimal_value.length > 9
               return false
             end
@@ -198,11 +198,11 @@ module Google
         end
 
         def initialize
-          @internalVariable = 1;
+          @internal_variable = 1;
         end
 
         def to_s
-          @stringRepresentation ||= self.to_string
+          @string_representation ||= self.to_string
         end
 
         private
@@ -231,48 +231,48 @@ module Google
           hours = 0
           minutes = 0
           seconds = 0
-          remainingNanoseconds = @nanoseconds
+          remaining_nanoseconds = @nanoseconds
 
           years, months = @months.divmod 12
-          hours, remainingNanoseconds = remainingNanoseconds.divmod self.class::NANOSECONDS_IN_AN_HOUR
-          minutes, remainingNanoseconds = remainingNanoseconds.divmod self.class::NANOSECONDS_IN_A_MINUTE
-          seconds = remainingNanoseconds / self.class::NANOSECONDS_IN_A_SECOND
+          hours, remaining_nanoseconds = remaining_nanoseconds.divmod self.class::NANOSECONDS_IN_AN_HOUR
+          minutes, remaining_nanoseconds = remaining_nanoseconds.divmod self.class::NANOSECONDS_IN_A_MINUTE
+          seconds = remaining_nanoseconds / self.class::NANOSECONDS_IN_A_SECOND
 
-          intervalString = 'P';
+          interval_string = 'P';
 
           if years != 0
-            intervalString += "#{years}Y";
+            interval_string += "#{years}Y";
           end
 
           if months != 0
-            intervalString += "#{months}M";
+            interval_string += "#{months}M";
           end
 
           if days != 0
-            intervalString += "#{days}D";
+            interval_string += "#{days}D";
           end
 
           if hours != 0 || minutes != 0 || seconds != 0
-            intervalString += 'T';
+            interval_string += 'T';
 
             if hours != 0
-                intervalString += "#{hours}H";
+                interval_string += "#{hours}H";
             end
 
             if minutes != 0
-                intervalString += "#{minutes}M";
+                interval_string += "#{minutes}M";
             end
 
             if seconds != 0
-                intervalString += "#{seconds}S";
+                interval_string += "#{seconds}S";
             end
           end
 
-          if intervalString == 'P'
+          if interval_string == 'P'
               return 'P0Y';
           end
 
-          intervalString;
+          interval_string;
         end
       end
     end
