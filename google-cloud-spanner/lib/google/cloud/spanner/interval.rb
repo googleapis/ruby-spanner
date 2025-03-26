@@ -1,4 +1,4 @@
-# Copyright 2017 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License")
 # you may not use this file except in compliance with the License.
@@ -19,156 +19,260 @@ module Google
         NANOSECONDS_IN_A_SECOND = 1000000000
         NANOSECONDS_IN_A_MINUTE = NANOSECONDS_IN_A_SECOND * 60
         NANOSECONDS_IN_AN_HOUR = NANOSECONDS_IN_A_MINUTE * 60
-        YEARS = 0
-        MONTHS = 1
-        DAYS = 2
-        HOURS = 4
-        MINUTES = 5
-        SECONDS = 6
+        MAX_MONTHS = 120000;
+        MIN_MONTHS = -Interval::MAX_MONTHS;
+        MAX_DAYS = 3660000;
+        MIN_DAYS = -Interval::MAX_DAYS;
+        MAX_NANOSECONDS = 316224000000000000000;
+        MIN_NANOSECONDS = -316224000000000000000;
 
-        def self.fromIso8601 interval_string
-          pattern = /
-            (?!$)(-?\d+Y)?(-?\d+M)?(-?\d+D)?(T(?=-?.?\d)(-?\d+H)?(-?\d+M)?(-?(((\d*)((\.|,)\d{1,9})?)|(\.\d{1,9}))S)?)?$
-            /
-          interval_months = 0
-          interval_days = 0
-          interval_nanoseconds = 0
+        IntervalParsingState = Struct.new(
+          :afterP,
+          :afterY,
+          :afterMonth,
+          :afterD,
+          :afterT,
+          :afterH,
+          :afterMins,
+          :nextAllowed,
+          :start,
+          :isTime,
+          :mayBeTerminal,
+          :isTerminal,
+          :isValidResolution,
+          :years,
+          :months,
+          :days,
+          :hours,
+          :minutes,
+          :seconds,
+        )
 
-          captures = interval_string.match(pattern).captures
-          if captures.empty?
-            raise ArgumentError, "The ISO8601 provided was not in the correct format"
-          end
-
-          filter = Set[YEARS, MONTHS, DAYS, HOURS, MINUTES, SECONDS]
-          captures.each_with_index do |value, index|
-            unless filter.include? index
-              next
+        # Static Methods
+        class << self
+          def parse text
+            if text.nil? || text.empty?
+              raise 'The given interval is empty'
             end
 
-            numeric_value = value.gsub(/[^0-9.,-]/, "")
+            state = IntervalParsingState.new(
+              /(Y|M|D|T)/,
+              /(M|D|T)/,
+              /(D|T)/,
+              /(T)/,
+              /(H|M|S)/,
+              /(M|S)/,
+              /(S)/,
+              /(P)/,
+              0,
+              false,
+              false,
+              false,
+              false,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            )
 
-            case index
-            when YEARS
-              interval_months += Interval.years_to_months numeric_value
-            when MONTHS
-              interval_months += Integer numeric_value
-            when DAYS
-              interval_days = Integer numeric_value
-            when HOURS
-              interval_nanoseconds += Interval.hours_to_nanoseconds numeric_value
-            when MINUTES
-              interval_nanoseconds += Interval.minutes_to_nanoseconds numeric_value
-            when SECONDS
-              interval_nanoseconds += Interval.seconds_to_nanoseconds numeric_value
+            current = -1
+
+            while state.start < text.length && !state.isTerminal do
+              current = text.index state.nextAllowed, state.start
+
+              if current.nil?
+                raise ArgumentError, "Unsupported Format: #{text}"
+              end
+
+              case text[current]
+              when 'P'
+                state.mayBeTerminal = false
+                state.isTerminal = false
+                state.isTime = false
+                state.isValidResolution = true
+                state.nextAllowed = state.afterP
+              when 'Y'
+                state.mayBeTerminal = true;
+                state.isTerminal = false;
+                state.isValidResolution = true;
+                state.years = Integer text[state.start, current - state.start]
+                state.nextAllowed = state.afterY;
+              when 'M'
+                if state.isTime
+                  state.mayBeTerminal = true;
+                  state.isTerminal = false;
+                  state.isValidResolution = true;
+                  state.minutes = Integer text[state.start, current - state.start]
+                  state.nextAllowed = state.afterMins;
+                else
+                  state.mayBeTerminal = true;
+                  state.isTerminal = false;
+                  state.isValidResolution = true;
+                  state.months = Integer text[state.start, current - state.start]
+                  state.nextAllowed = state.afterMonth;
+                end
+              when 'D'
+                state.mayBeTerminal = true;
+                state.isTerminal = false;
+                state.isValidResolution = true;
+                state.days = Integer text[state.start, current - state.start]
+                state.nextAllowed = state.afterD;
+              when 'T'
+                state.mayBeTerminal = false;
+                state.isTerminal = false;
+                state.isTime = true;
+                state.isValidResolution = true;
+                state.nextAllowed = state.afterT;
+              when 'H'
+                state.mayBeTerminal = true
+                state.isTerminal = false
+                state.isValidResolution = true
+                state.hours = Integer text[state.start, current - state.start]
+                state.nextAllowed = state.afterH
+              when 'S'
+                state.mayBeTerminal = true
+                state.isTerminal = true
+                state.isValidResolution = self.isValidResolution text[state.start, current - state.start]
+                state.seconds = Float text[state.start, current - state.start]
+                state.nextAllowed = nil;
+              else
+                raise ArgumentError, "Unsupported Format: #{text}"
+              end
+
+              state.start = current + 1
             end
+
+            if state.isTerminal && state.start < text.length
+              raise ArgumentError, "Unsupported format: #{text}"
+            end
+
+            unless state.mayBeTerminal
+              raise ArgumentError, "Unsupported format: #{text}"
+            end
+
+            unless state.isValidResolution
+              raise ArgumentError, 'The interval class only supports a resolution up to nanoseconds'
+            end
+
+            totalMonths = self.yearsToMonths(state.years) + state.months
+            totalNanoseconds = self.hoursToNanoseconds(state.hours) + self.minutesToNanoseconds(state.minutes) + self.secondsToNanoseconds(state.seconds)
+
+            Interval.new totalMonths, state.days, totalNanoseconds
           end
 
-          Interval.new interval_months, interval_days, interval_nanoseconds
-        end
+          private
 
-        def self.years_to_months years
-          Integer(years) * 12
-        end
-
-        def self.hours_to_nanoseconds hours
-          Integer(hours) * NANOSECONDS_IN_AN_HOUR
-        end
-
-        def self.minutes_to_nanoseconds minutes
-          Integer(minutes) * NANOSECONDS_IN_A_MINUTE
-        end
-
-        def self.seconds_to_nanoseconds seconds
-          # We only support up to nanoseconds of precision
-          split_seconds = seconds.split "."
-          if split_seconds.length > 2 && split_seconds[1].length > 9
-            raise ArgumentError, "The seconds portion of the interval only supports up to nanoseconds."
+          def yearsToMonths years
+            years * 12
           end
 
-          Float(seconds) * NANOSECONDS_IN_A_SECOND
+          def hoursToNanoseconds hours
+            hours * self::NANOSECONDS_IN_AN_HOUR
+          end
+
+          def minutesToNanoseconds minutes
+            minutes * self::NANOSECONDS_IN_A_MINUTE
+          end
+
+          def secondsToNanoseconds seconds
+            seconds * self::NANOSECONDS_IN_A_SECOND
+          end
+
+          def isValidResolution textValue
+            integer_value, decimal_value = textValue.gsub(',', '.').split('.')
+
+            # Not a decimal, so is valid
+            if decimal_value.nil? || decimal_value.empty?
+              return true
+            end
+
+            # More than 9 digits after the decimal point, not supported
+            if decimal_value.length > 9
+              return false
+            end
+
+            true
+          end
         end
 
-        def self.from_months months
-          Interval.new months, 0, 0
-        end
-
-        def self.from_days days
-          Interval.new 0, days, 0
-        end
-
-        def self.from_seconds seconds
-          nanoseconds = Interval.seconds_to_nanoseconds seconds
-          Interval.new 0, 0, nanoseconds
-        end
-
-        def self.from_nanoseconds nanoseconds
-          Interval.new 0, 0, nanoseconds
+        def initialize
+          @internalVariable = 1;
         end
 
         def to_s
+          @stringRepresentation ||= self.to_string
+        end
+
+        private
+
+        def initialize months, days, nanoseconds
+          if months > self.class::MAX_MONTHS || months < self.class::MIN_MONTHS
+            raise "The Interval class supports a range from #{self.class::MIN_MONTHS} to #{self.class::MAX_MONTHS} months"
+          end
+          @months = months
+
+          if days > self.class::MAX_DAYS || days < self.class::MIN_DAYS
+            raise "The Interval class supports a range from #{self.class::MIN_MONTHS} to #{self.class::MAX_MONTHS} days"
+          end
+          @days = days
+
+          if nanoseconds > self.class::MAX_NANOSECONDS || nanoseconds < self.class::MIN_NANOSECONDS
+            raise "The Interval class supports a range from #{self.class::MIN_NANOSECONDS} to #{self.class::MAX_NANOSECONDS} nanoseconds"
+          end
+          @nanoseconds = nanoseconds
+        end
+
+        def to_string
           years = 0
           months = 0
           days = @days
           hours = 0
           minutes = 0
           seconds = 0
-          remaining_nanoseconds = @nanoseconds
+          remainingNanoseconds = @nanoseconds
 
-          years = @months / 12
-          months = @months % 12
-          hours = Integer(remaining_nanoseconds / 3_600_000_000_000)
-          remaining_nanoseconds %= 3_600_000_000_000
-          minutes = Integer(remaining_nanoseconds / 60_000_000_000)
-          remaining_nanoseconds %= 60_000_000_000
-          seconds = remaining_nanoseconds / 1_000_000_000
+          years, months = @months.divmod 12
+          hours, remainingNanoseconds = remainingNanoseconds.divmod self.class::NANOSECONDS_IN_AN_HOUR
+          minutes, remainingNanoseconds = remainingNanoseconds.divmod self.class::NANOSECONDS_IN_A_MINUTE
+          seconds = remainingNanoseconds / self.class::NANOSECONDS_IN_A_SECOND
 
-          interval_string = "P"
+          intervalString = 'P';
 
           if years != 0
-            interval_string += "#{years}Y"
+            intervalString += "#{years}Y";
           end
 
           if months != 0
-            interval_string += "#{months}M"
+            intervalString += "#{months}M";
           end
 
           if days != 0
-            interval_string += "#{days}D"
+            intervalString += "#{days}D";
           end
 
           if hours != 0 || minutes != 0 || seconds != 0
-            interval_string += "T"
+            intervalString += 'T';
 
             if hours != 0
-              interval_string += "#{hours}H"
+                intervalString += "#{hours}H";
             end
 
             if minutes != 0
-              interval_string += "#{minutes}M"
+                intervalString += "#{minutes}M";
             end
 
             if seconds != 0
-              if (seconds % 1).zero?
-                interval_string += "#{Integer(seconds)}S"
-              else
-                interval_string += "#{seconds}S"
-              end
+                intervalString += "#{seconds}S";
             end
           end
 
-          if interval_string == "P"
-            return "P0Y"
+          if intervalString == 'P'
+              return 'P0Y';
           end
 
-          interval_string
-        end
-
-        private
-
-        def initialize months, days, nanoseconds
-          @months = months
-          @days = days
-          @nanoseconds = nanoseconds
+          intervalString;
         end
       end
     end
