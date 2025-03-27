@@ -15,10 +15,26 @@
 module Google
   module Cloud
     module Spanner
+      ##
+      # # Interval
+      #
+      # Represents an interval of time by storing the time components
+      # in months, days and nanoseconds.
+      #
+      # @example
+      #   require "google/cloud/spanner"
+      #
+      #   iso_8601_string = "P1Y2M3DT4H5M6S"
+      #   interval = Google::Cloud::Spanner::Interval::parse(iso_8601_string)
+      #
+      #   print(interval) # "P1Y2M3DT4H5M6S"
+      #
       class Interval
         NANOSECONDS_IN_A_SECOND = 1000000000
         NANOSECONDS_IN_A_MINUTE = NANOSECONDS_IN_A_SECOND * 60
         NANOSECONDS_IN_AN_HOUR = NANOSECONDS_IN_A_MINUTE * 60
+        NANOSECONDS_IN_A_MILLISECOND = 1000000;
+        NANOSECONDS_IN_A_MICROSECOND = 1000;
         MAX_MONTHS = 120000;
         MIN_MONTHS = -Interval::MAX_MONTHS;
         MAX_DAYS = 3660000;
@@ -50,6 +66,22 @@ module Google
 
         # Static Methods
         class << self
+
+          # Parses and ISO8601 string and returns an Interval instance.
+          # The accepted format for the ISO8601 format is:
+          # P[n]Y[n]M[n]DT[n]H[n]M[n[.fraction]]S
+          # where n represents an integer number.
+          #
+          # @param [String] An ISO8601 formatted string.
+          # @return [Interval]
+          #
+          # @example
+          #   require "google/cloud/spanner"
+          #
+          #   iso_8601_string = "P1Y2M3DT4H5M6S"
+          #   interval = Google::Cloud::Spanner::Interval::parse(iso_8601_string)
+          #
+          #   print(interval) # "P1Y2M3DT4H5M6S"
           def parse text
             if text.nil? || text.empty?
               raise 'The given interval is empty'
@@ -162,6 +194,46 @@ module Google
             Interval.new total_months, state.days, total_nanoseconds
           end
 
+          # Returns an Interval instance with the months given.
+          #
+          # @param [Integer] An integer representing the months of the interval.
+          # @return [Interval]
+          def from_months months
+            Interval.new months, 0, 0
+          end
+
+          # Returns an Interval instance with the days given
+          #
+          # @param[Integer] An integer representing the days of the interval.
+          # @return[Interval]
+          def from_days days
+            Interval.new 0, days, 0
+          end
+
+          # Returns an Interval instance with the seconds given.
+          #
+          # @param[Integer] An integer representing the seconds of the interval.
+          # @return[Interval]
+          def from_seconds seconds
+            Interval.new 0, 0, seconds * self::NANOSECONDS_IN_A_SECOND
+          end
+
+          # Returns an Interval instance with the milliseconds given.
+          #
+          # @param[Integer] An integer representing the milliseconds of the interval.
+          # @return[Interval]
+          def from_milliseconds milliseconds
+            Interval.new 0, 0, milliseconds * self::NANOSECONDS_IN_A_MILLISECOND
+          end
+
+          # Returns an Interval instance with the microseconds given.
+          #
+          # @param[Integer] An integer representing the microseconds of the interval.
+          # @return[Interval]
+          def from_microseconds microseconds
+            Interval.new 0, 0, milliseconds * self::NANOSECONDS_IN_A_MICROSECOND
+          end
+
           private
 
           def years_to_months years
@@ -195,10 +267,6 @@ module Google
 
             true
           end
-        end
-
-        def initialize
-          @internal_variable = 1;
         end
 
         def to_s
