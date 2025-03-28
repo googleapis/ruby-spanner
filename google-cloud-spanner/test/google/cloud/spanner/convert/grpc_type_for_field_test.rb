@@ -119,4 +119,10 @@ describe Google::Cloud::Spanner::Convert, :grpc_type_for_field, :mock_spanner do
     assert_equal type.code, :PROTO
     assert_equal type.proto_type_fqn, ""
   end
+
+  it "converts an UUID value" do
+    field = :UUID
+    type = Google::Cloud::Spanner::Convert.grpc_type_for_field field
+    assert_equal type.code, :UUID
+  end
 end
