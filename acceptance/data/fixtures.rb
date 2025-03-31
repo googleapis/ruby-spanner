@@ -62,7 +62,7 @@ module Acceptance
               dates ARRAY<DATE>,
               timestamps ARRAY<TIMESTAMP>,
               numerics ARRAY<NUMERIC>,
-              json_array ARRAY<JSON>,
+              json_array ARRAY<JSON>
               interval INTERVAL
           ) PRIMARY KEY (id)
         STUFFS
