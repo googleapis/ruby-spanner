@@ -256,7 +256,7 @@ module Google
             when :JSON
               JSON.parse value.string_value
             when :INTERVAL
-              Interval.fromIso8601 value.string_value
+              Interval.parse value.string_value
             when :PROTO
               descriptor = Google::Protobuf::DescriptorPool.generated_pool.lookup(type.proto_type_fqn).msgclass
               content = Base64.decode64 value.string_value
