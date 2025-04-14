@@ -263,7 +263,7 @@ module Acceptance
         date: Date.today + rand(-100..100),
         timestamp: Time.now + rand(-60 * 60 * 24.0..60 * 60 * 24.0),
         json: { venue: "Yellow Lake", rating: 10 },
-        interval: Interval.fromIso8601("P#{rand(1..9)}Y#{rand(1..9)}M#{rand(1..9)}D"),
+        interval: Interval.parse("P#{rand(1..9)}Y#{rand(1..9)}M#{rand(1..9)}D"),
         ints: rand(2..10).times.map { rand(0..1000) },
         floats: rand(2..10).times.map { rand(0.0..100.0) },
         float32s: rand(2..10).times.map { rand(0.0..100.0) },

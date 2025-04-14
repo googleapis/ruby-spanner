@@ -25,10 +25,9 @@ module Google
       #   require "google/cloud/spanner"
       #
       #   iso_8601_string = "P1Y2M3DT4H5M6S"
-      #   interval = Google::Cloud::Spanner::Interval::parse(iso_8601_string)
+      #   interval = Google::Cloud::Spanner::Interval::parse iso_8601_string
       #
-      #   print(interval) # "P1Y2M3DT4H5M6S"
-      #
+      #   puts interval # "P1Y2M3DT4H5M6S"
       class Interval
         NANOSECONDS_IN_A_SECOND = 1000000000
         NANOSECONDS_IN_A_MINUTE = NANOSECONDS_IN_A_SECOND * 60
@@ -47,7 +46,7 @@ module Google
         class << self
           # Parses an ISO8601 string and returns an Interval instance.
           # The accepted format for the ISO8601 format is:
-          # P[n]Y[n]M[n]DT[n]H[n]M[n[.fraction]]S
+          # `P[n]Y[n]M[n]DT[n]H[n]M[n[.fraction]]S`
           # where n represents an integer number.
           #
           # @param [String] An ISO8601 formatted string.
@@ -57,22 +56,27 @@ module Google
           #   require "google/cloud/spanner"
           #
           #   iso_8601_string = "P1Y2M3DT4H5M6S"
-          #   interval = Google::Cloud::Spanner::Interval::parse(iso_8601_string)
+          #   interval = Google::Cloud::Spanner::Interval::parse iso_8601_string
           #
-          #   print(interval) # "P1Y2M3DT4H5M6S"
+          #   puts interval # "P1Y2M3DT4H5M6S"
           def parse interval_string
-            pattern = /(?!$)(?<years>-?\d+Y)?(?<months>-?\d+M)?(?<days>-?\d+D)?(T(?=-?.?\d)(?<hours>-?\d+H)?(?<minutes>-?\d+M)?(?<seconds>-?(((\d*)((\.|,)\d{1,9})?)|(\.\d{1,9}))S)?)?$/
+            pattern = /^P(?!$)((?<years>-?\d+)Y)?((?<months>-?\d+)M)?((?<days>-?\d+)D)?(T(?!$)((?<hours>-?\d+)H)?((?<minutes>-?\d+)M)?((?<seconds>-?(?!S)\d*([\.,]\d{1,9})?)S)?)?$/
             interval_months = 0
             interval_days = 0
             interval_nanoseconds = 0
 
             matches = interval_string.match(pattern)
+
+            if matches.nil?
+              raise ArgumentError, "The ISO8601 provided was not in the correct format"
+            end
+
             if matches.captures.empty?
               raise ArgumentError, "The ISO8601 provided was not in the correct format"
             end
 
             if matches[:years]
-              interval_months += self::years_to_months matches[:years].to_i
+              interval_months += matches[:years].to_i * 12
             end
 
             if matches[:months]
@@ -84,15 +88,15 @@ module Google
             end
 
             if matches[:hours]
-              interval_nanoseconds += self::hours_to_nanoseconds matches[:hours].to_i
+              interval_nanoseconds += matches[:hours].to_i * NANOSECONDS_IN_AN_HOUR
             end
 
             if matches[:minutes]
-              interval_nanoseconds += self::minutes_to_nanoseconds matches[:minutes].to_i
+              interval_nanoseconds += matches[:minutes].to_i * NANOSECONDS_IN_A_MINUTE
             end
 
             if matches[:seconds]
-              interval_nanoseconds += self::seconds_to_nanoseconds matches[:seconds].to_f
+              interval_nanoseconds += matches[:seconds].gsub(',', '.').to_f * NANOSECONDS_IN_A_SECOND
             end
 
             Interval.new interval_months, interval_days, interval_nanoseconds
@@ -119,7 +123,7 @@ module Google
           # @param [Integer]
           # @return [Interval]
           def from_seconds seconds
-            nanoseconds = Interval.seconds_to_nanoseconds seconds
+            nanoseconds = seconds_to_nanoseconds seconds
             Interval.new 0, 0, nanoseconds
           end
 
@@ -148,30 +152,6 @@ module Google
           def from_nanoseconds nanoseconds
             Interval.new 0, 0, nanoseconds
           end
-
-          private
-
-          def years_to_months years
-            Integer(years) * 12
-          end
-
-          def hours_to_nanoseconds hours
-            Integer(hours) * NANOSECONDS_IN_AN_HOUR
-          end
-
-          def minutes_to_nanoseconds minutes
-            Integer(minutes) * NANOSECONDS_IN_A_MINUTE
-          end
-
-          def seconds_to_nanoseconds seconds
-            # We only support up to nanoseconds of precision
-            split_seconds = seconds.to_s.split '.'
-            if split_seconds.length > 2 || split_seconds.length > 1 && split_seconds[1].length > 9
-              raise ArgumentError, "The seconds portion of the interval only supports up to nanoseconds."
-            end
-
-            Float(seconds) * NANOSECONDS_IN_A_SECOND
-          end
         end
 
         def to_s
@@ -198,6 +178,14 @@ module Google
           @nanoseconds = nanoseconds
         end
 
+        def flip_if_needed value
+          if value < 0
+            return -1
+          end
+
+          return 1
+        end
+
         def to_string
           years = 0
           months = 0
@@ -207,44 +195,44 @@ module Google
           seconds = 0
           remaining_nanoseconds = @nanoseconds
 
-          years = @months / 12
-          months = @months % 12
+          years = @months.fdiv(12).truncate
+          months = @months % (flip_if_needed(@months) * 12)
           hours = Integer(remaining_nanoseconds / 3_600_000_000_000)
-          remaining_nanoseconds %= 3_600_000_000_000
+          remaining_nanoseconds %= (flip_if_needed(remaining_nanoseconds) * 3_600_000_000_000)
           minutes = Integer(remaining_nanoseconds / 60_000_000_000)
-          remaining_nanoseconds %= 60_000_000_000
-          seconds = remaining_nanoseconds / 1_000_000_000
+          remaining_nanoseconds %= (flip_if_needed(remaining_nanoseconds) * 60_000_000_000)
+          seconds = remaining_nanoseconds.to_f / 1_000_000_000
 
-          interval_string = "P"
+          interval_string = ['P']
 
           if years != 0
-            interval_string += "#{years}Y"
+            interval_string.append "#{years}Y"
           end
 
           if months != 0
-            interval_string += "#{months}M"
+            interval_string.append "#{months}M"
           end
 
           if days != 0
-            interval_string += "#{days}D"
+            interval_string.append "#{days}D"
           end
 
           if hours != 0 || minutes != 0 || seconds != 0
-            interval_string += "T"
+            interval_string.append "T"
 
             if hours != 0
-              interval_string += "#{hours}H"
+              interval_string.append "#{hours}H"
             end
 
             if minutes != 0
-              interval_string += "#{minutes}M"
+              interval_string.append "#{minutes}M"
             end
 
             if seconds != 0
               if (seconds % 1).zero?
-                interval_string += "#{Integer(seconds)}S"
+                interval_string.append "#{Integer(seconds)}S"
               else
-                interval_string += "#{seconds}S"
+                interval_string.append "#{seconds}S"
               end
             end
           end
@@ -253,7 +241,7 @@ module Google
             return "P0Y"
           end
 
-          interval_string
+          interval_string.join
         end
       end
     end
