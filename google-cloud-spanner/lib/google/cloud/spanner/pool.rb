@@ -221,8 +221,8 @@ module Google
           @keepalive_task.execute
         end
 
-        def future &block
-          Concurrent::Future.new(executor: @thread_pool, &block).execute
+        def future(&)
+          Concurrent::Future.new(executor: @thread_pool, &).execute
         end
       end
     end

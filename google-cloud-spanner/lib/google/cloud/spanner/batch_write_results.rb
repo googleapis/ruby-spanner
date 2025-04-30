@@ -92,9 +92,9 @@ module Google
         #
         # @yield [::Google::Cloud::Spanner::BatchWriteResults::BatchResult]
         #
-        def each &block
+        def each(&)
           if defined? @results
-            @results.each(&block)
+            @results.each(&)
           else
             results = []
             @enumerable.each do |grpc|
