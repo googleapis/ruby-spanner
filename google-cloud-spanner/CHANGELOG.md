@@ -1,5 +1,11 @@
 # Release History
 
+### 2.27.0 (2025-04-30)
+
+#### Features
+
+* Updated required Ruby version to 3.1 ([#160](https://github.com/googleapis/ruby-spanner/issues/160)) 
+
 ### 2.26.0 (2025-03-24)
 
 #### Features
