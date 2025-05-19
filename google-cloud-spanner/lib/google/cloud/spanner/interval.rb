@@ -29,28 +29,28 @@ module Google
       #
       #   puts interval # "P1Y2M3DT4H5M6S"
       class Interval
-        NANOSECONDS_IN_A_SECOND = 1000000000
+        NANOSECONDS_IN_A_SECOND = 1_000_000_000
         NANOSECONDS_IN_A_MINUTE = NANOSECONDS_IN_A_SECOND * 60
         NANOSECONDS_IN_AN_HOUR = NANOSECONDS_IN_A_MINUTE * 60
-        NANOSECONDS_IN_A_MILLISECOND = 1000000
-        NANOSECONDS_IN_A_MICROSECOND = 1000
-        MAX_MONTHS = 120000
+        NANOSECONDS_IN_A_MILLISECOND = 1_000_000
+        NANOSECONDS_IN_A_MICROSECOND = 1_000
+        MAX_MONTHS = 120_000
         MIN_MONTHS = -MAX_MONTHS
-        MAX_DAYS = 3660000
+        MAX_DAYS = 3_660_000
         MIN_DAYS = -MAX_DAYS
-        MAX_NANOSECONDS = 316224000000000000000
-        MIN_NANOSECONDS = -316224000000000000000
+        MAX_NANOSECONDS = 316_224_000_000_000_000_000
+        MIN_NANOSECONDS = -316_224_000_000_000_000_000
 
         private_constant :NANOSECONDS_IN_A_SECOND, :NANOSECONDS_IN_A_MINUTE, :NANOSECONDS_IN_AN_HOUR, :NANOSECONDS_IN_A_MILLISECOND, :NANOSECONDS_IN_A_MICROSECOND, :MAX_MONTHS, :MIN_MONTHS, :MAX_DAYS, :MIN_DAYS, :MAX_NANOSECONDS, :MIN_NANOSECONDS
 
         class << self
           # Parses an ISO8601 string and returns an Interval instance.
-          # The accepted format for the ISO8601 format is:
+          # The accepted format for the ISO8601 standard is:
           # `P[n]Y[n]M[n]DT[n]H[n]M[n[.fraction]]S`
-          # where n represents an integer number.
+          # where `n` represents an integer number.
           #
           # @param [String] An ISO8601 formatted string.
-          # @return [Interval]
+          # @return [Google::Cloud::Spanner::Interval]
           #
           # @example
           #   require "google/cloud/spanner"
@@ -68,11 +68,11 @@ module Google
             matches = interval_string.match(pattern)
 
             if matches.nil?
-              raise ArgumentError, "The ISO8601 provided was not in the correct format"
+              raise ArgumentError, "The provided string does not follow ISO8601 standard."
             end
 
             if matches.captures.empty?
-              raise ArgumentError, "The ISO8601 provided was not in the correct format"
+              raise ArgumentError, "The provided string does not follow ISO8601 standard."
             end
 
             if matches[:years]
@@ -95,6 +95,7 @@ module Google
               interval_nanoseconds += matches[:minutes].to_i * NANOSECONDS_IN_A_MINUTE
             end
 
+            # Only seconds can be fractional. Both period and comma are valid inputs.
             if matches[:seconds]
               interval_nanoseconds += matches[:seconds].gsub(',', '.').to_f * NANOSECONDS_IN_A_SECOND
             end
@@ -155,7 +156,7 @@ module Google
         end
 
         def to_s
-          # Memoizing it as the logic can be a bit heavy
+          # Memoizing it as the logic can be a bit heavy.
           @string_representation ||= self.to_string
         end
 
@@ -178,30 +179,31 @@ module Google
           @nanoseconds = nanoseconds
         end
 
-        def flip_if_needed value
-          if value < 0
-            return -1
-          end
-
-          return 1
+        def match_sign value
+          value < 0 ? -1 : 1
         end
 
+        # Converts [Interval] to an ISO8601 Standard string.
         def to_string
-          years = 0
-          months = 0
+          # Months should be converted to years and months.
+          years = @months.fdiv(12).truncate
+          months = @months % (match_sign(@months) * 12)
+
           days = @days
-          hours = 0
-          minutes = 0
-          seconds = 0
+
+          # Nanoseconds should be converted to hours, minutes and seconds components.
           remaining_nanoseconds = @nanoseconds
 
-          years = @months.fdiv(12).truncate
-          months = @months % (flip_if_needed(@months) * 12)
-          hours = Integer(remaining_nanoseconds / 3_600_000_000_000)
-          remaining_nanoseconds %= (flip_if_needed(remaining_nanoseconds) * 3_600_000_000_000)
-          minutes = Integer(remaining_nanoseconds / 60_000_000_000)
-          remaining_nanoseconds %= (flip_if_needed(remaining_nanoseconds) * 60_000_000_000)
-          seconds = remaining_nanoseconds.to_f / 1_000_000_000
+          hours = (remaining_nanoseconds.abs / NANOSECONDS_IN_AN_HOUR) * match_sign(remaining_nanoseconds)
+          remaining_nanoseconds %= (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_AN_HOUR)
+          minutes = (remaining_nanoseconds.abs / NANOSECONDS_IN_A_MINUTE) * match_sign(remaining_nanoseconds)
+          remaining_nanoseconds %= (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_A_MINUTE)
+
+          # Only seconds can be fractional, and can have a maximum of 9 characters after decimal.
+          seconds = remaining_nanoseconds.to_f / NANOSECONDS_IN_A_SECOND
+          is_sec_nonzero = seconds.nonzero?
+          # Prevent usage of scientific notation.
+          seconds = "%f" % seconds
 
           interval_string = ['P']
 
@@ -217,7 +219,8 @@ module Google
             interval_string.append "#{days}D"
           end
 
-          if hours != 0 || minutes != 0 || seconds != 0
+          test = seconds != 0
+          if hours != 0 || minutes != 0 || is_sec_nonzero
             interval_string.append "T"
 
             if hours != 0
@@ -229,19 +232,39 @@ module Google
             end
 
             if seconds != 0
-              if (seconds % 1).zero?
-                interval_string.append "#{Integer(seconds)}S"
-              else
-                interval_string.append "#{seconds}S"
-              end
+              interval_string.append "#{format_seconds(seconds)}S"
             end
           end
 
-          if interval_string == "P"
+          if interval_string == ["P"]
             return "P0Y"
           end
 
           interval_string.join
+        end
+
+
+        # Formats decimal values be in multiples of 3 length.
+        #
+        def format_seconds seconds
+          whole, fraction = seconds.to_s.split('.')
+          return whole if fraction.nil? || fraction == '0'
+
+          fraction = fraction.gsub(/0+$/, '')
+          
+          return "#{whole}" if fraction.length == 0
+
+          target_length =
+            if fraction.length <= 3
+              3
+            elsif fraction.length <= 6
+              6
+            else
+              9
+            end
+
+          fraction = (fraction + '0' * target_length)[0...target_length]
+          "#{whole}.#{fraction}"
         end
       end
     end

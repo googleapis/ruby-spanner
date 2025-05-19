@@ -22,7 +22,7 @@ describe "Spanner Client", :types, :interval, :spanner do
   it "writes and reads :INTERVAL" do
     skip if emulator_enabled?
 
-    interval = Interval.fromIso8601 "P1Y2M3Y"
+    interval = Interval.parse "P1Y2M3Y"
     results = db.execute_query "SELECT @value AS value", params: { value: interval }, types: { value: :INTERVAL }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
