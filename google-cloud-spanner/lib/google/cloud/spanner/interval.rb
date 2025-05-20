@@ -41,7 +41,9 @@ module Google
         MAX_NANOSECONDS = 316_224_000_000_000_000_000
         MIN_NANOSECONDS = -316_224_000_000_000_000_000
 
-        private_constant :NANOSECONDS_IN_A_SECOND, :NANOSECONDS_IN_A_MINUTE, :NANOSECONDS_IN_AN_HOUR, :NANOSECONDS_IN_A_MILLISECOND, :NANOSECONDS_IN_A_MICROSECOND, :MAX_MONTHS, :MIN_MONTHS, :MAX_DAYS, :MIN_DAYS, :MAX_NANOSECONDS, :MIN_NANOSECONDS
+        private_constant :NANOSECONDS_IN_A_SECOND, :NANOSECONDS_IN_A_MINUTE, :NANOSECONDS_IN_AN_HOUR,
+                         :NANOSECONDS_IN_A_MILLISECOND, :NANOSECONDS_IN_A_MICROSECOND, :MAX_MONTHS,
+                         :MIN_MONTHS, :MAX_DAYS, :MIN_DAYS, :MAX_NANOSECONDS, :MIN_NANOSECONDS
 
         class << self
           # Parses an ISO8601 string and returns an Interval instance.
@@ -65,7 +67,7 @@ module Google
             interval_days = 0
             interval_nanoseconds = 0
 
-            matches = interval_string.match(pattern)
+            matches = interval_string.match pattern
 
             if matches.nil?
               raise ArgumentError, "The provided string does not follow ISO8601 standard."
@@ -97,7 +99,7 @@ module Google
 
             # Only seconds can be fractional. Both period and comma are valid inputs.
             if matches[:seconds]
-              interval_nanoseconds += matches[:seconds].gsub(',', '.').to_f * NANOSECONDS_IN_A_SECOND
+              interval_nanoseconds += matches[:seconds].gsub(",", ".").to_f * NANOSECONDS_IN_A_SECOND
             end
 
             Interval.new interval_months, interval_days, interval_nanoseconds
@@ -157,30 +159,30 @@ module Google
 
         def to_s
           # Memoizing it as the logic can be a bit heavy.
-          @string_representation ||= self.to_string
+          @to_s ||= to_string
         end
 
         private
 
         def initialize months, days, nanoseconds
-          if (months > MAX_MONTHS || months < MIN_MONTHS)
+          if months > MAX_MONTHS || months < MIN_MONTHS
             raise ArgumentError, "The Interval class supports months from #{MIN_MONTHS} to #{MAX_MONTHS}."
           end
           @months = months
 
-          if (days > MAX_DAYS || days < MIN_DAYS)
+          if days > MAX_DAYS || days < MIN_DAYS
             raise ArgumentError, "The Interval class supports days from #{MIN_DAYS} to #{MAX_DAYS}."
           end
           @days = days
 
-          if (nanoseconds > MAX_NANOSECONDS || nanoseconds < MIN_NANOSECONDS)
+          if nanoseconds > MAX_NANOSECONDS || nanoseconds < MIN_NANOSECONDS
             raise ArgumentError, "The Interval class supports nanoseconds from #{MIN_NANOSECONDS} to #{MAX_NANOSECONDS}"
           end
           @nanoseconds = nanoseconds
         end
 
         def match_sign value
-          value < 0 ? -1 : 1
+          value.negative? ? -1 : 1
         end
 
         # Converts [Interval] to an ISO8601 Standard string.
@@ -202,10 +204,9 @@ module Google
           # Only seconds can be fractional, and can have a maximum of 9 characters after decimal. Therefore,
           # we convert the remaining nanoseconds to an integer for formatting.
           seconds = (remaining_nanoseconds.abs / NANOSECONDS_IN_A_SECOND) * match_sign(remaining_nanoseconds)
-          #remaining_nanoseconds %= (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_A_SECOND)
           nanoseconds = remaining_nanoseconds % (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_A_SECOND)
 
-          interval_string = ['P']
+          interval_string = ["P"]
 
           if years != 0
             interval_string.append "#{years}Y"
@@ -231,7 +232,7 @@ module Google
             end
 
             if seconds != 0 || nanoseconds != 0
-              interval_string.append "#{format_seconds(seconds, nanoseconds)}S"
+              interval_string.append "#{format_seconds seconds, nanoseconds}S"
             end
           end
 
@@ -242,15 +243,14 @@ module Google
           interval_string.join
         end
 
-
         # Formats decimal values be in multiples of 3 length.
         #
         def format_seconds seconds, nanoseconds
-          return seconds if nanoseconds == 0
+          return seconds if nanoseconds.zero?
           add_sign = seconds.zero? && nanoseconds.negative?
 
-          nanoseconds_str = nanoseconds.abs.to_s.rjust(9, '0')
-          nanoseconds_str = nanoseconds_str.gsub(/0+$/, '')  
+          nanoseconds_str = nanoseconds.abs.to_s.rjust 9, "0"
+          nanoseconds_str = nanoseconds_str.gsub(/0+$/, "")
 
           target_length =
             if nanoseconds_str.length <= 3
@@ -261,7 +261,7 @@ module Google
               9
             end
 
-          nanoseconds_str = (nanoseconds_str + '0' * target_length)[0...target_length]
+          nanoseconds_str = (nanoseconds_str + ("0" * target_length))[0...target_length]
           "#{add_sign ? '-' : ''}#{seconds}.#{nanoseconds_str}"
         end
       end

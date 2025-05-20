@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "google/cloud/spanner/interval"
-
 module Acceptance
   module Fixtures
     def stuffs_ddl_statement
@@ -62,8 +60,7 @@ module Acceptance
               dates ARRAY<DATE>,
               timestamps ARRAY<TIMESTAMP>,
               numerics ARRAY<NUMERIC>,
-              json_array ARRAY<JSON>,
-              interval INTERVAL
+              json_array ARRAY<JSON>
           ) PRIMARY KEY (id)
         STUFFS
       end
@@ -240,7 +237,6 @@ module Acceptance
           date: :DATE,
           timestamp: :TIMESTAMP,
           json: :JSON,
-          interval: :INTERVAL,
           ints: [:INT64],
           floats: [:FLOAT64],
           float32s: [:FLOAT32],
@@ -263,7 +259,6 @@ module Acceptance
         date: Date.today + rand(-100..100),
         timestamp: Time.now + rand(-60 * 60 * 24.0..60 * 60 * 24.0),
         json: { venue: "Yellow Lake", rating: 10 },
-        interval: Interval.parse("P#{rand(1..9)}Y#{rand(1..9)}M#{rand(1..9)}D"),
         ints: rand(2..10).times.map { rand(0..1000) },
         floats: rand(2..10).times.map { rand(0.0..100.0) },
         float32s: rand(2..10).times.map { rand(0.0..100.0) },
