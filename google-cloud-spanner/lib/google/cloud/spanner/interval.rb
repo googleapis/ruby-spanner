@@ -199,11 +199,11 @@ module Google
           minutes = (remaining_nanoseconds.abs / NANOSECONDS_IN_A_MINUTE) * match_sign(remaining_nanoseconds)
           remaining_nanoseconds %= (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_A_MINUTE)
 
-          # Only seconds can be fractional, and can have a maximum of 9 characters after decimal.
-          seconds = remaining_nanoseconds.to_f / NANOSECONDS_IN_A_SECOND
-          is_sec_nonzero = seconds.nonzero?
-          # Prevent usage of scientific notation.
-          seconds = "%f" % seconds
+          # Only seconds can be fractional, and can have a maximum of 9 characters after decimal. Therefore,
+          # we convert the remaining nanoseconds to an integer for formatting.
+          seconds = (remaining_nanoseconds.abs / NANOSECONDS_IN_A_SECOND) * match_sign(remaining_nanoseconds)
+          #remaining_nanoseconds %= (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_A_SECOND)
+          nanoseconds = remaining_nanoseconds % (match_sign(remaining_nanoseconds) * NANOSECONDS_IN_A_SECOND)
 
           interval_string = ['P']
 
@@ -219,8 +219,7 @@ module Google
             interval_string.append "#{days}D"
           end
 
-          test = seconds != 0
-          if hours != 0 || minutes != 0 || is_sec_nonzero
+          if hours != 0 || minutes != 0 || seconds != 0 || nanoseconds != 0
             interval_string.append "T"
 
             if hours != 0
@@ -231,8 +230,8 @@ module Google
               interval_string.append "#{minutes}M"
             end
 
-            if seconds != 0
-              interval_string.append "#{format_seconds(seconds)}S"
+            if seconds != 0 || nanoseconds != 0
+              interval_string.append "#{format_seconds(seconds, nanoseconds)}S"
             end
           end
 
@@ -246,25 +245,24 @@ module Google
 
         # Formats decimal values be in multiples of 3 length.
         #
-        def format_seconds seconds
-          whole, fraction = seconds.to_s.split('.')
-          return whole if fraction.nil? || fraction == '0'
+        def format_seconds seconds, nanoseconds
+          return seconds if nanoseconds == 0
+          add_sign = seconds.zero? && nanoseconds.negative?
 
-          fraction = fraction.gsub(/0+$/, '')
-          
-          return "#{whole}" if fraction.length == 0
+          nanoseconds_str = nanoseconds.abs.to_s.rjust(9, '0')
+          nanoseconds_str = nanoseconds_str.gsub(/0+$/, '')  
 
           target_length =
-            if fraction.length <= 3
+            if nanoseconds_str.length <= 3
               3
-            elsif fraction.length <= 6
+            elsif nanoseconds_str.length <= 6
               6
             else
               9
             end
 
-          fraction = (fraction + '0' * target_length)[0...target_length]
-          "#{whole}.#{fraction}"
+          nanoseconds_str = (nanoseconds_str + '0' * target_length)[0...target_length]
+          "#{add_sign ? '-' : ''}#{seconds}.#{nanoseconds_str}"
         end
       end
     end
