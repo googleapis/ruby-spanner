@@ -15,7 +15,7 @@
 require "helper"
 require "google/cloud/spanner/interval"
 
-describe "Spanner Interval parsing", :interval, :spanner do
+describe Google::Cloud::Spanner::Interval, :invalid_input do
 
   it "fails on arbitrary strings" do
     assert_raises ArgumentError do

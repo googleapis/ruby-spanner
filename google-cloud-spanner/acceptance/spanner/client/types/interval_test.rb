@@ -19,14 +19,14 @@ describe "Spanner Client", :types, :interval, :spanner do
   let(:db) { spanner_client }
   let(:table_name) { "stuffs" }
 
-  it "writes and reads :INTERVAL" do
+  it "converts a valid ISO8601 string to an :INTERVAL" do
     skip if emulator_enabled?
 
-    interval = Interval.parse "P1Y2M3Y"
-    results = db.execute_query "SELECT @value AS value", params: { value: interval }, types: { value: :INTERVAL }
+    results = db.execute_query "SELECT @value AS value", params: { value: "P14M" }, types: { value: :INTERVAL }
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields[:value]).must_equal :INTERVAL
-    _(results.rows.first[:value]).must_equal interval
+    _(results.rows.first[:value]).must_be_kind_of Google::Cloud::Spanner::Interval
+    _(results.rows.first[:value].to_s).must_equal "P1Y2M"
   end
 end

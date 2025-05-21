@@ -15,7 +15,7 @@
 require "helper"
 require "google/cloud/spanner/interval"
 
-describe "Spanner Client", :interval, :spanner do
+describe Google::Cloud::Spanner::Interval, :convert_interval do
 
   Interval = Google::Cloud::Spanner::Interval
 

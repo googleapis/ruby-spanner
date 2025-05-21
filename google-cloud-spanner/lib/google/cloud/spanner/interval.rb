@@ -47,6 +47,7 @@ module Google
 
         class << self
           # Parses an ISO8601 string and returns an Interval instance.
+          #
           # The accepted format for the ISO8601 standard is:
           # `P[n]Y[n]M[n]DT[n]H[n]M[n[.fraction]]S`
           # where `n` represents an integer number.
@@ -99,7 +100,7 @@ module Google
 
             # Only seconds can be fractional. Both period and comma are valid inputs.
             if matches[:seconds]
-              interval_nanoseconds += matches[:seconds].gsub(",", ".").to_f * NANOSECONDS_IN_A_SECOND
+              interval_nanoseconds += (matches[:seconds].gsub(",", ".").to_f * NANOSECONDS_IN_A_SECOND).to_i
             end
 
             Interval.new interval_months, interval_days, interval_nanoseconds
@@ -126,7 +127,7 @@ module Google
           # @param [Integer]
           # @return [Interval]
           def from_seconds seconds
-            nanoseconds = seconds_to_nanoseconds seconds
+            nanoseconds = seconds * NANOSECONDS_IN_A_SECOND
             Interval.new 0, 0, nanoseconds
           end
 
@@ -157,13 +158,16 @@ module Google
           end
         end
 
+
+        # Converts the [Interval] to an ISO8601 Standard string.
+        # @return [String] The interval's ISO8601 string representation.
         def to_s
           # Memoizing it as the logic can be a bit heavy.
           @to_s ||= to_string
         end
 
-        private
-
+        ##
+        # @private Creates a new Google::Cloud::Spanner instance.
         def initialize months, days, nanoseconds
           if months > MAX_MONTHS || months < MIN_MONTHS
             raise ArgumentError, "The Interval class supports months from #{MIN_MONTHS} to #{MAX_MONTHS}."
@@ -181,11 +185,47 @@ module Google
           @nanoseconds = nanoseconds
         end
 
+
+        # @return [Integer] The numbers of months in the time interval.
+        attr_reader :months
+
+        # @return [Integer] The numbers of days in the time interval.
+        attr_reader :days
+
+        # @return [Integer] The numbers of nanoseconds in the time interval.
+        attr_reader :nanoseconds
+
+
+        ##
+        # Standard value equality check for this object.
+        #
+        # @param [Object] other An object to compare with.
+        # @return [Boolean]
+        def eql? other
+          other.is_a?(Interval) &&
+            months == other.months &&
+            days == other.days &&
+            nanoseconds == other.nanoseconds
+        end
+        alias == eql?
+
+        ##
+        # Generate standard hash code for this object.
+        #
+        # @return [Integer]
+        #
+        def hash
+          @hash ||= [@months, @days, @nanoseconds].hash
+        end
+
+        private
+
         def match_sign value
           value.negative? ? -1 : 1
         end
 
         # Converts [Interval] to an ISO8601 Standard string.
+        # @return [String] The interval's ISO8601 string representation.
         def to_string
           # Months should be converted to years and months.
           years = @months.fdiv(12).truncate
@@ -243,8 +283,8 @@ module Google
           interval_string.join
         end
 
-        # Formats decimal values be in multiples of 3 length.
-        #
+        # Formats decimal values to be in multiples of 3 length.
+        # @return [String]
         def format_seconds seconds, nanoseconds
           return seconds if nanoseconds.zero?
           add_sign = seconds.zero? && nanoseconds.negative?
