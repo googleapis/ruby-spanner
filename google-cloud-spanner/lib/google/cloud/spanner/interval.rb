@@ -52,7 +52,7 @@ module Google
           # `P[n]Y[n]M[n]DT[n]H[n]M[n[.fraction]]S`
           # where `n` represents an integer number.
           #
-          # @param [String] An ISO8601 formatted string.
+          # @param interval_string [String] An ISO8601 formatted string.
           # @return [Google::Cloud::Spanner::Interval]
           #
           # @example
@@ -98,7 +98,7 @@ module Google
 
           # Returns an Interval instance with the given months.
           #
-          # @param [Integer]
+          # @param months [Integer]
           # @return [Interval]
           def from_months months
             Interval.new months, 0, 0
@@ -106,7 +106,7 @@ module Google
 
           # Returns an Interval instance with the given days.
           #
-          # @param [Integer]
+          # @param days [Integer]
           # @return [Interval]
           def from_days days
             Interval.new 0, days, 0
@@ -114,7 +114,7 @@ module Google
 
           # Returns an Interval instance with the given seconds.
           #
-          # @param [Integer]
+          # @param seconds [Integer]
           # @return [Interval]
           def from_seconds seconds
             nanoseconds = seconds * NANOSECONDS_IN_A_SECOND
@@ -123,7 +123,7 @@ module Google
 
           # Returns an Interval instance with the given milliseconds.
           #
-          # @param [Integer]
+          # @param milliseconds [Integer]
           # @return [Interval]
           def from_milliseconds milliseconds
             nanoseconds = milliseconds * NANOSECONDS_IN_A_MILLISECOND
@@ -132,7 +132,7 @@ module Google
 
           # Returns an Interval instance with the given microseconds.
           #
-          # @param [Integer]
+          # @param microseconds [Integer]
           # @return [Interval]
           def from_microseconds microseconds
             nanoseconds = microseconds * NANOSECONDS_IN_A_MICROSECOND
@@ -141,7 +141,7 @@ module Google
 
           # Returns an Interval instance with the given nanoseconds.
           #
-          # @param [Integer]
+          # @param nanoseconds [Integer]
           # @return [Interval]
           def from_nanoseconds nanoseconds
             Interval.new 0, 0, nanoseconds
