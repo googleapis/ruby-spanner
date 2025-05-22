@@ -26,7 +26,8 @@ describe "Spanner Client", :types, :interval, :spanner do
 
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
     _(results.fields[:value]).must_equal :INTERVAL
-    _(results.rows.first[:value]).must_be_kind_of Google::Cloud::Spanner::Interval
-    _(results.rows.first[:value].to_s).must_equal "P1Y2M"
+    interval = results.rows.first[:value]
+    _(interval).must_be_kind_of Google::Cloud::Spanner::Interval
+    _(interval.to_s).must_equal "P1Y2M"
   end
 end

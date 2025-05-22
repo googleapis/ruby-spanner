@@ -63,40 +63,30 @@ module Google
           #
           #   puts interval # "P1Y2M3DT4H5M6S"
           def parse interval_string
-            pattern = /^P(?!$)((?<years>-?\d+)Y)?((?<months>-?\d+)M)?((?<days>-?\d+)D)?(T(?!$)((?<hours>-?\d+)H)?((?<minutes>-?\d+)M)?((?<seconds>-?(?!S)\d*([\.,]\d{1,9})?)S)?)?$/
+            pattern = /^
+              P(?!$)(?:(?<years>-?\d+)Y)?(?:(?<months>-?\d+)M)?(?:(?<days>-?\d+)D)
+              ?(?:T(?!$)(?:(?<hours>-?\d+)H)?(?:(?<minutes>-?\d+)M)?(?:(?<seconds>-?(?!S)\d*(?:[\.,]\d{1,9})?)S)?)?
+              $
+            /x
             interval_months = 0
             interval_days = 0
             interval_nanoseconds = 0
 
             matches = interval_string.match pattern
 
-            if matches.nil?
-              raise ArgumentError, "The provided string does not follow ISO8601 standard."
-            end
+            raise ArgumentError, "The provided string does not follow ISO8601 standard." if matches.nil?
 
-            if matches.captures.empty?
-              raise ArgumentError, "The provided string does not follow ISO8601 standard."
-            end
+            raise ArgumentError, "The provided string does not follow ISO8601 standard." if matches.captures.empty?
 
-            if matches[:years]
-              interval_months += matches[:years].to_i * 12
-            end
+            interval_months += matches[:years].to_i * 12 if matches[:years]
 
-            if matches[:months]
-              interval_months += matches[:months].to_i
-            end
+            interval_months += matches[:months].to_i if matches[:months]
 
-            if matches[:days]
-              interval_days = matches[:days].to_i
-            end
+            interval_days = matches[:days].to_i if matches[:days]
 
-            if matches[:hours]
-              interval_nanoseconds += matches[:hours].to_i * NANOSECONDS_IN_AN_HOUR
-            end
+            interval_nanoseconds += matches[:hours].to_i * NANOSECONDS_IN_AN_HOUR if matches[:hours]
 
-            if matches[:minutes]
-              interval_nanoseconds += matches[:minutes].to_i * NANOSECONDS_IN_A_MINUTE
-            end
+            interval_nanoseconds += matches[:minutes].to_i * NANOSECONDS_IN_A_MINUTE if matches[:minutes]
 
             # Only seconds can be fractional. Both period and comma are valid inputs.
             if matches[:seconds]
@@ -248,37 +238,25 @@ module Google
 
           interval_string = ["P"]
 
-          if years != 0
-            interval_string.append "#{years}Y"
-          end
+          interval_string.append "#{years}Y" if years.nonzero?
 
-          if months != 0
-            interval_string.append "#{months}M"
-          end
+          interval_string.append "#{months}M" if months.nonzero?
 
-          if days != 0
-            interval_string.append "#{days}D"
-          end
+          interval_string.append "#{days}D" if days.nonzero?
 
-          if hours != 0 || minutes != 0 || seconds != 0 || nanoseconds != 0
+          if hours.nonzero? || minutes.nonzero? || seconds.nonzero? || nanoseconds.nonzero?
             interval_string.append "T"
 
-            if hours != 0
-              interval_string.append "#{hours}H"
-            end
+            interval_string.append "#{hours}H" if hours.nonzero?
 
-            if minutes != 0
-              interval_string.append "#{minutes}M"
-            end
+            interval_string.append "#{minutes}M" if minutes.nonzero?
 
-            if seconds != 0 || nanoseconds != 0
+            if seconds.nonzero? || nanoseconds.nonzero?
               interval_string.append "#{format_seconds seconds, nanoseconds}S"
             end
           end
 
-          if interval_string == ["P"]
-            return "P0Y"
-          end
+          return "P0Y" if interval_string == ["P"]
 
           interval_string.join
         end
