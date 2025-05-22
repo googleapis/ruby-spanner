@@ -27,16 +27,19 @@ Metrics/ModuleLength:
 Metrics/AbcSize:  
   Exclude:
       - "acceptance/**/*"  
+      - "lib/google/cloud/spanner/interval.rb"
 Metrics/ClassLength:
   Enabled: false
 Metrics/CyclomaticComplexity:
   Exclude:
     - "acceptance/**/*"
     - "lib/google/cloud/spanner.rb"
+    - "lib/google/cloud/spanner/interval.rb"
 Metrics/PerceivedComplexity:
   Exclude:
     - "acceptance/**/*"
     - "lib/google/cloud/spanner.rb"
+    - "lib/google/cloud/spanner/interval.rb"
 Naming/FileName:
   Exclude:
     - "lib/google-cloud-spanner.rb"
