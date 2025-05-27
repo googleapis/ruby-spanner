@@ -136,10 +136,10 @@ module Google
 
           @mutex.synchronize do
             available_count = sessions_available.count
-            release_count = @min - available_count
+            release_count = available_count - @min
             release_count = 0 if release_count.negative?
 
-            to_keepalive += sessions_available.select do |x|
+            to_keepalive = sessions_available.select do |x|
               x.idle_since? @keepalive
             end
 
@@ -221,8 +221,8 @@ module Google
           @keepalive_task.execute
         end
 
-        def future &block
-          Concurrent::Future.new(executor: @thread_pool, &block).execute
+        def future(&)
+          Concurrent::Future.new(executor: @thread_pool, &).execute
         end
       end
     end
