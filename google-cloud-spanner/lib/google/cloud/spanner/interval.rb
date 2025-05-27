@@ -48,7 +48,7 @@ module Google
         class << self
           # rubocop:disable Metrics/AbcSize
           # rubocop:disable Metrics/MethodLength
-          #
+
           # Parses an ISO8601 string and returns an Interval instance.
           #
           # The accepted format for the ISO8601 standard is:
