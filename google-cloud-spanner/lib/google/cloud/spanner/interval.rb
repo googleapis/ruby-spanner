@@ -46,6 +46,9 @@ module Google
                          :MIN_MONTHS, :MAX_DAYS, :MIN_DAYS, :MAX_NANOSECONDS, :MIN_NANOSECONDS
 
         class << self
+          # rubocop:disable Metrics/AbcSize
+          # rubocop:disable Metrics/MethodLength
+          #
           # Parses an ISO8601 string and returns an Interval instance.
           #
           # The accepted format for the ISO8601 standard is:
@@ -62,10 +65,17 @@ module Google
           #   interval = Google::Cloud::Spanner::Interval::parse iso_8601_string
           #
           #   puts interval # "P1Y2M3DT4H5M6S"
+          #
           def parse interval_string
             pattern = /^
-              P(?!$)(?:(?<years>-?\d+)Y)?(?:(?<months>-?\d+)M)?(?:(?<days>-?\d+)D)
-              ?(?:T(?!$)(?:(?<hours>-?\d+)H)?(?:(?<minutes>-?\d+)M)?(?:(?<seconds>-?(?!S)\d*(?:[\.,]\d{1,9})?)S)?)?
+              P(?!$)
+              (?:(?<years>-?\d+)Y)?
+              (?:(?<months>-?\d+)M)?
+              (?:(?<days>-?\d+)D)?
+              (?:T(?!$)
+              (?:(?<hours>-?\d+)H)?
+              (?:(?<minutes>-?\d+)M)?
+              (?:(?<seconds>-?(?!S)\d*(?:[\.,]\d{1,9})?)S)?)?
               $
             /x
             interval_months = 0
@@ -95,6 +105,9 @@ module Google
 
             Interval.new interval_months, interval_days, interval_nanoseconds
           end
+
+          # rubocop:enable Metrics/AbcSize
+          # rubocop:enable Metrics/MethodLength
 
           # Returns an Interval instance with the given months.
           #
@@ -214,6 +227,10 @@ module Google
           value.negative? ? -1 : 1
         end
 
+        # rubocop:disable Metrics/AbcSize
+        # rubocop:disable Metrics/CyclomaticComplexity
+        # rubocop:disable Metrics/PerceivedComplexity
+
         # Converts [Interval] to an ISO8601 Standard string.
         # @return [String] The interval's ISO8601 string representation.
         def to_string
@@ -260,6 +277,10 @@ module Google
 
           interval_string.join
         end
+
+        # rubocop:enable Metrics/AbcSize
+        # rubocop:enable Metrics/CyclomaticComplexity
+        # rubocop:enable Metrics/PerceivedComplexity
 
         # Formats decimal values to be in multiples of 3 length.
         # @return [String]
