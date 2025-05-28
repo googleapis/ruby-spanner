@@ -1,5 +1,12 @@
 # Release History
 
+### 2.27.0 (2025-05-28)
+
+#### Features
+
+* Spanner Interval type ([#162](https://github.com/googleapis/ruby-spanner/issues/162)) 
+* Updated required Ruby version to 3.1 ([#160](https://github.com/googleapis/ruby-spanner/issues/160)) 
+
 ### 2.26.0 (2025-03-24)
 
 #### Features
