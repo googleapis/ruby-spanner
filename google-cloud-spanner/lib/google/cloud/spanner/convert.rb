@@ -19,6 +19,7 @@ require "stringio"
 require "base64"
 require "bigdecimal"
 require "google/cloud/spanner/data"
+require "google/cloud/spanner/interval"
 
 module Google
   module Cloud
@@ -108,6 +109,8 @@ module Google
               else
                 Google::Protobuf::Value.new string_value: obj.to_json
               end
+            when Interval
+              obj.to_s
             when Google::Protobuf::MessageExts
               proto_class = obj.class
               content = proto_class.encode obj
@@ -252,6 +255,8 @@ module Google
               BigDecimal value.string_value
             when :JSON
               JSON.parse value.string_value
+            when :INTERVAL
+              Interval.parse value.string_value
             when :PROTO
               descriptor = Google::Protobuf::DescriptorPool.generated_pool.lookup(type.proto_type_fqn).msgclass
               content = Base64.decode64 value.string_value
