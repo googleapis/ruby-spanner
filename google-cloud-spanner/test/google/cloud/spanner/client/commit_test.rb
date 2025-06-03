@@ -37,6 +37,11 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
                                                        exclude_txn_from_change_streams: true
   }
+  let(:tx_opts_isolation_level) { 
+    Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+                                                       isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::SERIALIZABLE
+
+  }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
   let(:mutations) {
@@ -446,6 +451,28 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     spanner.service.mocked_service = mock
 
     timestamp = client.delete "users", [], exclude_txn_from_change_streams: true
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "delete all rows directly while setting isolation level" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
+    mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_isolation_level, request_options: nil }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.delete "users", [], isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::SERIALIZABLE
     _(timestamp).must_equal commit_time
 
     shutdown_client! client

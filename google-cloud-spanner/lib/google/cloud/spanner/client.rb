@@ -1143,7 +1143,7 @@ module Google
         #                       request_options: request_options
         #
         def upsert table, rows,
-                   exclude_txn_from_change_streams: false,
+                   exclude_txn_from_change_streams: false, isolation_level: nil,
                    commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
@@ -1151,6 +1151,7 @@ module Google
           @pool.with_session do |session|
             session.upsert table, rows,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           isolation_level: isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options
@@ -1290,7 +1291,7 @@ module Google
         #                       request_options: request_options
         #
         def insert table, rows,
-                   exclude_txn_from_change_streams: false,
+                   exclude_txn_from_change_streams: false, isolation_level: nil,
                    commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
@@ -1298,6 +1299,7 @@ module Google
           @pool.with_session do |session|
             session.insert table, rows,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           isolation_level: isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options
@@ -1435,7 +1437,7 @@ module Google
         #                      request_options: request_options
         #
         def update table, rows,
-                   exclude_txn_from_change_streams: false,
+                   exclude_txn_from_change_streams: false, isolation_level: nil,
                    commit_options: nil, request_options: nil, call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
@@ -1443,6 +1445,7 @@ module Google
           @pool.with_session do |session|
             session.update table, rows,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           isolation_level: isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options
@@ -1582,11 +1585,12 @@ module Google
         #                       request_options: request_options
         #
         def replace table, rows,
-                    exclude_txn_from_change_streams: false,
+                    exclude_txn_from_change_streams: false, isolation_level: nil,
                     commit_options: nil, request_options: nil, call_options: nil
           @pool.with_session do |session|
             session.replace table, rows,
                             exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                            isolation_level: isolation_level,
                             commit_options: commit_options,
                             request_options: request_options,
                             call_options: call_options
@@ -1699,13 +1703,15 @@ module Google
         #
         def delete table, keys = [],
                    exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   isolation_level: nil, commit_options: nil, request_options: nil,
+                   call_options: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
             session.delete table, keys,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                           isolation_level: isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options
@@ -1826,6 +1832,7 @@ module Google
         #   end
         #
         def commit exclude_txn_from_change_streams: false,
+                   isolation_level: nil,
                    commit_options: nil, request_options: nil, call_options: nil,
                    &block
           raise ArgumentError, "Must provide a block" unless block_given?
@@ -1836,6 +1843,7 @@ module Google
           @pool.with_session do |session|
             session.commit(
               exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+              isolation_level: isolation_level,
               commit_options: commit_options, request_options: request_options,
               call_options: call_options, &block
             )

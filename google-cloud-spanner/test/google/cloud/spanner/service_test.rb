@@ -125,6 +125,27 @@ describe Google::Cloud::Spanner::Service, :mock_spanner  do
       mocked_service.verify
       assert_equal expected_result, result
     end
+
+    it "sets the isolation_level field" do
+      mocked_service = Minitest::Mock.new
+      expected_request = {
+        session: session_id,
+        transaction_id: nil,
+        single_use_transaction: Google::Cloud::Spanner::V1::TransactionOptions.new(
+          read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+          isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::SERIALIZABLE
+        ),
+        mutations: [],
+        request_options: nil
+      }
+      expected_result = Object.new
+      mocked_service.expect :commit, expected_result, [expected_request, expected_call_opts]
+      basic_service.mocked_service = mocked_service
+      result = basic_service.commit session_id, [], isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::SERIALIZABLE
+      mocked_service.verify
+      assert_equal expected_result, result
+    end
+
   end
 
   describe "#create_pdml" do
