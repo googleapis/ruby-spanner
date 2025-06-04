@@ -1029,6 +1029,8 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level The
+        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1177,6 +1179,8 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level The
+        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1324,6 +1328,8 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level The
+        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1472,6 +1478,8 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level The
+        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1596,6 +1604,8 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level The
+        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1712,6 +1722,8 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level The
+        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
