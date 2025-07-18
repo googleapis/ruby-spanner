@@ -414,7 +414,7 @@ module Google
                                  resume_token: nil, partition_token: nil,
                                  request_options: nil, call_options: nil,
                                  data_boost_enabled: nil, directed_read_options: nil,
-                                 route_to_leader: nil
+                                 route_to_leader: nil, order_by: nil, lock_hint: nil,
           opts = default_options session_name: session_name,
                                  call_options: call_options,
                                  route_to_leader: route_to_leader
@@ -422,7 +422,8 @@ module Google
             session: session_name, table: table_name, columns: columns,
             key_set: keys, transaction: transaction, index: index,
             limit: limit, resume_token: resume_token,
-            partition_token: partition_token, request_options: request_options
+            partition_token: partition_token, request_options: request_options,
+            order_by: order_by, lock_hint: lock_hint
           }
           request[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           request[:directed_read_options] = directed_read_options unless directed_read_options.nil?

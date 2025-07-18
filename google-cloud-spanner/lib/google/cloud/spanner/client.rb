@@ -878,6 +878,10 @@ module Google
         #      and all replicas are exhausted without finding a healthy replica,
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
+        # @param [Integer] order_by A value to configure the order that Spanner returns the data in. To see the available options refer to
+        #   ['Google::Cloud::Spanner::V1::ReadRequest::OrderBy'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-OrderBy)
+        # @param [Integer] lock_hint A value to configure the mechanism for read done within a transaction. To see the available options refer to
+        #   ['Google::Cloud::Spanner::V1::ReadRequest::LockHint'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
         #
         # @return [Google::Cloud::Spanner::Results] The results of the read.
         #
@@ -962,7 +966,7 @@ module Google
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
                  single_use: nil, request_options: nil, call_options: nil,
-                 directed_read_options: nil
+                 directed_read_options: nil, order_by: nil, lock_hint: nil
           validate_single_use_args! single_use
           ensure_service!
 
@@ -981,7 +985,9 @@ module Google
                               request_options: request_options,
                               call_options: call_options,
                               directed_read_options: directed_read_options || @directed_read_options,
-                              route_to_leader: route_to_leader
+                              route_to_leader: route_to_leader,
+                              order_by: order_by,
+                              lock_hint: lock_hint
           end
           results
         end
