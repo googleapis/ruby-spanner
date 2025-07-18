@@ -483,6 +483,10 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
+        # @param [Integer] order_by A value to configure the order that Spanner returns the data in. To see the available options refer to
+        #   ['Google::Cloud::Spanner::V1::ReadRequest::OrderBy'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-OrderBy)
+        # @param [Integer] lock_hint A value to configure the mechanism for read done within a transaction. To see the available options refer to
+        #   ['Google::Cloud::Spanner::V1::ReadRequest::LockHint'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
         #
         # @return [Google::Cloud::Spanner::Results] The results of the read
         #   operation.
@@ -503,7 +507,7 @@ module Google
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
                  call_options: nil, data_boost_enabled: nil, directed_read_options: nil,
-                 route_to_leader: nil
+                 route_to_leader: nil, order_by: nil, lock_hint: nil
           ensure_service!
 
           read_options = {
@@ -512,7 +516,9 @@ module Google
             partition_token: partition_token,
             request_options: request_options,
             call_options: call_options,
-            route_to_leader: route_to_leader
+            route_to_leader: route_to_leader,
+            order_by: order_by,
+            lock_hint: lock_hint,
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           read_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
