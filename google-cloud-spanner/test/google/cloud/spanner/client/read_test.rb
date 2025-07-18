@@ -84,11 +84,63 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
       transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
     results = client.read "my-table", columns
+
+    shutdown_client! client
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "contains the order_by option" do
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+    mock = Minitest::Mock.new
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :streaming_read, results_enum, [{
+      session: session_grpc.name, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
+      transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+      request_options: nil, lock_hint: nil,
+      order_by: Google::Cloud::Spanner::V1::ReadRequest::OrderBy::ORDER_BY_NO_ORDER
+     }, default_options]
+    spanner.service.mocked_service = mock
+
+    results = client.read "my-table", columns,
+      order_by: Google::Cloud::Spanner::V1::ReadRequest::OrderBy::ORDER_BY_NO_ORDER
+
+    shutdown_client! client
+
+    mock.verify
+
+    assert_results results
+  end
+
+  it "contains the lock_hint option" do
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+    mock = Minitest::Mock.new
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :streaming_read, results_enum, [{
+      session: session_grpc.name, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
+      transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+      request_options: nil, order_by: nil,
+      lock_hint: Google::Cloud::Spanner::V1::ReadRequest::LockHint::LOCK_HINT_EXCLUSIVE
+     }, default_options]
+    spanner.service.mocked_service = mock
+
+    results = client.read "my-table", columns,
+      lock_hint: Google::Cloud::Spanner::V1::ReadRequest::LockHint::LOCK_HINT_EXCLUSIVE
 
     shutdown_client! client
 
@@ -107,7 +159,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([3]).list_value]),
       transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -134,7 +186,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([time1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([time2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([time3]).list_value]),
       transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -157,7 +209,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1,1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([2,2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([3,3]).list_value]),
       transaction: nil, index: "MyTableCompositeKey", limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -180,7 +232,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(ranges: [Google::Cloud::Spanner::Convert.to_key_range([1,1]..[3,3])]),
       transaction: nil, index: "MyTableCompositeKey", limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -204,7 +256,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
       transaction: nil, index: nil, limit: 5, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -227,7 +279,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
       transaction: nil, index: nil, limit: 1, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -252,7 +304,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
       transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -284,7 +336,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
       transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-      request_options: nil
+      request_options: nil, order_by: nil, lock_hint: nil
      }, expect_options]
     spanner.service.mocked_service = mock
 
@@ -308,7 +360,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
         columns: ["id", "name"],
         key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
         transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-        request_options: { priority: :PRIORITY_MEDIUM }
+        request_options: { priority: :PRIORITY_MEDIUM }, order_by: nil, lock_hint: nil
       }, default_options]
       spanner.service.mocked_service = mock
 
@@ -330,7 +382,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true),
       transaction: nil, index: nil, limit: nil, resume_token: nil, partition_token: nil,
-      request_options: { request_tag: "Tag-1"}
+      request_options: { request_tag: "Tag-1"}, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -361,7 +413,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
       transaction: nil, index: nil, limit: 1, resume_token: nil, partition_token: nil,
-      request_options: nil, directed_read_options: expect_directed_read_options
+      request_options: nil, directed_read_options: expect_directed_read_options, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
 
@@ -392,10 +444,10 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
       key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value]),
       transaction: nil, index: nil, limit: 1, resume_token: nil, partition_token: nil,
-      request_options: nil, directed_read_options: expect_directed_read_options
+      request_options: nil, directed_read_options: expect_directed_read_options, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
-    client = spanner.client instance_id, database_id, pool: { min: 0 }, directed_read_options: expect_directed_read_options 
+    client = spanner.client instance_id, database_id, pool: { min: 0 }, directed_read_options: expect_directed_read_options
 
     results = client.read "my-table", columns, keys: 1, limit: 1
 

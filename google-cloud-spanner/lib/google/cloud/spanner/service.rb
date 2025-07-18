@@ -414,7 +414,7 @@ module Google
                                  resume_token: nil, partition_token: nil,
                                  request_options: nil, call_options: nil,
                                  data_boost_enabled: nil, directed_read_options: nil,
-                                 route_to_leader: nil, order_by: nil, lock_hint: nil,
+                                 route_to_leader: nil, order_by: nil, lock_hint: nil
           opts = default_options session_name: session_name,
                                  call_options: call_options,
                                  route_to_leader: route_to_leader

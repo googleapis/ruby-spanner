@@ -518,7 +518,7 @@ module Google
             call_options: call_options,
             route_to_leader: route_to_leader,
             order_by: order_by,
-            lock_hint: lock_hint,
+            lock_hint: lock_hint
           }
           read_options[:data_boost_enabled] = data_boost_enabled unless data_boost_enabled.nil?
           read_options[:directed_read_options] = directed_read_options unless directed_read_options.nil?
