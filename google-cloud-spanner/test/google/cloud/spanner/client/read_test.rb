@@ -101,7 +101,6 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
 
-    mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
@@ -127,7 +126,6 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
 
-    mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
