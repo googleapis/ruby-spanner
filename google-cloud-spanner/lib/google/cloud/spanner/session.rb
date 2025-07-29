@@ -483,9 +483,11 @@ module Google
         #     * `:multiplier` (`Numeric`) - The incremental backoff multiplier.
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
-        # @param [Integer] order_by A value to configure the order that Spanner returns the data in. To see the available options refer to
+        # @param [Integer] order_by A value to configure the order that Spanner returns the data in.
+        #   To see the available options refer to
         #   ['Google::Cloud::Spanner::V1::ReadRequest::OrderBy'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-OrderBy)
-        # @param [Integer] lock_hint A value to configure the mechanism for read done within a transaction. To see the available options refer to
+        # @param [Integer] lock_hint A value to configure the mechanism for read done within a transaction.
+        #   To see the available options refer to
         #   ['Google::Cloud::Spanner::V1::ReadRequest::LockHint'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
         #
         # @return [Google::Cloud::Spanner::Results] The results of the read
