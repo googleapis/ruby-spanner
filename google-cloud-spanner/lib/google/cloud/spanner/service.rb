@@ -465,12 +465,14 @@ module Google
 
         def commit session_name, mutations = [],
                    transaction_id: nil, exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
             tx_opts = V1::TransactionOptions.new(
-              read_write: V1::TransactionOptions::ReadWrite.new,
+              read_write: V1::TransactionOptions::ReadWrite.new(
+                read_lock_mode: read_lock_mode
+              ),
               exclude_txn_from_change_streams: exclude_txn_from_change_streams
             )
           end
@@ -516,9 +518,12 @@ module Google
                               exclude_txn_from_change_streams: false,
                               request_options: nil,
                               call_options: nil,
-                              route_to_leader: nil
+                              route_to_leader: nil,
+                              read_lock_mode: nil
           tx_opts = V1::TransactionOptions.new(
-            read_write: V1::TransactionOptions::ReadWrite.new,
+            read_write: V1::TransactionOptions::ReadWrite.new(
+              read_lock_mode: read_lock_mode
+            ),
             exclude_txn_from_change_streams: exclude_txn_from_change_streams
           )
           opts = default_options session_name: session_name,
