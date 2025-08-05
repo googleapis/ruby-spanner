@@ -31,3 +31,5 @@ export SPANNER_EMULATOR_HOST=localhost:9010
 cd $PROJECT_ROOT/google-cloud-spanner/benchmark/benchwrapper
 bundle install
 bundle exec benchwrapper.rb --port=8081
+
+
