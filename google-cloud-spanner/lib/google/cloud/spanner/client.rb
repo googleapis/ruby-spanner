@@ -878,14 +878,12 @@ module Google
         #      and all replicas are exhausted without finding a healthy replica,
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
-        # @param [Integer] order_by Configure the order
-        #   that Spanner returns the data in.
+        # @param [Integer] order_by Configure the order that Spanner returns the data in.
         #   To see the available options refer to
-        #   ['Google::Cloud::Spanner::V1::ReadRequest::OrderBy'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-OrderBy)
-        # @param [Integer] lock_hint Configure the lock for reads
-        #   to be done within a transaction.
+        #   [Google::Cloud::Spanner::V1::ReadRequest::OrderBy](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-OrderBy)
+        # @param [Integer] lock_hint Configure the lock for reads to be done within a transaction.
         #   To see the available options refer to
-        #   ['Google::Cloud::Spanner::V1::ReadRequest::LockHint'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
+        #   [Google::Cloud::Spanner::V1::ReadRequest::LockHint](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
         #
         # @return [Google::Cloud::Spanner::Results] The results of the read.
         #
