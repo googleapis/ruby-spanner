@@ -28,6 +28,11 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
     Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
                                                        exclude_txn_from_change_streams: true
   }
+  let(:tx_opts_isolation_level) { 
+    Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+                                                       isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::REPEATABLE_READ
+
+  }     
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
 
   it "commits using a block" do
@@ -284,6 +289,26 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
     session.service.mocked_service = mock
 
     timestamp = session.delete "users", exclude_txn_from_change_streams: true
+    _(timestamp).must_equal commit_time
+
+    mock.verify
+  end
+
+  it "passes isolation_level" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :commit, commit_resp, [{ session: session.path, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_isolation_level, request_options: nil }, default_options]
+    session.service.mocked_service = mock
+
+    timestamp = session.delete "users", isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::REPEATABLE_READ
+
     _(timestamp).must_equal commit_time
 
     mock.verify
