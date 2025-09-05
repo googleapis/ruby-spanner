@@ -73,8 +73,7 @@ describe Google::Cloud::Spanner::Convert, :number_to_duration, :mock_spanner do
     number = BigDecimal "-643383279502884.1971693993751058209749445923078164062"
     duration = Google::Cloud::Spanner::Convert.number_to_duration number
     _(duration).must_be_kind_of Google::Protobuf::Duration
-    # This should really be -643383279502884, but BigDecimal is doing something here...
-    _(duration.seconds).must_equal -643383279502885
+    _(duration.seconds).must_equal -643383279502884
     _(duration.nanos).must_equal -197169399
   end
 
