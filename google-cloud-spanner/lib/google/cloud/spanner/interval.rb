@@ -75,7 +75,7 @@ module Google
               (?:T(?!$)
               (?:(?<hours>-?\d+)H)?
               (?:(?<minutes>-?\d+)M)?
-              (?:(?<seconds>-?(?!S)\d*(?:[\.,]\d{1,9})?)S)?)?
+              (?:(?<seconds>-?(?!S)\d*(?:[.,]\d{1,9})?)S)?)?
               $
             /x
             interval_months = 0
