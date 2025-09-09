@@ -882,7 +882,7 @@ module Google
         #   rows are returned from a read.
         #   To see the available options refer to
         #   [Google::Cloud::Spanner::V1::ReadRequest::OrderBy](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-OrderBy)
-        # @param [::Google::Cloud::Spanner::V1::ReadRequest::LockHint lock_hint A lock hint mechanism for reads done
+        # @param [::Google::Cloud::Spanner::V1::ReadRequest::LockHint] lock_hint A lock hint mechanism for reads done
         #   within a transaction.
         #   To see the available options refer to
         #   [Google::Cloud::Spanner::V1::ReadRequest::LockHint](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
