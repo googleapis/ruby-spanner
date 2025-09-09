@@ -21,6 +21,7 @@ require "google/cloud/spanner/database/list"
 require "google/cloud/spanner/database/restore_info"
 require "google/cloud/spanner/backup"
 require "google/cloud/spanner/policy"
+require "google/cloud/spanner/session/list"
 
 module Google
   module Cloud
@@ -616,6 +617,41 @@ module Google
             filter: "database:#{database_id}",
             page_size: page_size
           Backup::List.from_grpc grpc, service
+        end
+
+        ##
+        # Retrieves sessions belonging to the database.
+        #
+        # @param [Integer] page_size Optional. Number of sessions to be returned
+        #   in the response. If 0 or less, defaults to the server's maximum
+        #   allowed page size.
+        # @return [Array<Google::Cloud::Spanner::Session>] Enumerable list of
+        #   sessions. (See {Google::Cloud::Spanner::Session::List})
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #   database = spanner.database "my-instance", "my-database"
+        #
+        #   database.sessions.all.each do |session|
+        #     puts session.session_id
+        #   end
+        #
+        # @example List sessions by page size
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #   database = spanner.database "my-instance", "my-database"
+        #
+        #   database.sessions(page_size: 5).all.each do |session|
+        #     puts session.session_id
+        #   end
+        #
+        def sessions page_size: nil
+          ensure_service!
+          grpc = service.list_sessions database: path, max: page_size
+          Session::List.from_grpc grpc, service
         end
 
         # Information about the source used to restore the database.

@@ -365,6 +365,16 @@ module Google
           service.delete_session({ name: session_name }, opts)
         end
 
+        def list_sessions database:, call_options: nil, token: nil, max: nil
+          opts = default_options call_options: call_options
+          request = {
+            database: database,
+            page_size: max,
+            page_token: token
+          }
+          service.list_sessions request, opts
+        end
+
         def execute_streaming_sql session_name, sql, transaction: nil,
                                   params: nil, types: nil, resume_token: nil,
                                   partition_token: nil, seqno: nil,
