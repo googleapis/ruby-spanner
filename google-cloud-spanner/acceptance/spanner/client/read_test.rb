@@ -211,4 +211,40 @@ limit: 2).rows.map(&:to_h)).must_equal [{ id: 3, bool: true }, { id: 5, bool: tr
                                                                               { id: 11 },
                                                                               { id: 12 }]
   end
+
+  it "accepts the order_by option" do
+    _(db.read(table_name,
+              [:id],
+              order_by: Google::Cloud::Spanner::V1::ReadRequest::OrderBy::ORDER_BY_NO_ORDER)
+                        .rows.map(&:to_h)).must_equal [{ id: 1 },
+                                                       { id: 2 },
+                                                       { id: 3 },
+                                                       { id: 4 },
+                                                       { id: 5 },
+                                                       { id: 6 },
+                                                       { id: 7 },
+                                                       { id: 8 },
+                                                       { id: 9 },
+                                                       { id: 10 },
+                                                       { id: 11 },
+                                                       { id: 12 }]
+  end
+
+  it "accepts the lock_hint option" do
+    _(db.read(table_name,
+              [:id],
+              order_by: Google::Cloud::Spanner::V1::ReadRequest::LockHint::LOCK_HINT_EXCLUSIVE)
+                        .rows.map(&:to_h)).must_equal [{ id: 1 },
+                                                       { id: 2 },
+                                                       { id: 3 },
+                                                       { id: 4 },
+                                                       { id: 5 },
+                                                       { id: 6 },
+                                                       { id: 7 },
+                                                       { id: 8 },
+                                                       { id: 9 },
+                                                       { id: 10 },
+                                                       { id: 11 },
+                                                       { id: 12 }]
+  end
 end
