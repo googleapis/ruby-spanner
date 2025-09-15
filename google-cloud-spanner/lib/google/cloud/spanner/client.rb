@@ -1075,6 +1075,13 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1130,7 +1137,7 @@ module Google
         #
         def upsert table, rows,
                    exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
@@ -1139,7 +1146,8 @@ module Google
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                            commit_options: commit_options,
                            request_options: request_options,
-                           call_options: call_options
+                           call_options: call_options,
+                           read_lock_mode: read_lock_mode
           end
         end
         alias save upsert
@@ -1223,6 +1231,15 @@ module Google
         #       trigger a retry.
         #
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #
+        #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
         #
@@ -1277,7 +1294,7 @@ module Google
         #
         def insert table, rows,
                    exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
@@ -1286,7 +1303,8 @@ module Google
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                            commit_options: commit_options,
                            request_options: request_options,
-                           call_options: call_options
+                           call_options: call_options,
+                           read_lock_mode: read_lock_mode
           end
         end
 
@@ -1368,6 +1386,14 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1422,7 +1448,7 @@ module Google
         #
         def update table, rows,
                    exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
@@ -1431,7 +1457,8 @@ module Google
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                            commit_options: commit_options,
                            request_options: request_options,
-                           call_options: call_options
+                           call_options: call_options,
+                           read_lock_mode: read_lock_mode
           end
         end
 
@@ -1515,6 +1542,14 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1569,13 +1604,14 @@ module Google
         #
         def replace table, rows,
                     exclude_txn_from_change_streams: false,
-                    commit_options: nil, request_options: nil, call_options: nil
+                    commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           @pool.with_session do |session|
             session.replace table, rows,
                             exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                             commit_options: commit_options,
                             request_options: request_options,
-                            call_options: call_options
+                            call_options: call_options,
+                            read_lock_mode: read_lock_mode
           end
         end
 
@@ -1638,6 +1674,15 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #
+        #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
         #
@@ -1685,7 +1730,7 @@ module Google
         #
         def delete table, keys = [],
                    exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           request_options = Convert.to_request_options \
             request_options, tag_type: :transaction_tag
 
@@ -1694,7 +1739,8 @@ module Google
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                            commit_options: commit_options,
                            request_options: request_options,
-                           call_options: call_options
+                           call_options: call_options,
+                           read_lock_mode: read_lock_mode
           end
         end
 
@@ -1755,6 +1801,15 @@ module Google
         # @yield [commit] The block for mutating the data.
         # @yieldparam [Google::Cloud::Spanner::Commit] commit The Commit object.
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #
+        #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
         #
@@ -1812,7 +1867,7 @@ module Google
         #   end
         #
         def commit exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil,
+                   commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil,
                    &block
           raise ArgumentError, "Must provide a block" unless block_given?
 
@@ -1823,7 +1878,8 @@ module Google
             session.commit(
               exclude_txn_from_change_streams: exclude_txn_from_change_streams,
               commit_options: commit_options, request_options: request_options,
-              call_options: call_options, &block
+              call_options: call_options,
+              read_lock_mode: read_lock_mode, &block
             )
           end
         end
@@ -1988,6 +2044,15 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
+        #   The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #
+        #
         # @yield [transaction] The block for reading and writing data.
         # @yieldparam [Google::Cloud::Spanner::Transaction] transaction The
         #   Transaction object.
@@ -2090,7 +2155,7 @@ module Google
         #   end
         #
         def transaction deadline: 120, exclude_txn_from_change_streams: false,
-                        commit_options: nil, request_options: nil, call_options: nil
+                        commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
           ensure_service!
           unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested transactions are not allowed"
@@ -2104,7 +2169,8 @@ module Google
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
-            tx = session.create_empty_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
+            tx = session.create_empty_transaction \
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams, read_lock_mode: read_lock_mode
             if request_options
               tx.transaction_tag = request_options[:transaction_tag]
             end
@@ -2120,7 +2186,8 @@ module Google
                 exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                 commit_options: commit_options,
                 request_options: request_options,
-                call_options: call_options
+                call_options: call_options,
+                read_lock_mode: read_lock_mode
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
             rescue GRPC::Aborted,
@@ -2131,7 +2198,9 @@ module Google
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
               # Create new transaction on the session and retry the block
-              tx = session.create_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              tx = session.create_transaction \
+                exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                read_lock_mode: read_lock_mode
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
