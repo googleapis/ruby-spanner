@@ -24,6 +24,7 @@ describe "Spanner Database Backup Operations", :spanner do
   it "list backup operations" do
     skip if emulator_enabled?
 
+    # @type [::Google::Cloud::Spanner::Instance]
     instance = spanner.instance instance_id
     _(instance).wont_be :nil?
 

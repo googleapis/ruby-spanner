@@ -76,16 +76,25 @@ module Google
       #   end
       #
       class Transaction
-        # @private The `Google::Cloud::Spanner::V1::Transaction` object.
+        # The underlying `V1::Transaction` protobuf object.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::Transaction]
         attr_reader :grpc
 
-        # @private The Session object.
+        # The `Spanner::Session` session for this transaction.
+        # @private
+        # @return [::Google::Cloud::Spanner::Session]
         attr_accessor :session
 
-        # @private Transaction tag for statistics collection.
+        # Transaction tag for statistics collection.
+        # Example: `"update_user_profile"`.
+        # @private
+        # @return [::String, nil]
         attr_accessor :transaction_tag
 
-        # @private Whether to exclude from change streams.
+        # Whether to exclude this transaction from change streams.
+        # @private
+        # @return [::Boolean]
         attr_accessor :exclude_txn_from_change_streams
 
         def initialize
@@ -1203,8 +1212,11 @@ module Google
           end
         end
 
-        ##
-        # Create a new transaction in a thread-safe manner.
+        # Begins a new transaction in a thread-safe manner if one does not already exist.
+        #
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
+        #   object, or `nil` if a transaction already exists.
         def safe_begin_transaction
           @mutex.synchronize do
             return if existing_transaction?
@@ -1214,13 +1226,19 @@ module Google
           end
         end
 
-        ##
-        # @private The TransactionSelector to be used for queries. This method must
-        #   be called from within a synchronized block, since the value returned
-        #   depends on the state of @grpc field.
+        # The TransactionSelector to be used for queries. This method must
+        # be called from within a synchronized block, since the value returned
+        # depends on the state of @grpc field.
         #
-        #   This method is expected to be called from within `safe_execute()` method's block,
-        #   since it provides synchronization and gurantees thread safety.
+        # This method is expected to be called from within `safe_execute()` method's block,
+        # since it provides synchronization and gurantees thread safety.
+        #
+        # @param exclude_txn_from_change_streams [::Boolean] If set to true,
+        #   mutations will not be recorded in change streams with DDL option
+        #   `allow_txn_exclusion=true`.
+        #   Optional, defaults to `false`.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::TransactionSelector]
         def tx_selector exclude_txn_from_change_streams: false
           return V1::TransactionSelector.new id: transaction_id if existing_transaction?
           V1::TransactionSelector.new(
@@ -1261,6 +1279,9 @@ module Google
           raise "Must have active connection to service" unless session
         end
 
+        # The `Spanner::Service` object used by this transaction.
+        # @private
+        # @return [::Google::Cloud::Spanner::Service]
         def service
           session.service
         end

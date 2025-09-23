@@ -43,8 +43,18 @@ module Google
         RST_STREAM_INTERNAL_ERROR = "Received RST_STREAM".freeze
         EOS_INTERNAL_ERROR = "Received unexpected EOS on DATA frame from server".freeze
 
-        ##
-        # Creates a new Service instance.
+        # Creates a new `Spanner::Service` instance.
+        # @param project [::String] The project id to use
+        # @param credentials [::Symbol, ::Google::Auth::Credentials] Credentials
+        # @param quota_project [::String, nil] Optional. The quota project id to use
+        # @param host [::String, nil] Optional. The endpoint override.
+        # @param timeout [::Numeric, nil] Optional. Timeout for Gapic client.
+        # @param lib_name [::String, nil] Optional. Library name for headers.
+        # @param lib_version [::String, nil] Optional. Library version for headers.
+        # @param enable_leader_aware_routing [::Boolean, nil] Optional. Whether Leader
+        #   Aware Routing should be enabled.
+        # @param universe_domain [::String, nil] Optional. The domain of the universe to connect to.
+        # @private
         def initialize project, credentials, quota_project: nil,
                        host: nil, timeout: nil, lib_name: nil, lib_version: nil,
                        enable_leader_aware_routing: nil, universe_domain: nil
@@ -82,6 +92,8 @@ module Google
             GRPC::Core::CallCredentials.new credentials.client.updater_proc
         end
 
+        # `V1::Spanner::Client` or a mock.
+        # @return [::Google::Cloud::Spanner::V1::Spanner::Client]
         def service
           return mocked_service if mocked_service
           @service ||=
@@ -329,13 +341,41 @@ module Google
           service.get_session({ name: session_name }, opts)
         end
 
+        # Creates a new Spanner session.
+        # This creates a `V1::Session` protobuf object not wrapped in `Spanner::Session`.
+        #
+        # @param database_name [::String] The full name of the database.
+        # @param labels [::Hash, nil] Optional. The labels to be applied to all sessions
+        #   created by the client. Example: `"team" => "billing-service"`.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
+        # @param database_role [::String, nil] Optional. The Spanner session creator role.
+        #   Example: `analyst`.
+        # @param multiplexed [::Boolean] Optional. Default to `false`.
+        #   If `true`, specifies a multiplexed session.
+        # @return [::Google::Cloud::Spanner::V1::Session]
+        # @private
         def create_session database_name, labels: nil,
-                           call_options: nil, database_role: nil
+                           call_options: nil, database_role: nil,
+                           multiplexed: false
           route_to_leader = LARHeaders.create_session
-          opts = default_options session_name: database_name,
-                                 call_options: call_options,
-                                 route_to_leader: route_to_leader
-          session = V1::Session.new labels: labels, creator_role: database_role if labels || database_role
+          opts = default_options(
+            session_name: database_name,
+            call_options: call_options,
+            route_to_leader: route_to_leader
+          )
+
+          # check if we need a session object in request or server defaults would work.
+          params_diff_from_default = !(labels.nil? && database_role.nil? && !multiplexed)
+
+          if params_diff_from_default
+            session = V1::Session.new(
+              labels: labels,
+              creator_role: database_role,
+              multiplexed: multiplexed
+            )
+          end
+
           service.create_session(
             { database: database_name, session: session }, opts
           )
@@ -464,6 +504,29 @@ module Google
           service.partition_query request, opts
         end
 
+        # Commits a transaction. Can be a predefined (`transaction_id`) transaction
+        # or a single-use created for this request. The request includes the mutations to be
+        # applied to rows in the database.
+        #
+        # @param session_name [::String]
+        #   Required. The session in which the transaction to be committed is running.
+        # @param mutations [::Array<::Google::Cloud::Spanner::V1::Mutation>] Optional.
+        #   The mutations to be executed when this transaction commits. All
+        #   mutations are applied atomically, in the order they appear in
+        #   this list. Defaults to an empty array.
+        # @param transaction_id [::String, nil] Optional.
+        #   Commit a previously-started transaction. If nil, a new single-use transation will be used.
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
+        # @param commit_options [::Hash, nil]  Optional. A hash of commit options.
+        #   Example option: `:return_commit_stats`.
+        # @param request_options [::Hash, nil] Optional. Common request options.
+        #   Example option: `:priority`.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
+        # @return [::Google::Cloud::Spanner::V1::CommitResponse]
+        # @private
         def commit session_name, mutations = [],
                    transaction_id: nil, exclude_txn_from_change_streams: false,
                    commit_options: nil, request_options: nil, call_options: nil
@@ -485,10 +548,16 @@ module Google
           }
 
           request = add_commit_options request, commit_options
-
+          # request is a hash equivalent of `::Google::Cloud::Spanner::V1::CommitRequest`
           service.commit request, opts
         end
 
+        # Merges commit options hash to a hash representing a `V1::CommitRequest`.
+        # @param request [::Hash] A `::Google::Cloud::Spanner::V1::CommitRequest` in a hash form.
+        # @param commit_options [::Hash, nil]  Optional. A hash of commit options.
+        #   Example option: `:return_commit_stats`.
+        # @return [::Hash] An enriched `::Google::Cloud::Spanner::V1::CommitRequest` in a hash form.
+        # @private
         def add_commit_options request, commit_options
           if commit_options
             if commit_options.key? :return_commit_stats

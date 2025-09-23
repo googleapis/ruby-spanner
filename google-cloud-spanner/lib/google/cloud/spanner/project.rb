@@ -66,12 +66,22 @@ module Google
       #   end
       #
       class Project
-        ##
-        # @private The Service object.
-        attr_accessor :service, :query_options
+        # The `Spanner::Service` reference.
+        # @private
+        # @return [::Google::Cloud::Spanner::Service]
+        attr_accessor :service
 
-        ##
-        # @private Creates a new Spanner Project instance.
+        # A hash of values to specify the custom query options for executing SQL query.
+        # Example option: `:optimizer_version`.
+        # @private
+        # @return [::Hash, nil]
+        attr_accessor :query_options
+
+        # Creates a new Spanner Project instance.
+        # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` ref.
+        # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   query options for executing SQL query. Example option: `:optimizer_version`.
+        # @private
         def initialize service, query_options: nil
           @service = service
           @query_options = query_options
@@ -79,6 +89,8 @@ module Google
 
         ##
         # The identifier for the Cloud Spanner project.
+        #
+        # @return [::String]
         #
         # @example
         #   require "google/cloud"

@@ -11,7 +11,7 @@ AllCops:
     - "vendor/**/*"
     - "acceptance/data/protos/**/*"
 
-Documentation:
+Style/Documentation:
   Enabled: false
 
 Metrics/BlockLength:
