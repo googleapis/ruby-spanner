@@ -418,7 +418,7 @@ module Google
         # available.
         # @private
         # @raise [StandardError]
-        # @return nil
+        # @return [nil]
         def ensure_service!
           raise "Must have active connection to service" unless @project.service
         end
