@@ -152,11 +152,11 @@ module Google
             # Creates a new `Spanner::Backup::Job::List` of `Gapic::Operation` operations from a
             # `Gapic::PagedEnumerable<Google::Longrunning::Operation>`
             # object. Operation object is a backup operation.
-            # @param grpc [::Gapic::PagedEnumerable<::Google::Longrunning::Operation>] 
+            # @param grpc [::Gapic::PagedEnumerable<::Google::Longrunning::Operation>]
             #   Wrapped `Gapic::PagedEnumberable` reference.
             # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
             # @private
-            # @return [::Google::Cloud::Spanner::Backup::Job::List] 
+            # @return [::Google::Cloud::Spanner::Backup::Job::List]
             def self.from_grpc grpc, service
               operations_client =
                 service.databases.instance_variable_get "@operations_client"
