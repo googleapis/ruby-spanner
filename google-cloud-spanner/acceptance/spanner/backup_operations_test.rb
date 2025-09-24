@@ -24,6 +24,7 @@ describe "Spanner Database Backup Operations", :spanner do
   it "list backup operations" do
     skip if emulator_enabled?
 
+    # @type [::Google::Cloud::Spanner::Instance]
     instance = spanner.instance instance_id
     _(instance).wont_be :nil?
 
@@ -33,14 +34,14 @@ describe "Spanner Database Backup Operations", :spanner do
     create_job = database.create_backup backup_id, expire_time
     create_job.wait_until_done!
 
-    # All
+    # @type [::Array<Google::Cloud::Spanner::Backup::Job>]
     jobs = instance.backup_operations.all.to_a
     _(jobs).wont_be :empty?
 
     jobs.each do |job|
       _(job).must_be_kind_of Google::Cloud::Spanner::Backup::Job
 
-      unless job.error?
+      if job.done? && !job.error?
         _(job.backup).must_be_kind_of Google::Cloud::Spanner::Backup
       end
 

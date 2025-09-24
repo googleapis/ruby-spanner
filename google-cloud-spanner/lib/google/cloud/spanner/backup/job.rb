@@ -58,12 +58,14 @@ module Google
         #   end
         #
         class Job
-          ##
-          # @private The `Gapic::Operation` gRPC object.
+          # The wrapped `Gapic::Operation` object.
+          # @private
+          # @return [::Gapic::Operation]
           attr_accessor :grpc
 
-          ##
-          # @private The gRPC Service object.
+          # The `Spanner::Service` reference.
+          # @private
+          # @return [::Google::Cloud::Spanner::Service]
           attr_accessor :service
 
           ##
@@ -265,8 +267,11 @@ module Google
             Convert.timestamp_to_time @grpc.metadata.cancel_time
           end
 
-          ##
-          # @private New Backup::Job from a `Gapic::Operation` object.
+          # Create a new Backup::Job from a `Gapic::Operation` object.
+          # @param grpc [::Gapic::Operation`] The wrapped `Gapic::Operation` object.
+          # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
+          # @private
+          # @return [::Google::Cloud::Spanner::Backup::Job]
           def self.from_grpc grpc, service
             new.tap do |job|
               job.instance_variable_set :@grpc, grpc

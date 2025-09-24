@@ -43,19 +43,28 @@ module Google
       # no operations are sent for more than an hour.
       #
       class Session
-        ##
-        # @private The `Google::Cloud::Spanner::V1::Session` object
+        # The wrapped `V1::Session` protobuf session object.
+        # @return [::Google::Cloud::Spanner::V1::Session]
+        # @private
         attr_accessor :grpc
 
-        ##
-        # @private The gRPC Service object.
+        # The `Spanner::Service` object.
+        # @private
+        # @return [::Google::Cloud::Spanner::Service]
         attr_accessor :service
 
-        ##
-        # @private The hash of query options.
+        # A hash of values to specify the custom query options for executing SQL query.
+        # Example option: `:optimizer_version`.
+        # @private
+        # @return [::Hash, nil]
         attr_accessor :query_options
 
-        # @private Creates a new Session instance.
+        # Creates a new Session instance.
+        # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
+        # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` object.
+        # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   query options for executing SQL query. Example option: `:optimizer_version`.
+        # @private
         def initialize grpc, service, query_options: nil
           @grpc = grpc
           @service = service
@@ -63,33 +72,38 @@ module Google
         end
 
         # The unique identifier for the project.
-        # @return [String]
+        # @private
+        # @return [::String]
         def project_id
           @grpc.name.split("/")[1]
         end
 
         # The unique identifier for the instance.
-        # @return [String]
+        # @private
+        # @return [::String]
         def instance_id
           @grpc.name.split("/")[3]
         end
 
         # The unique identifier for the database.
-        # @return [String]
+        # @private
+        # @return [::String]
         def database_id
           @grpc.name.split("/")[5]
         end
 
         # The unique identifier for the session.
-        # @return [String]
+        # @private
+        # @return [::String]
         def session_id
           @grpc.name.split("/")[7]
         end
 
-        ##
-        # The full path for the session resource. Values are of the form
+        # Full session name.
+        # Values are of the form:
         # `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
-        # @return [String]
+        # @private
+        # @return [::String]
         def path
           @grpc.name
         end
@@ -1418,18 +1432,23 @@ module Google
           service.delete_session path
         end
 
-        ##
-        # @private
         # Determines if the session has been idle longer than the given
         # duration.
-        def idle_since? duration
+        # @param duration_sec [::Numeric] interval in seconds
+        # @private
+        # @return [::Boolean]
+        def idle_since? duration_sec
           return true if @last_updated_at.nil?
-          Time.now > @last_updated_at + duration
+          Time.now > @last_updated_at + duration_sec
         end
 
-        ##
-        # @private Creates a new Session instance from a
-        # `Google::Cloud::Spanner::V1::Session`.
+        # Creates a new Session instance from a `V1::Session`.
+        # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
+        # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` ref.
+        # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   query options for executing SQL query. Example option: `:optimizer_version`.
+        # @private
+        # @return [::Google::Cloud::Spanner::Session]
         def self.from_grpc grpc, service, query_options: nil
           new grpc, service, query_options: query_options
         end
@@ -1449,6 +1468,11 @@ module Google
           raise "Must have active connection to service" unless service
         end
 
+        # Merge two hashes
+        # @param hash [::Hash, nil]
+        # @param hash_to_merge [::Hash, nil]
+        # @private
+        # @return [::Hash, nil]
         def merge_if_present hash, hash_to_merge
           if hash.nil?
             hash_to_merge

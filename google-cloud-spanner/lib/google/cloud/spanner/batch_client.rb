@@ -63,8 +63,18 @@ module Google
       #     new_partition
       #
       class BatchClient
-        ##
-        # @private Creates a new Spanner BatchClient instance.
+        # Creates a new Spanner BatchClient instance.
+        # @param project [::Google::Cloud::Spanner::Project] A `Spanner::Project` ref.
+        # @param instance_id [::String] Instance id, e.g. `"my-instance"`.
+        # @param database_id [::String] Database id, e.g. `"my-database"`.
+        # @param session_labels [::Hash, nil] Optional. The labels to be applied to all sessions
+        #   created by the client. Example: `"team" => "billing-service"`.
+        # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   query options for executing SQL query. Example parameter `:optimizer_version`.
+        # @param directed_read_options [::Hash, nil] Optional. Client options used to set
+        #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
+        #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @private
         def initialize project, instance_id, database_id, session_labels: nil,
                        query_options: nil, directed_read_options: nil
           @project = project
@@ -404,15 +414,18 @@ module Google
 
         protected
 
-        ##
-        # @private Raise an error unless an active connection to the service is
+        # Raise an error unless an active connection to the service is
         # available.
+        # @private
+        # @raise [StandardError]
+        # @return [nil]
         def ensure_service!
           raise "Must have active connection to service" unless @project.service
         end
 
-        ##
         # New session for each use.
+        # @private
+        # @return [::Google::Cloud::Spanner::Session]
         def session
           ensure_service!
           grpc = @project.service.create_session \

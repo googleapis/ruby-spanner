@@ -19,5 +19,6 @@ gem "minitest-rg", "~> 5.3"
 gem "rake"
 gem "redcarpet", "~> 3.0"
 gem "simplecov", "~> 0.22"
+gem "solargraph", group: :development, require: false
 gem "yard", "~> 0.9"
-gem "yard-doctest", "~> 0.1.17"
+gem "yard-doctest", "~> 0.1.17", group: :development

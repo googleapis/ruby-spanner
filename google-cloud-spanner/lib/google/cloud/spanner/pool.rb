@@ -36,6 +36,16 @@ module Google
         # and `Session` objects as values.
         attr_accessor :sessions_in_use
 
+        # Creates a new Session pool that manages non-multiplexed sessions.
+        # @param client [::Google::Cloud::Spanner::Client] A `Spanner::Client` reference
+        # @param min [::Integer] Min number of sessions to keep
+        # @param max [::Integer] Max number of sessions to keep
+        # @param keepalive [::Numeric] How long after their last usage the sessions can be reclaimed
+        # @param fail [::Boolean] If `true` the pool will raise `SessionLimitError` if number of new sessions
+        #   needed is more that can be created due to the `max` parameter. If `false` it will wait instead.
+        # @param threads [::Integer, nil] Number of threads in the thread pool that is used for keepalive and
+        #   release session actions. If `nil` the Pool will choose a reasonable default.
+        # @private
         def initialize client, min: 10, max: 100, keepalive: 1800,
                        fail: true, threads: nil
           @client = client
@@ -52,6 +62,11 @@ module Google
           init
         end
 
+        # Provides a session for running an operation
+        # @yield session Session a client can use to run an operation
+        # @yieldparam [::Google::Cloud::Spanner::Session] `Spanner::Session` to run an operation
+        # @private
+        # @return [nil]
         def with_session
           session = checkout_session
           begin

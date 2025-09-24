@@ -51,12 +51,26 @@ module Google
       #   end
       #
       class Client
-        ##
+        # A semi-arbitrary constant for thread-wide global parameter name
         # @private
         IS_TRANSACTION_RUNNING_KEY = "ruby_spanner_is_transaction_running".freeze
 
-        ##
-        # @private Creates a new Spanner Client instance.
+        # Creates a new Spanner Client instance.
+        # @param project [::Google::Cloud::Spanner::Project] A `Spanner::Project` ref.
+        # @param instance_id [::String] Instance id, e.g. `"my-instance"`.
+        # @param database_id [::String] Database id, e.g. `"my-database"`.
+        # @param session_labels [::Hash, nil] Optional. The labels to be applied to all sessions
+        #   created by the client. Example: `"team" => "billing-service"`.
+        # @param pool_opts [::Hash] Optional. `Spanner::Pool` creation options.
+        #   Example parameter: `:keepalive`.
+        # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   query options for executing SQL query. Example parameter `:optimizer_version`.
+        # @param database_role [::String, nil] Optional. The Spanner session creator role.
+        #   Example: `analyst`
+        # @param directed_read_options [::Hash, nil] Optional. Client options used to set
+        #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
+        #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @private
         def initialize project, instance_id, database_id, session_labels: nil,
                        pool_opts: {}, query_options: nil, database_role: nil,
                        directed_read_options: nil
@@ -89,7 +103,7 @@ module Google
         end
 
         # The Spanner project connected to.
-        # @return [Project]
+        # @return [::Google::Cloud::Spanner::Project]
         def project
           @project
         end
@@ -2114,13 +2128,15 @@ module Google
               yield tx
               transaction_id = nil
               transaction_id = tx.transaction_id if tx.existing_transaction?
-              commit_resp = @project.service.commit \
-                tx.session.path, tx.mutations,
+              commit_resp = @project.service.commit(
+                tx.session.path,
+                tx.mutations,
                 transaction_id: transaction_id,
                 exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                 commit_options: commit_options,
                 request_options: request_options,
                 call_options: call_options
+              )
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
             rescue GRPC::Aborted,
@@ -2419,17 +2435,21 @@ module Google
           @pool.reset
         end
 
-        ##
+        # Creates a new Session objece.
+        # @param multiplexed [::Boolean] Optional. Default to `false`.
+        #   If `true`, specifies a multiplexed session.
         # @private
-        # Creates a new session object every time.
-        def create_new_session
+        # @return [::Google::Cloud::Spanner::Session]
+        def create_new_session multiplexed: false
           ensure_service!
           grpc = @project.service.create_session \
             Admin::Database::V1::DatabaseAdmin::Paths.database_path(
               project: project_id, instance: instance_id, database: database_id
             ),
             labels: @session_labels,
-            database_role: @database_role
+            database_role: @database_role,
+            multiplexed: multiplexed
+
           Session.from_grpc grpc, @project.service, query_options: @query_options
         end
 
