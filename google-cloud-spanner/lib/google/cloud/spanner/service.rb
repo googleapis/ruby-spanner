@@ -157,6 +157,11 @@ module Google
           paged_enum.response
         end
 
+        # Gets information about a particular instance
+        # @param name [::String] The name of the Spanner instance, e.g. 'myinstance'
+        #   or path to the Spanner instance, e.g. `projects/myproject/instances/myinstance`.
+        # @private
+        # @return [::Google::Cloud::Spanner::Admin::Instance::V1::Instance]
         def get_instance name, call_options: nil
           opts = default_options call_options: call_options
           request = { name: instance_path(name) }
@@ -525,8 +530,8 @@ module Google
         #   Example option: `:priority`.
         # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
         #   call options. Example option `:timeout`.
-        # @return [::Google::Cloud::Spanner::V1::CommitResponse]
         # @private
+        # @return [::Google::Cloud::Spanner::V1::CommitResponse]
         def commit session_name, mutations = [],
                    transaction_id: nil, exclude_txn_from_change_streams: false,
                    commit_options: nil, request_options: nil, call_options: nil
@@ -717,6 +722,25 @@ module Google
           databases.list_database_operations request, opts
         end
 
+        # Lists the backup `::Google::Longrunning::Operation` long-running operations in
+        # the given instance. A backup operation has a name of the form
+        # projects/<project>/instances/<instance>/backups/<backup>/operations/<operation>.
+        # @param instance_id [::String] The name of the Spanner instance, e.g. 'myinstance'
+        #   or path to the Spanner instance, e.g. `projects/myproject/instances/myinstance`.
+        # @param filter [::String, nil] Optional.
+        #   An expression that filters the list of returned backup operations.
+        #   Example filter: `done:true`.
+        # @param page_size [::Integer, nil] Optional.
+        #   Number of operations to be returned in the response. If 0 or
+        #   less, defaults to the server's maximum allowed page size.
+        # @param page_token [::String, nil] Optional.
+        #   If set, `page_token` should contain a value received as a `next_page_token`
+        #   from a previous `ListBackupOperationsResponse` to the same `parent`
+        #   and with the same `filter`.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
+        # @private
+        # @return [::Gapic::PagedEnumerable<::Gapic::Operation>]
         def list_backup_operations instance_id,
                                    filter: nil, page_size: nil,
                                    page_token: nil,
@@ -806,6 +830,12 @@ module Google
             project: project
         end
 
+        # Converts an instance name to instance path.
+        # If an instance path is given, returns it unchanged
+        # @param name [::String] name of the Spanner instance, e.g. 'myinstance'
+        #   or path to the Spanner instance, e.g. `projects/myproject/instances/myinstance`.
+        # @private
+        # @return [::String]
         def instance_path name
           return name if name.to_s.include? "/"
 

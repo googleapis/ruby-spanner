@@ -2128,13 +2128,15 @@ module Google
               yield tx
               transaction_id = nil
               transaction_id = tx.transaction_id if tx.existing_transaction?
-              commit_resp = @project.service.commit \
-                tx.session.path, tx.mutations,
+              commit_resp = @project.service.commit(
+                tx.session.path,
+                tx.mutations,
                 transaction_id: transaction_id,
                 exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                 commit_options: commit_options,
                 request_options: request_options,
                 call_options: call_options
+              )
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
             rescue GRPC::Aborted,

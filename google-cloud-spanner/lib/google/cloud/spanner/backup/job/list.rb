@@ -33,8 +33,9 @@ module Google
           #   {Google::Cloud::Spanner::Admin::Database.database_admin}.list_backup_operations instead.
           #
           class List < DelegateClass(::Array)
+            # The `Spanner::Service` reference.
             # @private
-            # The gRPC Service object.
+            # @return [::Google::Cloud::Spanner::Service]
             attr_accessor :service
 
             # @private
@@ -148,13 +149,14 @@ module Google
               end
             end
 
-            ##
-            # @private
-            #
-            # New Backup::Job::List from a
+            # Creates a new `Spanner::Backup::Job::List` of `Gapic::Operation` operations from a
             # `Gapic::PagedEnumerable<Google::Longrunning::Operation>`
             # object. Operation object is a backup operation.
-            #
+            # @param grpc [::Gapic::PagedEnumerable<::Google::Longrunning::Operation>] 
+            #   Wrapped `Gapic::PagedEnumberable` reference.
+            # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
+            # @private
+            # @return [::Google::Cloud::Spanner::Backup::Job::List] 
             def self.from_grpc grpc, service
               operations_client =
                 service.databases.instance_variable_get "@operations_client"

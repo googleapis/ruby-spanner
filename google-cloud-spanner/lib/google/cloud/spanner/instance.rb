@@ -74,11 +74,15 @@ module Google
       #   end
       #
       class Instance
-        ##
-        # @private The gRPC Service object.
+        # The `Spanner::Service` reference.
+        # @private
+        # @return [::Google::Cloud::Spanner::Service]
         attr_accessor :service
 
-        # @private Creates a new Instance instance.
+        # Creates a new `Spanner::Instance` instance.
+        # @param grpc [::Google::Cloud::Spanner::Admin::Instance::V1::Instance] The protobuf `V1::Instance` underlying object.
+        # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
+        # @private
         def initialize grpc, service
           @grpc = grpc
           @service = service
@@ -957,9 +961,12 @@ module Google
           grpc.permissions
         end
 
-        ##
-        # @private Creates a new Instance instance from a
+        # Creates a new Instance instance from a
         # `Google::Cloud::Spanner::Admin::Instance::V1::Instance`.
+        # @param grpc [::Google::Cloud::Spanner::Admin::Instance::V1::Instance] The protobuf `V1::Instance` underlying object.
+        # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
+        # @private
+        # @return [::Google::Cloud::Spanner::Instance]
         def self.from_grpc grpc, service
           new grpc, service
         end
