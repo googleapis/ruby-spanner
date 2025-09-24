@@ -41,7 +41,7 @@ describe "Spanner Database Backup Operations", :spanner do
     jobs.each do |job|
       _(job).must_be_kind_of Google::Cloud::Spanner::Backup::Job
 
-      if job.done?
+      if job.done? && !job.error?
         _(job.backup).must_be_kind_of Google::Cloud::Spanner::Backup
       end
 
