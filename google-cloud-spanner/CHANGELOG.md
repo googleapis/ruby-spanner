@@ -1,5 +1,11 @@
 # Release History
 
+### 2.28.0 (2025-09-24)
+
+#### Features
+
+* Add support for order_by and lock_hint options ([#182](https://github.com/googleapis/ruby-spanner/issues/182)) 
+
 ### 2.27.0 (2025-05-28)
 
 #### Features
@@ -11,7 +17,8 @@
 
 #### Features
 
-* Support setting the universe domain ([#144](https://github.com/googleapis/ruby-spanner/issues/144)) 
+* Support setting the universe domain ([#144](https://github.com/googleapis/ruby-spanner/issues/144))
+
 #### Bug Fixes
 
 * Corrected algorithm that releases stale sessions in the pool ([#156](https://github.com/googleapis/ruby-spanner/issues/156)) 
