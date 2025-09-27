@@ -374,7 +374,7 @@ module Google
           response = service.execute_streaming_sql path, sql, **execute_query_options
 
           results = Results.from_execute_query_response response, service, path, sql, execute_query_options
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           results
         end
 
@@ -444,7 +444,7 @@ module Google
                                               batch.statements, seqno,
                                               request_options: request_options,
                                               call_options: call_options
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           results
         end
 
@@ -546,7 +546,7 @@ module Google
 
           results = Results.from_read_response response, service, path, table, columns, read_options
 
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
 
           results
         end
@@ -562,7 +562,7 @@ module Google
                                     max_partitions: max_partitions,
                                     call_options: call_options
 
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
 
           results
         end
@@ -579,7 +579,7 @@ module Google
             max_partitions: max_partitions,
             call_options: call_options
 
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
 
           results
         end
@@ -681,7 +681,7 @@ module Google
                                        commit_options: commit_options,
                                        request_options: request_options,
                                        call_options: call_options
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           resp = CommitResponse.from_grpc commit_resp
           commit_options ? resp : resp.timestamp
         end
@@ -779,7 +779,7 @@ module Google
                                          request_options: request_options,
                                          call_options: call_options
           results = BatchWriteResults.new response
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           results
         end
 
@@ -1365,7 +1365,7 @@ module Google
         # Rolls back the transaction, releasing any locks it holds.
         def rollback transaction_id
           service.rollback path, transaction_id
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC)
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           true
         end
 
@@ -1394,7 +1394,7 @@ module Google
         def reload!
           ensure_service!
           @grpc = service.get_session path
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC) 
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           self
         rescue Google::Cloud::NotFoundError
           labels = @grpc.labels.to_h unless @grpc.labels.to_h.empty?
@@ -1403,7 +1403,7 @@ module Google
               project: project_id, instance: instance_id, database: database_id
             ),
             labels: labels
-          @last_updated_at = Process::clock_gettime(Process::CLOCK_MONOTONIC) 
+          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           self
         end
 
@@ -1439,7 +1439,7 @@ module Google
         # @return [::Boolean]
         def idle_since? duration_sec
           return true if @last_updated_at.nil?
-          Process::clock_gettime(Process::CLOCK_MONOTONIC) > @last_updated_at + duration_sec
+          Process.clock_gettime(Process::CLOCK_MONOTONIC) > @last_updated_at + duration_sec
         end
 
         # Creates a new Session instance from a `V1::Session`.
