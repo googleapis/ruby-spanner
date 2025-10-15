@@ -59,7 +59,7 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
 
   it "calls keepalive on the sessions that need it" do
     # update the session so it was last updated an hour ago
-    session.instance_variable_set :@last_updated_at, Time.now - 60*60
+    session.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC) - 60*60
     # set the session in the pool
     pool.sessions_available = [session]
     pool.sessions_in_use = {}
@@ -78,7 +78,7 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
 
   it "doesn't call keepalive on sessions that don't need it" do
     # update the session so it was last updated now
-    session.instance_variable_set :@last_updated_at, Time.now
+    session.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC)
     # set the session in the pool
     pool.sessions_available = [session]
     pool.sessions_in_use = {}
@@ -102,9 +102,9 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     pool.sessions_available = [session, session2, session3]
     pool.instance_variable_set :@thread_pool, Concurrent::ImmediateExecutor.new
     pool.instance_variable_set :@min, 2
-    session.instance_variable_set :@last_updated_at, Time.now
-    session2.instance_variable_set :@last_updated_at, Time.now - 2000
-    session3.instance_variable_set :@last_updated_at, Time.now - 2000
+    session.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC)
+    session2.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC) - 2000
+    session3.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC) - 2000
 
     keepalive_log = []
     release_log = []
@@ -138,8 +138,8 @@ describe Google::Cloud::Spanner::Pool, :keepalive_or_release, :mock_spanner do
     pool.sessions_available = [session, session2]
     pool.instance_variable_set :@thread_pool, Concurrent::ImmediateExecutor.new
     pool.instance_variable_set :@min, 3
-    session.instance_variable_set :@last_updated_at, Time.now
-    session2.instance_variable_set :@last_updated_at, Time.now - 2000
+    session.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC)
+    session2.instance_variable_set :@last_updated_at, Process::clock_gettime(Process::CLOCK_MONOTONIC) - 2000
 
     keepalive_log = []
     session2.stub(:keepalive!, proc { keepalive_log << session2 }) do
