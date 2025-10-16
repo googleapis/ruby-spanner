@@ -1200,8 +1200,8 @@ module Google
 
         # Begins a new transaction in a thread-safe manner if one does not already exist.
         #
-        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
-        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        # @param exclude_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
         # @param request_options [::Hash, nil] Optional. Common request options.
         #   Example option: `:priority`.
