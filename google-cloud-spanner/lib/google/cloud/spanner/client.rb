@@ -2127,14 +2127,14 @@ module Google
               Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
               yield tx
 
-              if (!tx.existing_transaction?)
+              unless tx.existing_transaction?
                 # This can happen if the yielded `tx` object was only used to add mutations.
                 # Then it never called any RPCs and didn't create a server-side Transaction object.
                 # In which case we should make an explicit BeginTransaction call here.
                 tx.safe_begin_transaction!(
-                   exclude_from_change_streams: exclude_txn_from_change_streams,
-                   request_options: request_options,
-                   call_options: call_options
+                  exclude_from_change_streams: exclude_txn_from_change_streams,
+                  request_options: request_options,
+                  call_options: call_options
                 )
               end
 
@@ -2161,7 +2161,6 @@ module Google
               tx = session.create_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
               retry
             rescue StandardError => e
-              raise
               # Rollback transaction when handling unexpected error
               tx.session.rollback tx.transaction_id if tx.existing_transaction?
               # Return nil if raised with rollback.

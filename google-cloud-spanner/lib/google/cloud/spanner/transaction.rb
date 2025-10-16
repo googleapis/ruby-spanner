@@ -1183,7 +1183,7 @@ module Google
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
         def self.from_grpc grpc, session, exclude_txn_from_change_streams: false
-          new(grpc, session, exclude_txn_from_change_streams)
+          new grpc, session, exclude_txn_from_change_streams
         end
 
         ##

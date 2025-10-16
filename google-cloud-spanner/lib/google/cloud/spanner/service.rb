@@ -587,7 +587,6 @@ module Google
           service.rollback request, opts
         end
 
-
         # Explicitly begins a new transaction, making a `BeginTransaction` rpc call,
         # and creating and returning a `V1::Transaction` object.
         #
@@ -598,7 +597,7 @@ module Google
         # can begin a new transaction as part of the request (so-called inline-begin).
         # The inline-begin functionality is used in methods on `Spanner::Transaction` class,
         # e.g. `Spanner::Transaction#read`, accessible to the end-users via the `Spanner::Client#transaction` method.
-        # 
+        #
         # All the above methods, and  {::Google::Cloud::Spanner::V1::Spanner::Client#commit Commit}
         # can utilize single-use transactions that do not require an explicit BeginTransaction call.
         # Single-use transactions are used by the methods on `Spanner::Client` class,

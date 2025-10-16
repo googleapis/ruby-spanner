@@ -20,8 +20,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   let(:session_id) { "session1" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
-  let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc nil, session }
-  let(:transaction_id) { "tx789" }
+  let(:tx_id) { "tx789" }
   let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
   let(:commit_time) { Time.now }
   let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
@@ -82,7 +81,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     if begin_transaction
       Google::Cloud::Spanner::V1::ResultSetMetadata.new(
         transaction: Google::Cloud::Spanner::V1::Transaction.new(
-          id: transaction_id
+          id: tx_id
         )
       )
     else

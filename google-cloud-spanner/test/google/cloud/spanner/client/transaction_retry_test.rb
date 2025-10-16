@@ -24,6 +24,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
+  let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
   let(:tx_selector_id) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:tx_selector_begin) do
     Google::Cloud::Spanner::V1::TransactionSelector.new(
@@ -419,6 +420,12 @@ describe Google::Cloud::Spanner::Client, :transaction, :retry, :mock_spanner do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+      session: session_grpc.name, 
+      options: tx_opts, 
+      request_options: nil
+    }, default_options]
+
 
     def mock.commit *args
       # first time called this will raise

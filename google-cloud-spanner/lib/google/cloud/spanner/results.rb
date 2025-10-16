@@ -55,7 +55,7 @@ module Google
         # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` reference.
         # @param partial_result_sets [::Enumerable<::Google::Cloud::Spanner::V1::PartialResultSet>]
         #   Raw enumerable from grpc `StreamingRead` call.
-        # @param session_name [::String] Required. 
+        # @param session_name [::String] Required.
         #   The session in which the transaction to be committed is running.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
@@ -326,7 +326,7 @@ module Google
         # @param partial_result_sets [::Enumerable<::Google::Cloud::Spanner::V1::PartialResultSet>]
         #   Raw enumerable from underlying grpc call.
         # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` reference.
-         # @param session_name [::String] Required. 
+        # @param session_name [::String] Required.
         #   The session in which the transaction to be committed is running.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
@@ -346,7 +346,7 @@ module Google
         # @param response [::Enumerable<::Google::Cloud::Spanner::V1::PartialResultSet>]
         #   Raw enumerable from grpc `ExecuteStreamingSql` call.
         # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` reference.
-        # @param session_name [::String] Required. 
+        # @param session_name [::String] Required.
         #   The session in which the transaction to be committed is running.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
@@ -360,7 +360,7 @@ module Google
         def self.from_execute_query_response response, service, session_name, sql, execute_query_options
           from_partial_result_sets(response, service, session_name).tap do |results|
             execute_query_options_copy = execute_query_options.dup
-            if (!results.metadata.transaction.nil?)
+            unless results.metadata.transaction.nil?
               execute_query_options_copy[:transaction] = V1::TransactionSelector.new id: results.metadata.transaction.id
             end
 
@@ -373,7 +373,7 @@ module Google
         # @param response [::Enumerable<::Google::Cloud::Spanner::V1::PartialResultSet>]
         #   Raw enumerable from grpc `StreamingRead` call.
         # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` reference.
-        # @param session_name [::String] Required. 
+        # @param session_name [::String] Required.
         #   The session in which the transaction to be committed is running.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
@@ -389,7 +389,7 @@ module Google
         def self.from_read_response response, service, session_name, table, columns, read_options
           from_partial_result_sets(response, service, session_name).tap do |results|
             read_options_copy = read_options.dup
-            if (!results.metadata.transaction.nil?)
+            unless results.metadata.transaction.nil?
               read_options_copy[:transaction] = V1::TransactionSelector.new id: results.metadata.transaction.id
             end
 
