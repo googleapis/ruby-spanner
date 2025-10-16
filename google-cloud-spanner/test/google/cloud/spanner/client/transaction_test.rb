@@ -501,9 +501,22 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
 
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+
+    # Since the yielded transaction object was only used to add mutations,
+    # we expect an explicit `begin_transaction` call, and subsequently
+    # the id of the transaction returned to be issued in the `commit` request.
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name, 
+        options: tx_opts, 
+        request_options: nil
+      }, default_options]
+
     mock.expect :commit, commit_resp, [{
-      session: session_grpc.name, mutations: mutations, transaction_id: nil,
-      single_use_transaction: tx_no_dml_options, request_options: nil
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil,
+      request_options: nil
     }, default_options]
     spanner.service.mocked_service = mock
 
@@ -563,9 +576,21 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     it "commits multiple mutations" do
       mock = Minitest::Mock.new
       mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+      # Since the yielded transaction object was only used to add mutations,
+      # we expect an explicit `begin_transaction` call, and subsequently
+      # the id of the transaction returned to be issued in the `commit` request.
+      mock.expect :begin_transaction, transaction_grpc, [{
+          session: session_grpc.name, 
+          options: tx_opts, 
+          request_options: request_options
+        }, default_options]
+
       mock.expect :commit, commit_resp, [{
-        session: session_grpc.name, mutations: mutations, transaction_id: nil,
-        single_use_transaction: tx_no_dml_options, request_options: request_options
+        session: session_grpc.name, 
+        mutations: mutations, 
+        transaction_id: transaction_id, 
+        single_use_transaction: nil,
+        request_options: request_options
       }, default_options]
       spanner.service.mocked_service = mock
 
