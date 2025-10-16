@@ -22,6 +22,7 @@ describe "Spanner Database Backup", :spanner do
 
   it "creates, get, updates, restore and delete a database backup" do
     skip if emulator_enabled?
+    skip if temporary_disable_backup?
 
     backup_id = "#{$spanner_database_id}-crud"
     database = spanner.database instance_id, database_id
@@ -122,6 +123,7 @@ describe "Spanner Database Backup", :spanner do
 
   it "cancel create backup operation" do
     skip if emulator_enabled?
+    skip if temporary_disable_backup?
 
     backup_id = "#{$spanner_database_id}-cancel"
     database = spanner.database instance_id, database_id
@@ -140,6 +142,7 @@ describe "Spanner Database Backup", :spanner do
 
   it "fails to create a backup with a version time too far in the past" do
     skip if emulator_enabled?
+    skip if temporary_disable_backup?
 
     backup_id = "#{$spanner_database_id}-version-time-fail"
     database = spanner.database instance_id, database_id
@@ -152,6 +155,7 @@ describe "Spanner Database Backup", :spanner do
 
   it "fails to create a backup with a version time in the future" do
     skip if emulator_enabled?
+    skip if temporary_disable_backup?
 
     backup_id = "#{$spanner_database_id}-version-time-fail"
     database = spanner.database instance_id, database_id
@@ -164,6 +168,7 @@ describe "Spanner Database Backup", :spanner do
 
   it "lists and gets database backups" do
     skip if emulator_enabled?
+    skip if temporary_disable_backup?
 
     backup_id = "#{$spanner_database_id}-list"
     database = spanner.database instance_id, database_id
