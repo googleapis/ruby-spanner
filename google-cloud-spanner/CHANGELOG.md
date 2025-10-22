@@ -1,5 +1,15 @@
 # Release History
 
+### 2.28.0 (2025-10-22)
+
+#### Features
+
+* Add support for order_by and lock_hint options 
+* Add support for order_by and lock_hint options ([#182](https://github.com/googleapis/ruby-spanner/issues/182)) 
+#### Bug Fixes
+
+* use updated transaction when retrying results ([#191](https://github.com/googleapis/ruby-spanner/issues/191)) 
+
 ### 2.27.0 (2025-05-28)
 
 #### Features
