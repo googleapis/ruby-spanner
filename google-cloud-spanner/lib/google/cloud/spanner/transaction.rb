@@ -97,7 +97,19 @@ module Google
         # @return [::Boolean]
         attr_accessor :exclude_txn_from_change_streams
 
-        def initialize
+        # Creates a new `Spanner::Transaction` instance from a `V1::Transaction` object.
+        # @param grpc [::Google::Cloud::Spanner::V1::Transaction] Underlying `V1::Transaction` object.
+        # @param session [::Google::Cloud::Spanner::Session] The session this transaction is running in.
+        # @param exclude_txn_from_change_streams [::Boolean]
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
+        # @private
+        # @return [::Google::Cloud::Spanner::Transaction]
+        def initialize grpc, session, exclude_txn_from_change_streams
+          @grpc = grpc
+          @session = session
+          @exclude_txn_from_change_streams = exclude_txn_from_change_streams
+
           @commit = Commit.new
           @seqno = 0
           @exclude_txn_from_change_streams = false
@@ -125,7 +137,7 @@ module Google
         # @return [String] The transaction id.
         def transaction_id
           return @grpc.id if existing_transaction?
-          safe_begin_transaction
+          safe_begin_transaction!
           @grpc.id
         end
 
@@ -1162,15 +1174,16 @@ module Google
           @commit.mutations
         end
 
-        ##
-        # @private Creates a new Transaction instance from a
-        # `Google::Cloud::Spanner::V1::Transaction`.
+        # Creates a new `Spanner::Transaction` instance from a `V1::Transaction` object.
+        # @param grpc [::Google::Cloud::Spanner::V1::Transaction] Underlying `V1::Transaction` object.
+        # @param session [::Google::Cloud::Spanner::Session] The session this transaction is running in.
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
+        # @private
+        # @return [::Google::Cloud::Spanner::Transaction]
         def self.from_grpc grpc, session, exclude_txn_from_change_streams: false
-          new.tap do |s|
-            s.instance_variable_set :@grpc,    grpc
-            s.instance_variable_set :@session, session
-            s.exclude_txn_from_change_streams = exclude_txn_from_change_streams
-          end
+          new grpc, session, exclude_txn_from_change_streams
         end
 
         ##
@@ -1183,6 +1196,33 @@ module Google
         # @private Checks if transaction is not already created.
         def no_existing_transaction?
           @grpc.nil?
+        end
+
+        # Begins a new transaction in a thread-safe manner if one does not already exist.
+        #
+        # @param exclude_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
+        # @param request_options [::Hash, nil] Optional. Common request options.
+        #   Example option: `:priority`.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
+        #   object, or `nil` if a transaction already exists.
+        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil
+          @mutex.synchronize do
+            return if existing_transaction?
+            ensure_session!
+            route_to_leader = LARHeaders.begin_transaction true
+            @grpc = service.begin_transaction(
+              session.path,
+              exclude_txn_from_change_streams: exclude_from_change_streams,
+              request_options: request_options,
+              call_options: call_options,
+              route_to_leader: route_to_leader
+            )
+          end
         end
 
         protected
@@ -1212,20 +1252,6 @@ module Google
           end
         end
 
-        # Begins a new transaction in a thread-safe manner if one does not already exist.
-        #
-        # @private
-        # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
-        #   object, or `nil` if a transaction already exists.
-        def safe_begin_transaction
-          @mutex.synchronize do
-            return if existing_transaction?
-            ensure_session!
-            route_to_leader = LARHeaders.begin_transaction true
-            @grpc = service.begin_transaction session.path, route_to_leader: route_to_leader
-          end
-        end
-
         # The TransactionSelector to be used for queries. This method must
         # be called from within a synchronized block, since the value returned
         # depends on the state of @grpc field.
@@ -1233,10 +1259,9 @@ module Google
         # This method is expected to be called from within `safe_execute()` method's block,
         # since it provides synchronization and gurantees thread safety.
         #
-        # @param exclude_txn_from_change_streams [::Boolean] If set to true,
-        #   mutations will not be recorded in change streams with DDL option
-        #   `allow_txn_exclusion=true`.
-        #   Optional, defaults to `false`.
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
         # @private
         # @return [::Google::Cloud::Spanner::V1::TransactionSelector]
         def tx_selector exclude_txn_from_change_streams: false

@@ -587,6 +587,38 @@ module Google
           service.rollback request, opts
         end
 
+        # Explicitly begins a new transaction, making a `BeginTransaction` rpc call,
+        # and creating and returning a `V1::Transaction` object.
+        #
+        # Explicit transaction creation can often be skipped:
+        # {::Google::Cloud::Spanner::V1::Spanner::Client#read Read},
+        # {::Google::Cloud::Spanner::V1::Spanner::Client#execute_sql ExecuteSql} and
+        # {::Google::Cloud::Spanner::V1::Spanner::Client#execute_batch_dml ExecuteBatchDml}
+        # can begin a new transaction as part of the request (so-called inline-begin).
+        # The inline-begin functionality is used in methods on `Spanner::Transaction` class,
+        # e.g. `Spanner::Transaction#read`, accessible to the end-users via the `Spanner::Client#transaction` method.
+        #
+        # All the above methods, and  {::Google::Cloud::Spanner::V1::Spanner::Client#commit Commit}
+        # can utilize single-use transactions that do not require an explicit BeginTransaction call.
+        # Single-use transactions are used by the methods on `Spanner::Client` class,
+        # e.g. `Spanner::Client#read`, with the exception of `Spanner::Client#transaction`.
+        #
+        # @param session_name [::String]
+        #   Required. The session in which the transaction is to be created.
+        #   Values are of the form:
+        #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
+        # @param request_options [::Hash, nil] Optional. Common request options.
+        #   Example option: `:priority`.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
+        # @param route_to_leader [::String, nil] Optional. The value to be sent
+        #   as `x-goog-spanner-route-to-leader` header for leader aware routing.
+        #   Expected values: `"true"` or `"false"`.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::Transaction]
         def begin_transaction session_name,
                               exclude_txn_from_change_streams: false,
                               request_options: nil,

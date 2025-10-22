@@ -37,6 +37,10 @@ def emulator_enabled?
   ENV["SPANNER_EMULATOR_HOST"]
 end
 
+def temporary_disable_backup?
+  true
+end
+
 def make_params dialect, value
   key = dialect == :gsql ? :value : :p1
   { key => value }

@@ -44,8 +44,14 @@ module Google
       #   results = batch_snapshot.execute_partition partition
       #
       class Partition
-        # @ private
+        # A `V1::ExecuteSqlRequest` that is related to this partition.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::ExecuteSqlRequest]
         attr_reader :execute
+
+        # A `V1::ReadRequest` that is related to this partition.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::ReadRequest]
         attr_reader :read
 
         ##
