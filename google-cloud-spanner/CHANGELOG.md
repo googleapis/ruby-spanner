@@ -4,11 +4,15 @@
 
 #### Features
 
-* Add support for order_by and lock_hint options 
-* Add support for order_by and lock_hint options ([#182](https://github.com/googleapis/ruby-spanner/issues/182)) 
+* Add support for order_by and lock_hint options ([#182](https://github.com/googleapis/ruby-spanner/issues/182))
+ 
 #### Bug Fixes
 
-* use updated transaction when retrying results ([#191](https://github.com/googleapis/ruby-spanner/issues/191)) 
+* use create Transaction when retrying when enumerating rows in `Spanner::Results` ([#191](https://github.com/googleapis/ruby-spanner/issues/191))
+* run explicit BeginTransaction in Client#transaction for mutation-only payloads ([#191](https://github.com/googleapis/ruby-spanner/issues/191))
+* Transaction#intialize is no longer incorrectly marked as public in documentation ([#191](https://github.com/googleapis/ruby-spanner/issues/191))
+* several field accessors in Partition are no longer incorrectly marked as public in documentation ([#191](https://github.com/googleapis/ruby-spanner/issues/191))
+* session keepalive uses Process.clock_gettime instead of Time.now ([#185](https://github.com/googleapis/ruby-spanner/pull/185)) 
 
 ### 2.27.0 (2025-05-28)
 
