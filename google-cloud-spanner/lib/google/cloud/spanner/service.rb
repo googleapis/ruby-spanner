@@ -534,13 +534,15 @@ module Google
         # @return [::Google::Cloud::Spanner::V1::CommitResponse]
         def commit session_name, mutations = [],
                    transaction_id: nil, exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   isolation_level: nil, commit_options: nil, request_options: nil,
+                   call_options: nil
           route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
             tx_opts = V1::TransactionOptions.new(
               read_write: V1::TransactionOptions::ReadWrite.new,
-              exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+              isolation_level: isolation_level
             )
           end
           opts = default_options session_name: session_name,
@@ -621,12 +623,14 @@ module Google
         # @return [::Google::Cloud::Spanner::V1::Transaction]
         def begin_transaction session_name,
                               exclude_txn_from_change_streams: false,
+                              isolation_level: nil,
                               request_options: nil,
                               call_options: nil,
                               route_to_leader: nil
           tx_opts = V1::TransactionOptions.new(
             read_write: V1::TransactionOptions::ReadWrite.new,
-            exclude_txn_from_change_streams: exclude_txn_from_change_streams
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+            isolation_level: isolation_level
           )
           opts = default_options session_name: session_name,
                                  call_options: call_options,
@@ -658,7 +662,7 @@ module Google
         end
 
         def create_snapshot session_name, strong: nil, timestamp: nil,
-                            staleness: nil, call_options: nil
+                            isolation_level: nil, staleness: nil, call_options: nil
           tx_opts = V1::TransactionOptions.new(
             read_only: V1::TransactionOptions::ReadOnly.new(
               {
@@ -667,7 +671,8 @@ module Google
                 exact_staleness: Convert.number_to_duration(staleness),
                 return_read_timestamp: true
               }.compact
-            )
+            ),
+            isolation_level: isolation_level
           )
           opts = default_options session_name: session_name,
                                  call_options: call_options
@@ -677,10 +682,12 @@ module Google
 
         def create_pdml session_name,
                         exclude_txn_from_change_streams: false,
+                        isolation_level: nil,
                         call_options: nil
           tx_opts = V1::TransactionOptions.new(
             partitioned_dml: V1::TransactionOptions::PartitionedDml.new,
-            exclude_txn_from_change_streams: exclude_txn_from_change_streams
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+            isolation_level: isolation_level
           )
           route_to_leader = LARHeaders.begin_transaction true
           opts = default_options session_name: session_name,
