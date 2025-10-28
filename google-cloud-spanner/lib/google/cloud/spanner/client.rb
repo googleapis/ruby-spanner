@@ -2524,16 +2524,21 @@ module Google
         #   single-use key.
         # @return [void]
         def validate_single_use_args! opts
-          return true if opts.nil? || opts.empty?
-          valid_keys = %i[strong timestamp read_timestamp staleness
-                          exact_staleness bounded_timestamp
-                          min_read_timestamp bounded_staleness max_staleness]
-          if opts.keys.count == 1 && valid_keys.include?(opts.keys.first)
-            return true
-          end
+          # An empty options hash is valid.
+          return if opts.nil? || opts.empty?
+
+          keys = opts.keys
+
+          valid_keys = Set.new(%i[
+                                 strong timestamp read_timestamp staleness exact_staleness
+                                 bounded_timestamp min_read_timestamp bounded_staleness max_staleness
+                               ]).freeze
+
+          # Raise an error unless there is exactly one key and it's in the valid set.
+          return if keys.length == 1 && valid_keys.include?(keys.first)
           raise ArgumentError,
-                "Must provide only one of the following single_use values: " \
-                "#{valid_keys}"
+                "Options must contain exactly one of the following keys: " \
+                "#{valid_keys.to_a.join ', '}"
         end
 
         # Creates a selector for a single-use, read-only transaction.
