@@ -412,7 +412,8 @@ module Google
                                             query_options: query_options,
                                             request_options: request_options,
                                             call_options: call_options,
-                                            route_to_leader: route_to_leader
+                                            route_to_leader: route_to_leader,
+                                            precommit_token_notify: method(:update_precommit_token!)
 
             update_wrapped_transaction! results.transaction
 
@@ -590,6 +591,11 @@ module Google
                                   query_options: query_options,
                                   request_options: request_options,
                                   call_options: call_options
+
+          # Since this method is calling `execute_query`, the transaction is going to be updated,
+          # and the `results` object is going to be set up with precommit token notification reference,
+          # so we don't need to do anything special here.
+
           # Stream all PartialResultSet to get ResultSetStats
           results.rows.to_a
           # Raise an error if there is not a row count returned
@@ -819,8 +825,8 @@ module Google
                                    transaction: tx_selector,
                                    request_options: request_options,
                                    call_options: call_options,
-                                   route_to_leader: route_to_leader
-            @grpc ||= results.transaction
+                                   route_to_leader: route_to_leader,
+                                   precommit_token_notify: method(:update_precommit_token!)
             update_wrapped_transaction! results.transaction
             results
           end

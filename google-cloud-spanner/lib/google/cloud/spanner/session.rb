@@ -217,6 +217,9 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
+        #
         # @return [Google::Cloud::Spanner::Results] The results of the query
         #   execution.
         #
@@ -358,7 +361,8 @@ module Google
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
                           request_options: nil, call_options: nil, data_boost_enabled: nil,
-                          directed_read_options: nil, route_to_leader: nil
+                          directed_read_options: nil, route_to_leader: nil,
+                          precommit_token_notify: nil
           ensure_service!
           query_options = merge_if_present query_options, @query_options
 
@@ -374,7 +378,8 @@ module Google
 
           response = service.execute_streaming_sql path, sql, **execute_query_options
 
-          results = Results.from_execute_query_response response, service, path, sql, execute_query_options
+          results = Results.from_execute_query_response response, service, path, sql, execute_query_options,
+                                                        precommit_token_notify: precommit_token_notify
           @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           results
         end
@@ -507,6 +512,9 @@ module Google
         #   To see the available options refer to
         #   ['Google::Cloud::Spanner::V1::ReadRequest::LockHint'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
         #
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
+        #
         # @return [Google::Cloud::Spanner::Results] The results of the read
         #   operation.
         #
@@ -526,7 +534,7 @@ module Google
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
                  call_options: nil, data_boost_enabled: nil, directed_read_options: nil,
-                 route_to_leader: nil, order_by: nil, lock_hint: nil
+                 route_to_leader: nil, order_by: nil, lock_hint: nil, precommit_token_notify: nil
           ensure_service!
 
           read_options = {
@@ -545,7 +553,8 @@ module Google
           response = service.streaming_read_table \
             path, table, columns, **read_options
 
-          results = Results.from_read_response response, service, path, table, columns, read_options
+          results = Results.from_read_response response, service, path, table, columns, read_options,
+                                               precommit_token_notify: precommit_token_notify
 
           @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
 

@@ -56,13 +56,23 @@ module Google
         # @param metadata [::Google::Cloud::Spanner::V1::ResultSetMetadata] ParialResultSet metadata object
         # @param stats [::Google::Cloud::Spanner::V1::ResultSetStats] Query plan and execution statistics
         #   for the statement that produced this streaming result set.
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
         # @private
-        def initialize service, partial_result_sets, session_name, metadata, stats
+        def initialize service, partial_result_sets, session_name, metadata, stats, precommit_token_notify: nil
           @service = service
           @partial_result_sets = partial_result_sets
           @session_name = session_name
           @metadata = metadata
           @stats = stats
+
+          # The notification function for the precommit token.
+          # `Results` object will see precommit tokens while iterating if it were created
+          # in the context of an RW transaction on a multiplexed session.
+          # Precommit token is a passthrough parameter that that transaction will need to supply in order to Commit.
+          # There can be multiple precommit tokens in the stream
+          # (should be at least 2 -- with the first and last PartialResultSet).
+          @precommit_token_notify = precommit_token_notify
         end
 
         # The `V1::ResultSetMetadata` protobuf object from the first
@@ -168,6 +178,14 @@ module Google
               # metadata should be set before the first iteration...
               @metadata ||= grpc.metadata
               @stats ||= grpc.stats
+
+              # The precommit token should be issued on first and last stream element.
+              # These two precommit tokens can be different.
+              # If these Results are created in the context of a `Spanner::Transaction`,
+              # that `Transaction` object is the one keeping track of the precommit token and should be notified.
+              if grpc.precommit_token && @precommit_token_notify
+                @precommit_token_notify.call(grpc.precommit_token)
+              end
 
               buffered_responses << grpc
 
@@ -330,14 +348,23 @@ module Google
         #   The name of the session for the operation that created these Results.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
         # @private
         # @return [::Google::Cloud::Spanner::Results]
-        def self.from_partial_result_sets partial_result_sets, service, session_name
+        def self.from_partial_result_sets partial_result_sets, service, session_name, precommit_token_notify: nil
           # @type [::Google::Cloud::Spanner::V1::PartialResultSet]
           partial_result_set = partial_result_sets.peek
           metadata = partial_result_set.metadata
           stats = partial_result_set.stats
-          new service, partial_result_sets, session_name, metadata, stats
+          results = new service, partial_result_sets, session_name, metadata, stats,
+                        precommit_token_notify: precommit_token_notify
+
+          if partial_result_set.precommit_token && precommit_token_notify
+            precommit_token_notify.call partial_result_set.precommit_token
+          end
+
+          results
         rescue GRPC::BadStatus => e
           raise Google::Cloud::Error.from_error(e)
         end
@@ -355,10 +382,14 @@ module Google
         #   that were sent to the `service.execute_streaming_sql`. This hash joins params needed to
         #   construct `::Gapic::CallOptions`, e.g. `call_options` and header-related `route_to_leader`
         #   with params specific to `execute_streaming_sql`, such as `seqno`.
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
         # @private
         # @return [::Google::Cloud::Spanner::Results]
-        def self.from_execute_query_response response, service, session_name, sql, execute_query_options
-          from_partial_result_sets(response, service, session_name).tap do |results|
+        def self.from_execute_query_response response, service, session_name, sql, execute_query_options,
+                                             precommit_token_notify: nil
+          from_partial_result_sets(response, service, session_name,
+                                   precommit_token_notify: precommit_token_notify).tap do |results|
             execute_query_options_copy = execute_query_options.dup
             unless results.metadata.transaction.nil?
               execute_query_options_copy[:transaction] = V1::TransactionSelector.new id: results.metadata.transaction.id
@@ -384,10 +415,14 @@ module Google
         #   that were sent to the `service.streaming_read_table`. This hash joins params needed to
         #   construct `::Gapic::CallOptions`, e.g. `call_options` and header-related `route_to_leader`
         #   with params specific to `streaming_read_table`, such as `keys`.
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
         # @private
         # @return [::Google::Cloud::Spanner::Results]
-        def self.from_read_response response, service, session_name, table, columns, read_options
-          from_partial_result_sets(response, service, session_name).tap do |results|
+        def self.from_read_response response, service, session_name, table, columns, read_options,
+                                    precommit_token_notify: nil
+          from_partial_result_sets(response, service, session_name,
+                                   precommit_token_notify: precommit_token_notify).tap do |results|
             read_options_copy = read_options.dup
             unless results.metadata.transaction.nil?
               read_options_copy[:transaction] = V1::TransactionSelector.new id: results.metadata.transaction.id
