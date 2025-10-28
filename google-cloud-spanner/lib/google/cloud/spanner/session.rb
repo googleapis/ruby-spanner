@@ -1400,29 +1400,16 @@ module Google
           Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
         end
 
-        ##
-        # Reloads the session resource. Useful for determining if the session is
-        # still valid on the Spanner API.
-        def reload!
-          ensure_service!
-          @grpc = service.get_session path
-          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
-          self
-        rescue Google::Cloud::NotFoundError
-          labels = @grpc.labels.to_h unless @grpc.labels.to_h.empty?
-          @grpc = service.create_session \
-            V1::Spanner::Paths.database_path(
-              project: project_id, instance: instance_id, database: database_id
-            ),
-            labels: labels
-          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
-          self
-        end
-
-        ##
+        # If the session is non-multiplexed, keeps the session alive by executing `"SELECT 1"`.
+        # This method will re-create the session if necessary.
+        # For multiplexed session the keepalive is not required and this method immediately returns `true`.
         # @private
-        # Keeps the session alive by executing `"SELECT 1"`.
+        # @return [::Boolean]
+        #   `true` if the session is multiplexed or if the keepalive was successful for non-multiplexed session,
+        #   `false` if the non-multiplexed session was not found and the had to be recreated.
         def keepalive!
+          return true if multiplexed?
+
           ensure_service!
           route_to_leader = LARHeaders.execute_query false
           execute_query "SELECT 1", route_to_leader: route_to_leader
@@ -1437,9 +1424,12 @@ module Google
           false
         end
 
-        ##
-        # Permanently deletes the session.
+        # Permanently deletes the session unless this session is multiplexed.
+        # Multiplexed sessions can not be deleted, and this method immediately returns.
+        # @private
+        # @return [void]
         def release!
+          return if multiplexed?
           ensure_service!
           service.delete_session path
         end
