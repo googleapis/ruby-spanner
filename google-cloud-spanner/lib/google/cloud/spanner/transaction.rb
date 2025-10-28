@@ -1255,10 +1255,15 @@ module Google
         #   Example option: `:priority`.
         # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
         #   call options. Example option `:timeout`.
+        # @param mutation_key [::Google::Cloud::Spanner::V1::Mutation, nil] Optional.
+        #   If a read-write transaction on a multiplexed session commit mutations
+        #   without performing any reads or queries, one of the mutations from the mutation set
+        #   must be sent as a mutation key for `BeginTransaction`.
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
         #   object, or `nil` if a transaction already exists.
-        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil
+        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil,
+                                    mutation_key: nil
           @mutex.synchronize do
             return if existing_transaction?
             ensure_session!
@@ -1268,7 +1273,8 @@ module Google
               exclude_txn_from_change_streams: exclude_from_change_streams,
               request_options: request_options,
               call_options: call_options,
-              route_to_leader: route_to_leader
+              route_to_leader: route_to_leader,
+              mutation_key: mutation_key
             )
           end
         end

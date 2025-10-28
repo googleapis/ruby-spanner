@@ -703,7 +703,7 @@ module Google
           )
           opts = default_options session_name: session_name,
                                  call_options: call_options
-          request = { session: session_name, options: tx_opts }
+          request = { session: session_name, options: tx_opts, mutation_key: nil }
           service.begin_transaction request, opts
         end
 
@@ -718,7 +718,7 @@ module Google
           opts = default_options session_name: session_name,
                                  call_options: call_options,
                                  route_to_leader: route_to_leader
-          request = { session: session_name, options: tx_opts }
+          request = { session: session_name, options: tx_opts, mutation_key: nil }
           service.begin_transaction request, opts
         end
 

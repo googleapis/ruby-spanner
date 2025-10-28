@@ -1959,7 +1959,8 @@ module Google
         # rubocop:disable Metrics/AbcSize
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/BlockLength
-
+        # rubocop:disable Metrics/CyclomaticComplexity
+        # rubocop:disable Metrics/PerceivedComplexity
 
         ##
         # Creates a transaction for reads and writes that execute atomically at
@@ -2147,10 +2148,14 @@ module Google
                 # This typically will happen if the yielded `tx` object was only used to add mutations.
                 # Then it never called any RPCs and didn't create a server-side Transaction object.
                 # In which case we should make an explicit BeginTransaction call here.
+
+                mutation_key = tx.mutations[0]
+
                 tx.safe_begin_transaction!(
                   exclude_from_change_streams: exclude_txn_from_change_streams,
                   request_options: request_options,
-                  call_options: call_options
+                  call_options: call_options,
+                  mutation_key: mutation_key
                 )
               end
 
@@ -2197,6 +2202,9 @@ module Google
         # rubocop:enable Metrics/AbcSize
         # rubocop:enable Metrics/MethodLength
         # rubocop:enable Metrics/BlockLength
+        # rubocop:enable Metrics/CyclomaticComplexity
+        # rubocop:enable Metrics/PerceivedComplexity
+
 
         ##
         # Creates a snapshot read-only transaction for reads that execute
