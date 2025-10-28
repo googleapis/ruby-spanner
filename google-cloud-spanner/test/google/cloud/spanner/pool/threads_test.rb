@@ -20,23 +20,21 @@ describe Google::Cloud::Spanner::Client, :threads, :mock_spanner do
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
+  let(:session_creation_options) { ::Google::Cloud::Spanner::SessionCreationOptions.new database_path: database_path(instance_id, database_id)}
 
   it "creates a thread pool with the number of threads specified" do
     mock = Minitest::Mock.new
     # mock.expect :delete_session, nil, [session_grpc.name, options: default_options]
     session.service.mocked_service = mock
 
-    client = spanner.client instance_id, database_id, pool: { min: 0, max: 4, threads: 13 }
-    pool = client.instance_variable_get :@pool
+    pool = Google::Cloud::Spanner::Pool.new(spanner.service, session_creation_options, min: 0, max: 4, threads: 13)
     threads = pool.instance_variable_get :@threads
     thread_pool = pool.instance_variable_get :@thread_pool
 
     _(threads).must_equal 13
     _(thread_pool.max_length).must_equal 13
 
-    client.close
-
-    shutdown_client! client
+    shutdown_pool! pool
 
     mock.verify
   end
