@@ -2162,7 +2162,8 @@ module Google
                 exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                 commit_options: commit_options,
                 request_options: request_options,
-                call_options: call_options
+                call_options: call_options,
+                precommit_token: tx.precommit_token
               )
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp

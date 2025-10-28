@@ -97,6 +97,13 @@ module Google
         # @return [::Boolean]
         attr_accessor :exclude_txn_from_change_streams
 
+        # A token that is required when committing an RW transaction over a multiplexed session
+        # It can be read when transaction is created (either by BeginTransaction or by inlined begin),
+        # or from a previous operation within existing transaction.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken, nil]
+        attr_accessor :precommit_token
+
         # Creates a new `Spanner::Transaction` instance from a `V1::Transaction` object.
         # @param grpc [::Google::Cloud::Spanner::V1::Transaction] Underlying `V1::Transaction` object.
         # @param session [::Google::Cloud::Spanner::Session] The session this transaction is running in.
@@ -130,6 +137,14 @@ module Google
           # create a transaction must be synchronized, and any logic that depends on
           # the state of transaction creation must also be synchronized.
           @mutex = Mutex.new
+
+          # Precommit token is a piece of server-side bookkeeping pushed onto client-side
+          # as a part of MultiplexedSession update. Briefly, for a given read-write transaction on a
+          # Multiplexed session the client library must:
+          #   1. From all read operations, store the most recently received token.
+          #   2. Include this final token in the CommitRequest.
+          # @type [::Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken, nil]
+          @precommit_token = nil
         end
 
         ##
@@ -398,7 +413,9 @@ module Google
                                             request_options: request_options,
                                             call_options: call_options,
                                             route_to_leader: route_to_leader
-            @grpc ||= results.transaction
+
+            update_wrapped_transaction! results.transaction
+
             results
           end
         end
@@ -676,8 +693,56 @@ module Google
                                             request_options: request_options,
                                             call_options: call_options, &block
             batch_update_results = BatchUpdateResults.new response
-            @grpc ||= batch_update_results.transaction
+            update_wrapped_transaction! batch_update_results.transaction
+            response.result_sets.each do |result_set|
+              update_precommit_token! result_set.precommit_token if result_set.precommit_token
+            end
             batch_update_results.row_counts
+          end
+        end
+
+        # Updates this `Spanner::Transaction` with a new underlying `V1::Transaction` object.
+        # This happens when this `Spanner::Transaction` is in a empty-wrapper mode
+        # (it was created by `Google::Cloud::Spanner::Session#create_empty_transaction`).
+        # In that mode the inner wrapped `grpc` object representing the `V1::Transaction` is nil,
+        # and (almost all) service request run using the "inline-begin" transactions.
+        # As part of "inline-begin", a new `V1::Transaction` is created server-side, returned with the
+        # results, and in turn should be saved as the new `grpc` object.
+        #
+        # ! This method is expected to be called from within `safe_execute()` method's block!
+        #
+        # This method also updates the precommit token, if the new underlying `V1::Transaction` has it.
+        #
+        # This is a mutator method.
+        # @param new_transaction [::Google::Cloud::Spanner::V1::Transaction]
+        #   `V1::Transaction` object that was created on the server-side.
+        # @private
+        # @return [void]
+        def update_wrapped_transaction! new_transaction
+          return unless @grpc.nil?
+          return if new_transaction.nil?
+
+          @grpc = new_transaction
+          update_precommit_token! new_transaction.precommit_token
+        end
+
+        # Updates this transaction's precommit token but only if:
+        #   * new token exists
+        #   * new token's seq_num is greater.
+        #
+        # ! This method is expected to be called from within `safe_execute()` method's block!
+        #
+        # This is a mutator method.
+        # @param new_precommit_token [::Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken, nil]
+        #   the new precommit token, if any, from the latest service operation (e.g. from a ResultSet from a read).
+        # @private
+        # @return [void]
+        def update_precommit_token! new_precommit_token
+          if !new_precommit_token.nil? && (
+              @precommit_token.nil? ||
+              new_precommit_token.seq_num > @precommit_token.seq_num
+            )
+            @precommit_token = new_precommit_token
           end
         end
 
@@ -756,6 +821,7 @@ module Google
                                    call_options: call_options,
                                    route_to_leader: route_to_leader
             @grpc ||= results.transaction
+            update_wrapped_transaction! results.transaction
             results
           end
         end

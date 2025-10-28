@@ -530,11 +530,15 @@ module Google
         #   Example option: `:priority`.
         # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
         #   call options. Example option `:timeout`.
+        # @param precommit_token [::Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken, nil] Optional.
+        #    If the read-write transaction was executed on a multiplexed session, then a precommit token
+        #    with the highest sequence number received in this transaction attempt must be included.
         # @private
         # @return [::Google::Cloud::Spanner::V1::CommitResponse]
         def commit session_name, mutations = [],
                    transaction_id: nil, exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil
+                   commit_options: nil, request_options: nil, call_options: nil,
+                   precommit_token: nil
           route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
@@ -549,7 +553,7 @@ module Google
           request = {
             session: session_name, transaction_id: transaction_id,
             single_use_transaction: tx_opts, mutations: mutations,
-            request_options: request_options
+            request_options: request_options, precommit_token: precommit_token
           }
 
           request = add_commit_options request, commit_options
