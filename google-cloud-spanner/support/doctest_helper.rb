@@ -282,7 +282,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchClient" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end
@@ -300,7 +300,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchSnapshot" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end
@@ -316,7 +316,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchSnapshot#partition_query" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end
@@ -332,7 +332,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchSnapshot#execute" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       5.times do
         mock.expect :begin_transaction, tx_resp do |req|
           verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
@@ -349,7 +349,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchSnapshot#execute_sql" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       5.times do
         mock.expect :begin_transaction, tx_resp do |req|
           verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
@@ -366,7 +366,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchSnapshot#execute_partition" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end
@@ -382,7 +382,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::BatchSnapshot#execute_sql_partition" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end
@@ -419,7 +419,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::Partition" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end
@@ -473,7 +473,7 @@ YARD::Doctest.configure do |doctest|
 
   doctest.before "Google::Cloud::Spanner::Project#batch_client" do
     mock_spanner do |mock, mock_instances, mock_databases|
-      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: nil }, Hash]
+      mock.expect :create_session, session_grpc, [{ database: "projects/my-project/instances/my-instance/databases/my-database", session: default_session_request }, Hash]
       mock.expect :begin_transaction, tx_resp do |req|
         verify_mock_params(req, session: "session-name", options: Google::Cloud::Spanner::V1::TransactionOptions)
       end

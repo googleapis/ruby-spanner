@@ -414,7 +414,7 @@ describe Google::Cloud do
         Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
           credentials = OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new {}))
           new_spanner = Google::Cloud::Spanner.new
-          new_client = new_spanner.client "instance-id", "database-id", pool: { min: 0 }, query_options: expect_query_options
+          new_client = new_spanner.client "instance-id", "database-id", query_options: expect_query_options
           _(new_client.query_options).must_equal expect_query_options
         end
       end
@@ -429,7 +429,7 @@ describe Google::Cloud do
           Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
             credentials = OpenStruct.new(client: OpenStruct.new(updater_proc: Proc.new {}))
             new_spanner = Google::Cloud::Spanner.new
-            new_client = new_spanner.client "instance-id", "database-id", pool: { min: 0 }, query_options: { optimizer_version: "1", optimizer_statistics_package: "auto_20191128_14_47_22UTC" }
+            new_client = new_spanner.client "instance-id", "database-id", query_options: { optimizer_version: "1", optimizer_statistics_package: "auto_20191128_14_47_22UTC" }
             _(new_client.query_options).must_equal expect_query_options
           end
         end

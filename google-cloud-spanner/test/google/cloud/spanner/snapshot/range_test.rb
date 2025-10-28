@@ -22,7 +22,7 @@ describe Google::Cloud::Spanner::Snapshot, :range, :mock_spanner do
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
-  let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session, nil }
+  let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session }
 
   it "creates an inclusive range" do
     range = snapshot.range 1, 100

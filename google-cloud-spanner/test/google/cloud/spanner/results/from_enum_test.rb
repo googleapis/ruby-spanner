@@ -63,7 +63,7 @@ describe Google::Cloud::Spanner::Results, :from_partial_result_sets, :mock_spann
      Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash2),
      Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash3)].to_enum
   end
-  let(:results) { Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request&.name }
+  let(:results) { Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request.name }
 
   it "exists" do
     _(results).must_be_kind_of Google::Cloud::Spanner::Results

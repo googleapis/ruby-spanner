@@ -30,7 +30,7 @@ describe Google::Cloud::Spanner::Results, :row_count, :mock_spanner do
       )
     ].to_enum
 
-    results = Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request&.name
+    results = Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request.name
     results.rows.to_a # force all results to be processed
 
     _(results).must_be :row_count_exact?
@@ -53,7 +53,7 @@ describe Google::Cloud::Spanner::Results, :row_count, :mock_spanner do
       )
     ].to_enum
 
-    results = Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request&.name
+    results = Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request.name
     results.rows.to_a # force all results to be processed
 
     _(results).must_be :row_count_lower_bound?
@@ -73,7 +73,7 @@ describe Google::Cloud::Spanner::Results, :row_count, :mock_spanner do
       )
     ].to_enum
 
-    results = Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request&.name
+    results = Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request.name
     results.rows.to_a # force all results to be processed
 
     _(results).wont_be :row_count_exact?

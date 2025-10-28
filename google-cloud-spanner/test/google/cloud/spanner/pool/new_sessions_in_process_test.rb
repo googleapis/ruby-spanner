@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require "helper"
+require "google/cloud/spanner/pool"
 
 describe Google::Cloud::Spanner::Pool, :new_sessions_in_process, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
@@ -21,18 +22,13 @@ describe Google::Cloud::Spanner::Pool, :new_sessions_in_process, :mock_spanner d
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
-  let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
+  let(:session_creation_options) { ::Google::Cloud::Spanner::SessionCreationOptions.new database_path: database_path(instance_id, database_id)}
   let(:pool) do
     session.instance_variable_set :@last_updated_at, Time.now
-    p = client.instance_variable_get :@pool
+    p = Google::Cloud::Spanner::Pool.new(spanner.service, session_creation_options, min: 0, max: 4)
     p.sessions_available = [session]
     p.sessions_in_use = {}
     p
-  end
-
-  after do
-    shutdown_client! client
   end
 
   it "does not increment new_sessions_in_process when create_session raises an error" do

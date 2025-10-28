@@ -55,7 +55,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
   end
   let(:results_grpc) { Google::Cloud::Spanner::V1::PartialResultSet.new results_hash }
   let(:results_enum) { Array(results_grpc).to_enum }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
   let(:time_obj) { Time.parse "2014-10-02T15:01:23.045123456Z" }
   let(:timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp time_obj }
   let(:duration) { Google::Cloud::Spanner::Convert.number_to_duration 120 }
@@ -70,7 +70,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -93,7 +93,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -116,7 +116,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -139,7 +139,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -162,7 +162,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -185,7 +185,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -208,7 +208,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -231,7 +231,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 
@@ -254,7 +254,7 @@ describe Google::Cloud::Spanner::Client, :execute_query, :single_use, :mock_span
     )
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     spanner.service.mocked_service = mock
     expect_execute_streaming_sql results_enum, session_grpc.name, "SELECT * FROM users", transaction: transaction, options: default_options
 

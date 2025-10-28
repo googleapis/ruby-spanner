@@ -149,6 +149,11 @@ describe "Spanner Client", :batch_update, :spanner do
     end
 
     it "raises BatchUpdateError when the first statement in Batch DML is a syntax error for #{dialect}" do
+      # ** When using the emulator with multiplexed sessions**
+      # the BatchUpdate transaction in this test will not get cleaned up and that will cause the
+      # "The emulator only supports one transaction at a time." failure.
+      skip if emulator_enabled?
+
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
       db[dialect].transaction do |tx|
@@ -198,6 +203,11 @@ describe "Spanner Client", :batch_update, :spanner do
 
     describe "request options for #{dialect}" do
       it "execute batch update with priority options for #{dialect}" do
+        # ** When using the emulator with multiplexed sessions**
+        # the BatchUpdate transaction in this test will not get cleaned up and that will cause the
+        # "The emulator only supports one transaction at a time." failure.
+        skip if emulator_enabled?
+
         db[dialect].transaction do |tx|
           row_counts = tx.batch_update request_options: { priority: :PRIORITY_HIGH } do |b|
             b.batch_update insert_dml[dialect], params: insert_params[dialect]

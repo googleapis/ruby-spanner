@@ -19,7 +19,7 @@ describe Google::Cloud::Spanner::Client, :range, :mock_spanner do
   let(:database_id) { "my-database-id" }
   let(:session_id) { "session123" }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
 
   after do
     shutdown_client! client

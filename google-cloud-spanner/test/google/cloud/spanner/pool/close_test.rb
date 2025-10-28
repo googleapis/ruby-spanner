@@ -14,6 +14,8 @@
 
 require "helper"
 
+require "google/cloud/spanner/pool"
+
 describe Google::Cloud::Spanner::Pool, :close, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
@@ -21,24 +23,16 @@ describe Google::Cloud::Spanner::Pool, :close, :mock_spanner do
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:default_options) { ::Gapic::CallOptions.new  metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
-  let(:pool) do
-    session.instance_variable_set :@last_updated_at, Time.now
-    p = client.instance_variable_get :@pool
-    p.sessions_available = [session]
-    p.sessions_in_use = {}
-    p
-  end
-
-  after do
-    shutdown_client! client
-  end
+  let(:session_creation_options) { ::Google::Cloud::Spanner::SessionCreationOptions.new database_path: database_path(instance_id, database_id)}
 
   it "deletes sessions when closed" do
     mock = Minitest::Mock.new
     mock.expect :delete_session, nil, [{ name: session_grpc.name }, default_options]
     session.service.mocked_service = mock
 
+    pool = Google::Cloud::Spanner::Pool.new(spanner.service, session_creation_options, min: 0, max: 4)
+    pool.sessions_available = [session]
+    pool.sessions_in_use = {}
     pool.close
 
     shutdown_pool! pool
@@ -51,6 +45,9 @@ describe Google::Cloud::Spanner::Pool, :close, :mock_spanner do
     mock.expect :delete_session, nil, [{ name: session_grpc.name }, default_options]
     session.service.mocked_service = mock
 
+    pool = Google::Cloud::Spanner::Pool.new(spanner.service, session_creation_options, min: 0, max: 4)
+    pool.sessions_available = [session]
+    pool.sessions_in_use = {}
     pool.close
 
     shutdown_pool! pool

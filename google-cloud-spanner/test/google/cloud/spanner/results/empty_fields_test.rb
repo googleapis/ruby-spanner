@@ -32,7 +32,7 @@ describe Google::Cloud::Spanner::Results, :empty_fields, :mock_spanner do
   let(:results_enum) do
     [Google::Cloud::Spanner::V1::PartialResultSet.new(results_types)].to_enum
   end
-  let(:results) { Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request&.name }
+  let(:results) { Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request.name }
 
   it "handles empty field names" do
     _(results).must_be_kind_of Google::Cloud::Spanner::Results

@@ -27,17 +27,13 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
   let(:session_grpc_4) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id_4) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
+  let(:session_creation_options) { ::Google::Cloud::Spanner::SessionCreationOptions.new database_path: database_path(instance_id, database_id)}
   let(:pool) do
     session.instance_variable_set :@last_updated_at, Time.now
-    p = client.instance_variable_get :@pool
+    p = Google::Cloud::Spanner::Pool.new(spanner.service, session_creation_options, min: 0, max: 4)
     p.sessions_available = [session]
     p.sessions_in_use = {}
     p
-  end
-
-  after do
-    shutdown_client! client
   end
 
   it "can checkout and checkin a session" do
