@@ -1143,30 +1143,6 @@ module Google
           ColumnValue.commit_timestamp
         end
 
-        ##
-        # @private
-        # Keeps the transaction current by creating a new transaction.
-        def keepalive!
-          ensure_session!
-          @grpc = session.create_transaction.instance_variable_get :@grpc
-        end
-
-        ##
-        # @private
-        # Permanently deletes the transaction and session.
-        def release!
-          ensure_session!
-          session.release!
-        end
-
-        ##
-        # @private
-        # Determines if the transaction has been idle longer than the given
-        # duration.
-        def idle_since? duration
-          session.idle_since? duration
-        end
-
         # All of the mutations created in the transaction block.
         # @private
         # @return [Array<Google::Cloud::Spanner::V1::Mutation>]
