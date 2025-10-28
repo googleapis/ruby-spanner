@@ -2278,7 +2278,7 @@ module Google
                             staleness: staleness || exact_staleness,
                             call_options: call_options
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
-            snp = Snapshot.from_grpc snp_grpc, session, @directed_read_options
+            snp = Snapshot.from_grpc snp_grpc, session, directed_read_options: @directed_read_options
             yield snp if block_given?
           ensure
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
