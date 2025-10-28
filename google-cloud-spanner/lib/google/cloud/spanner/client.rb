@@ -2446,56 +2446,6 @@ module Google
           @pool.reset
         end
 
-        # Creates a new Session objece.
-        # @param multiplexed [::Boolean] Optional. Default to `false`.
-        #   If `true`, specifies a multiplexed session.
-        # @private
-        # @return [::Google::Cloud::Spanner::Session]
-        def create_new_session multiplexed: false
-          ensure_service!
-          grpc = @project.service.create_session \
-            Admin::Database::V1::DatabaseAdmin::Paths.database_path(
-              project: project_id, instance: instance_id, database: database_id
-            ),
-            labels: @session_labels,
-            database_role: @database_role,
-            multiplexed: multiplexed
-
-          Session.from_grpc grpc, @project.service, query_options: @query_options
-        end
-
-        ##
-        # @private
-        # Creates a batch of new session objects of size `total`.
-        # Makes multiple RPCs if necessary. Returns empty array if total is 0.
-        def batch_create_new_sessions total
-          sessions = []
-          remaining = total
-          while remaining.positive?
-            sessions += batch_create_sessions remaining
-            remaining = total - sessions.count
-          end
-          sessions
-        end
-
-        ##
-        # @private
-        # The response may have fewer sessions than requested in the RPC.
-        #
-        def batch_create_sessions session_count
-          ensure_service!
-          resp = @project.service.batch_create_sessions \
-            Admin::Database::V1::DatabaseAdmin::Paths.database_path(
-              project: project_id, instance: instance_id, database: database_id
-            ),
-            session_count,
-            labels: @session_labels,
-            database_role: @database_role
-          resp.session.map do |grpc|
-            Session.from_grpc grpc, @project.service, query_options: @query_options
-          end
-        end
-
         # @private
         def to_s
           "(project_id: #{project_id}, instance_id: #{instance_id}, " \
