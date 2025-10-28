@@ -2143,8 +2143,8 @@ module Google
               Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
               yield tx
 
-              unless tx.existing_transaction?
-                # This can happen if the yielded `tx` object was only used to add mutations.
+              if tx.mutations.any? && !tx.existing_transaction?
+                # This typically will happen if the yielded `tx` object was only used to add mutations.
                 # Then it never called any RPCs and didn't create a server-side Transaction object.
                 # In which case we should make an explicit BeginTransaction call here.
                 tx.safe_begin_transaction!(
@@ -2154,7 +2154,7 @@ module Google
                 )
               end
 
-              transaction_id = tx.transaction_id
+              transaction_id = tx.transaction_id if tx.existing_transaction?
               commit_resp = @project.service.commit(
                 tx.session.path,
                 tx.mutations,
@@ -2173,8 +2173,12 @@ module Google
               check_and_propagate_err! e, (current_time - start_time > deadline)
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
+
               # Create new transaction on the session and retry the block
-              tx = session.create_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              tx = session.create_empty_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              if request_options
+                tx.transaction_tag = request_options[:transaction_tag]
+              end
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
@@ -2458,8 +2462,8 @@ module Google
         ##
         # Reset the client sessions.
         #
-        def reset
-          @pool.reset
+        def reset!
+          @pool.reset!
         end
 
         # @private
