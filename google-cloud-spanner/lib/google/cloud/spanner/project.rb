@@ -567,7 +567,7 @@ module Google
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
-        # @return [Client] The newly created client.
+        # @return [::Google::Cloud::Spanner::Client] The newly created client.
         #
         # @example
         #   require "google/cloud/spanner"
@@ -649,7 +649,7 @@ module Google
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
-        # @return [Client] The newly created client.
+        # @return [::Google::Cloud::Spanner::BatchClient] The newly created client.
         #
         # @example
         #   require "google/cloud/spanner"

@@ -71,7 +71,9 @@ module Google
           ##
           # @private Creates a new Backup::Job instance.
           def initialize
+            # @type [::Gapic::Operation, nil]
             @grpc = nil
+            # @type [::Google::Cloud::Spanner::Service, nil]
             @service = nil
           end
 
@@ -268,7 +270,7 @@ module Google
           end
 
           # Create a new Backup::Job from a `Gapic::Operation` object.
-          # @param grpc [::Gapic::Operation`] The wrapped `Gapic::Operation` object.
+          # @param grpc [::Gapic::Operation`] Underlying `Gapic::Operation` object.
           # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
           # @private
           # @return [::Google::Cloud::Spanner::Backup::Job]

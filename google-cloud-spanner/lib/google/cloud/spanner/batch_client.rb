@@ -110,13 +110,15 @@ module Google
         end
 
         # The Spanner instance connected to.
-        # @return [Instance]
+        # @deprecated Use {Google::Cloud::Spanner::Admin::Instance#instance_admin} instead.
+        # @return [::Google::Cloud::Spanner::Instance]
         def instance
           @project.instance instance_id
         end
 
         # The Spanner database connected to.
-        # @return [Database]
+        # @deprecated Use {Google::Cloud::Spanner::Admin::Database#database_admin} instead.
+        # @return [::Google::Cloud::Spanner::Database]
         def database
           @project.database instance_id, database_id
         end

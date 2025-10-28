@@ -19,10 +19,15 @@ module Google
       ##
       # @private Helper class to process BatchDML response
       class BatchUpdateResults
-        ## Object of type
-        # Google::Cloud::Spanner::V1::ExecuteBatchDmlResponse
+        # The `V1::ExecuteBatchDmlResponse` object to process
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::ExecuteBatchDmlResponse]
         attr_reader :grpc
 
+        # Initializes the `BatchUpdateResults` helper
+        # @private
+        # @param grpc [::Google::Cloud::Spanner::V1::ExecuteBatchDmlResponse]
+        #   The response from `ExecuteBatchDml` rpc to process in this helper.
         def initialize grpc
           @grpc = grpc
         end

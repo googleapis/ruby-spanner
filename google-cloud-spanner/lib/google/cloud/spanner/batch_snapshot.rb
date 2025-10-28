@@ -68,8 +68,15 @@ module Google
         # @private Directed Read Options
         attr_reader :directed_read_options
 
-        ##
-        # @private Creates a BatchSnapshot object.
+        # Creates a new `Spanner::BatchSnapshot` instance.
+        # @param grpc [::Google::Cloud::Spanner::V1::Transaction]
+        #   Underlying `V1::Transaction` object.
+        # @param session [::Google::Cloud::Spanner::Session] A `Spanner::Session` reference.
+        # @param directed_read_options [::Hash, nil] Optional. Client options used to set
+        #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
+        #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @private
+        # @return [::Google::Cloud::Spanner::BatchSnapshot]
         def initialize grpc, session, directed_read_options: nil
           @grpc = grpc
           @session = session
@@ -852,9 +859,16 @@ module Google
           from_grpc transaction_grpc, Session.from_grpc(session_grpc, service, query_options: query_options)
         end
 
-        ##
-        # @private Creates a new BatchSnapshot instance from a
+        # Creates a new BatchSnapshot instance from a
         # `Google::Cloud::Spanner::V1::Transaction`.
+        # @param grpc [::Google::Cloud::Spanner::V1::Transaction]
+        #   Underlying `V1::Transaction` object.
+        # @param session [::Google::Cloud::Spanner::Session] A `Spanner::Session` reference.
+        # @param directed_read_options [::Hash, nil] Optional. Client options used to set
+        #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
+        #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @private
+        # @return [::Google::Cloud::Spanner::BatchSnapshot]
         def self.from_grpc grpc, session, directed_read_options: nil
           new grpc, session, directed_read_options: directed_read_options
         end

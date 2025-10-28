@@ -45,6 +45,7 @@ module Google
         ##
         # @private
         def initialize
+          # @type [Array<Google::Cloud::Spanner::V1::Mutation>]
           @mutations = []
         end
 
@@ -279,7 +280,9 @@ module Google
           keys
         end
 
+        # Return the current mutations added to this `Spanner::Commit` object.
         # @private
+        # @return [Array<Google::Cloud::Spanner::V1::Mutation>]
         def mutations
           @mutations
         end

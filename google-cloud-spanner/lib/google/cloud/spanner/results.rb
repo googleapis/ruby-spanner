@@ -45,18 +45,12 @@ module Google
       #   end
       #
       class Results
-        # The `V1::ResultSetMetadata` protobuf object from the first
-        # PartialResultSet.
-        # @private
-        # @return [::Google::Cloud::Spanner::V1::ResultSetMetadata]
-        attr_reader :metadata
-
         # Creates a new Results instance.
         # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` reference.
         # @param partial_result_sets [::Enumerable<::Google::Cloud::Spanner::V1::PartialResultSet>]
         #   Raw enumerable from grpc `StreamingRead` call.
         # @param session_name [::String] Required.
-        #   The session in which the transaction to be committed is running.
+        #   The name of the session for the operation that created these Results.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
         # @param metadata [::Google::Cloud::Spanner::V1::ResultSetMetadata] ParialResultSet metadata object
@@ -70,6 +64,12 @@ module Google
           @metadata = metadata
           @stats = stats
         end
+
+        # The `V1::ResultSetMetadata` protobuf object from the first
+        # PartialResultSet.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::ResultSetMetadata]
+        attr_reader :metadata
 
         ##
         # The read timestamp chosen for single-use snapshots (read-only
@@ -162,7 +162,7 @@ module Google
                 should_retry_request = false
               end
 
-              # @type [::Google::Cloud::Spanner::V1::PartialResultsSet]
+              # @type [::Google::Cloud::Spanner::V1::PartialResultSet]
               grpc = @partial_result_sets.next
 
               # metadata should be set before the first iteration...
@@ -327,7 +327,7 @@ module Google
         #   Raw enumerable from underlying grpc call.
         # @param service [::Google::Cloud::Spanner::Service] The `Spanner::Service` reference.
         # @param session_name [::String] Required.
-        #   The session in which the transaction to be committed is running.
+        #   The name of the session for the operation that created these Results.
         #   Values are of the form:
         #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
         # @private

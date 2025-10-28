@@ -1167,9 +1167,9 @@ module Google
           session.idle_since? duration
         end
 
-        ##
-        # @private
         # All of the mutations created in the transaction block.
+        # @private
+        # @return [Array<Google::Cloud::Spanner::V1::Mutation>]
         def mutations
           @commit.mutations
         end

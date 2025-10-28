@@ -352,17 +352,17 @@ module Google
         # @param database_name [::String] The full name of the database.
         # @param labels [::Hash, nil] Optional. The labels to be applied to all sessions
         #   created by the client. Example: `"team" => "billing-service"`.
-        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
-        #   call options. Example option `:timeout`.
         # @param database_role [::String, nil] Optional. The Spanner session creator role.
         #   Example: `analyst`.
         # @param multiplexed [::Boolean] Optional. Default to `false`.
         #   If `true`, specifies a multiplexed session.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
         # @return [::Google::Cloud::Spanner::V1::Session]
         # @private
         def create_session database_name, labels: nil,
-                           call_options: nil, database_role: nil,
-                           multiplexed: false
+                           database_role: nil, multiplexed: false,
+                           call_options: nil
           route_to_leader = LARHeaders.create_session
           opts = default_options(
             session_name: database_name,
@@ -617,13 +617,18 @@ module Google
         # @param route_to_leader [::String, nil] Optional. The value to be sent
         #   as `x-goog-spanner-route-to-leader` header for leader aware routing.
         #   Expected values: `"true"` or `"false"`.
+        # @param mutation_key [::Google::Cloud::Spanner::V1::Mutation, nil] Optional.
+        #   If a read-write transaction on a multiplexed session commit mutations
+        #   without performing any reads or queries, one of the mutations from the mutation set
+        #   must be sent as a mutation key for `BeginTransaction`.
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction]
         def begin_transaction session_name,
                               exclude_txn_from_change_streams: false,
                               request_options: nil,
                               call_options: nil,
-                              route_to_leader: nil
+                              route_to_leader: nil,
+                              mutation_key: nil
           tx_opts = V1::TransactionOptions.new(
             read_write: V1::TransactionOptions::ReadWrite.new,
             exclude_txn_from_change_streams: exclude_txn_from_change_streams
@@ -634,7 +639,8 @@ module Google
           request = {
             session: session_name,
             options: tx_opts,
-            request_options: request_options
+            request_options: request_options,
+            mutation_key: mutation_key
           }
           service.begin_transaction request, opts
         end
@@ -657,6 +663,28 @@ module Google
           service.batch_write request, opts
         end
 
+        # Creates a specialized `V1::Transaction` object. Reads on that object will have
+        # at most one of following consistency properties:
+        # * reading all previously commited transactions
+        # * reading all data from a given timestamp
+        # * reading all data from a timestamp that is exactly a given value old
+        # (the last one sidesteps worries of client-server time skew).
+        #
+        # Having at _least_ one of those is not enforced so this can create normal transactions
+        # as well.
+        # Created transactions will include the  the read timestamp chosen for the transaction.
+        # @param session_name [::String] Required.
+        #   Required. The session in which the snapshot transaction is to be created..
+        #   Values are of the form:
+        #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
+        # @param strong [::Boolean, nil] Optional.
+        #   Whether this transaction should have strong consistency.
+        # @param timestamp [::String, ::Date ::Time, nil] Optional.
+        #   Timestamp that the reads should be executed at. Reads are repeatable with this option.
+        # @param staleness [::Numeric, nil] Optional.
+        #   The offset of staleness that the reads should be executed at.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
         def create_snapshot session_name, strong: nil, timestamp: nil,
                             staleness: nil, call_options: nil
           tx_opts = V1::TransactionOptions.new(
@@ -829,6 +857,21 @@ module Google
           value << " gccl"
         end
 
+        # Creates new `Gapic::CallOptions` from typical parameters for Spanner RPC calls.
+        #
+        # @param session_name [::String, nil] Optional.
+        #   The session name. Used to extract the routing header. The value will be
+        #   used to send the old `google-cloud-resource-prefix` routing header.
+        #   Expected values are of the form:
+        #   `projects/<project_id>/instances/<instance_id>/databases/<database_id>/sessions/<session_id>`.
+        #   If nil is specified nothing will be sent.
+        # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
+        #   call options. Example option `:timeout`.
+        # @param route_to_leader [::String, nil] Optional. The value to be sent
+        #   as `x-goog-spanner-route-to-leader` header for leader aware routing.
+        #   Expected values: `"true"` or `"false"`. If nil is specified nothing will be sent.
+        # @private
+        # @return [::Gapic::CallOptions]
         def default_options session_name: nil, call_options: nil, route_to_leader: nil
           opts = {}
           metadata = {}

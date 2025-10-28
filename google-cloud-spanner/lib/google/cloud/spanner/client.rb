@@ -2516,8 +2516,13 @@ module Google
           raise "Must have active connection to service" unless @project.service
         end
 
-        ##
-        # Check for valid snapshot arguments
+        # Checks that the options hash contains exactly one valid single-use key.
+        #
+        # @param opts [::Hash, nil] The options hash to validate.
+        # @private
+        # @raise [ArgumentError] If the hash does not contain exactly one valid
+        #   single-use key.
+        # @return [void]
         def validate_single_use_args! opts
           return true if opts.nil? || opts.empty?
           valid_keys = %i[strong timestamp read_timestamp staleness
@@ -2531,8 +2536,26 @@ module Google
                 "#{valid_keys}"
         end
 
-        ##
-        # Create a single-use TransactionSelector
+        # Creates a selector for a single-use, read-only transaction.
+        #
+        # @param opts [::Hash] Options for creating the transaction selector.
+        #   If those are `nil` or empty, a `nil` will be returned instead of a `V1::TransactionSelector`.
+        # @option opts [::Boolean] :strong
+        #   Executes a strong read.
+        # @option opts [::Time, ::DateTime] :read_timestamp
+        #   Executes a read at the provided time. Alias: `:timestamp`.
+        # @option opts [::Numeric] :exact_staleness
+        #   Executes a read at a time that is exactly this stale (in seconds).
+        #   Alias: `:staleness`.
+        # @option opts [::Time, ::DateTime] :min_read_timestamp
+        #   Executes a read at a time that is at least this timestamp.
+        #   Alias: `:bounded_timestamp`.
+        # @option opts [::Numeric] :max_staleness
+        #   Executes a read at a time that is at most this stale (in seconds).
+        #   Alias: `:bounded_staleness`.
+        # @private
+        # @return [V1::TransactionSelector, nil] The transaction selector object, or
+        #   `nil` if the `opts` hash is nil or empty.
         def single_use_transaction opts
           return nil if opts.nil? || opts.empty?
 

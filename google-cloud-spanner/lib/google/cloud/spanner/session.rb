@@ -44,8 +44,8 @@ module Google
       #
       class Session
         # The wrapped `V1::Session` protobuf session object.
-        # @return [::Google::Cloud::Spanner::V1::Session]
         # @private
+        # @return [::Google::Cloud::Spanner::V1::Session]
         attr_accessor :grpc
 
         # The `Spanner::Service` object.
@@ -59,7 +59,7 @@ module Google
         # @return [::Hash, nil]
         attr_accessor :query_options
 
-        # Creates a new Session instance.
+        # Creates a new `Spanner::Session` instance.
         # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` object.
         # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
@@ -428,8 +428,8 @@ module Google
         #   number of rows that were modified for each successful statement
         #   before the error.
         #
-        # @return [Array<Integer>] A list with the exact number of rows that
-        #   were modified for each DML statement.
+        # @return [::Google::Cloud::Spanner::V1::ExecuteBatchDmlResponse]
+        #   An unwrapped result of the service call -- a `V1::ExecuteBatchDmlResponse` object.
         #
         def batch_update transaction, seqno, request_options: nil,
                          call_options: nil
@@ -1369,9 +1369,15 @@ module Google
           true
         end
 
-        ##
+        # Explicitly begins a new transaction and creates a server-side transaction object.
+        # Unlike {#create_empty_transaction}, this method makes an immediate
+        # `BeginTransaction` RPC call.
+        #
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
         # @private
-        # Creates a new transaction object every time.
+        # @return [::Google::Cloud::Spanner::Transaction]
         def create_transaction exclude_txn_from_change_streams: false
           route_to_leader = LARHeaders.begin_transaction true
           tx_grpc = service.begin_transaction path,
@@ -1380,10 +1386,15 @@ module Google
           Transaction.from_grpc tx_grpc, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
         end
 
-        ##
+        # Creates a new empty transaction wrapper without a server-side object.
+        # This is used for inline-begin transactions and does not make an RPC call.
+        # See {#create_transaction} for the RPC-based method.
+        #
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
         # @private
-        # Creates a new transaction object without the grpc object
-        # within it. Use it for inline-begin of a transaction.
+        # @return [::Google::Cloud::Spanner::Transaction] The new *empty* transaction object.
         def create_empty_transaction exclude_txn_from_change_streams: false
           Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
         end
@@ -1433,7 +1444,8 @@ module Google
         end
 
         # Determines if the session has been idle longer than the given
-        # duration.
+        # duration in seconds.
+        #
         # @param duration_sec [::Numeric] interval in seconds
         # @private
         # @return [::Boolean]
@@ -1442,7 +1454,7 @@ module Google
           Process.clock_gettime(Process::CLOCK_MONOTONIC) > @last_updated_at + duration_sec
         end
 
-        # Creates a new Session instance from a `V1::Session`.
+        # Creates a new `Spanner::Session` instance from a `V1::Session` object.
         # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` ref.
         # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom

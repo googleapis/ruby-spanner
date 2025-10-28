@@ -41,7 +41,9 @@ module Google
       #   end
       #
       class Snapshot
-        # @private The Session object.
+        # A `V1::Session` reference.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::Session]
         attr_accessor :session
 
         ##
