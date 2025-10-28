@@ -69,6 +69,7 @@ module Google
           @grpc = grpc
           @service = service
           @query_options = query_options
+          @created_time = Process.clock_gettime Process::CLOCK_MONOTONIC
         end
 
         # The unique identifier for the project.
@@ -1454,6 +1455,16 @@ module Google
           Process.clock_gettime(Process::CLOCK_MONOTONIC) > @last_updated_at + duration_sec
         end
 
+        # Determines if the session did exist for at least the given
+        # duration in seconds.
+        #
+        # @param duration_sec [::Numeric] interval in seconds
+        # @private
+        # @return [::Boolean]
+        def existed_since? duration_sec
+          Process.clock_gettime(Process::CLOCK_MONOTONIC) > @created_time + duration_sec
+        end
+
         # Creates a new `Spanner::Session` instance from a `V1::Session` object.
         # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` ref.
@@ -1472,6 +1483,13 @@ module Google
         end
 
         protected
+
+        # Whether this session is multiplexed.
+        # @private
+        # @return [::Boolean]
+        def multiplexed?
+          @grpc.multiplexed
+        end
 
         ##
         # @private Raise an error unless an active connection to the service is
