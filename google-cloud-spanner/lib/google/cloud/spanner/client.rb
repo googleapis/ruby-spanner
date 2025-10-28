@@ -16,7 +16,8 @@
 require "google/cloud/spanner/errors"
 require "google/cloud/spanner/project"
 require "google/cloud/spanner/data"
-require "google/cloud/spanner/pool"
+require "google/cloud/spanner/session_cache"
+require "google/cloud/spanner/session_creation_options"
 require "google/cloud/spanner/session"
 require "google/cloud/spanner/transaction"
 require "google/cloud/spanner/snapshot"
@@ -55,14 +56,17 @@ module Google
         # @private
         IS_TRANSACTION_RUNNING_KEY = "ruby_spanner_is_transaction_running".freeze
 
+        # rubocop:disable Lint/UnusedMethodArgument
+
         # Creates a new Spanner Client instance.
         # @param project [::Google::Cloud::Spanner::Project] A `Spanner::Project` ref.
         # @param instance_id [::String] Instance id, e.g. `"my-instance"`.
         # @param database_id [::String] Database id, e.g. `"my-database"`.
         # @param session_labels [::Hash, nil] Optional. The labels to be applied to all sessions
         #   created by the client. Example: `"team" => "billing-service"`.
-        # @param pool_opts [::Hash] Optional. `Spanner::Pool` creation options.
-        #   Example parameter: `:keepalive`.
+        # @param pool_opts [::Hash] Optional. Defaults to `{}`. Deprecated.
+        #   @deprecated This parameter is non-functional since the multiplexed SessionCache does not require
+        #   pool options.
         # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
         #   query options for executing SQL query. Example parameter `:optimizer_version`.
         # @param database_role [::String, nil] Optional. The Spanner session creator role.
@@ -79,10 +83,22 @@ module Google
           @database_id = database_id
           @database_role = database_role
           @session_labels = session_labels
-          @directed_read_options = directed_read_options
-          @pool = Pool.new self, **pool_opts
           @query_options = query_options
+          @directed_read_options = directed_read_options
+
+          session_creation_options = SessionCreationOptions.new(
+            database_path:  Admin::Database::V1::DatabaseAdmin::Paths.database_path(
+              project: @project.service.project, instance: instance_id, database: database_id
+            ),
+            session_labels: @session_labels,
+            session_creator_role: @database_role,
+            query_options: @query_options
+          )
+
+          @pool = SessionCache.new @project.service, session_creation_options
         end
+
+        # rubocop:enable Lint/UnusedMethodArgument
 
         # The unique identifier for the project.
         # @return [String]
