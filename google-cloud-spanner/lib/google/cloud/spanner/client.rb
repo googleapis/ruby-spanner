@@ -2144,22 +2144,19 @@ module Google
               Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
               yield tx
 
-              if tx.mutations.any? && !tx.existing_transaction?
+              unless tx.existing_transaction?
                 # This typically will happen if the yielded `tx` object was only used to add mutations.
                 # Then it never called any RPCs and didn't create a server-side Transaction object.
                 # In which case we should make an explicit BeginTransaction call here.
 
-                mutation_key = tx.mutations[0]
-
                 tx.safe_begin_transaction!(
                   exclude_from_change_streams: exclude_txn_from_change_streams,
                   request_options: request_options,
-                  call_options: call_options,
-                  mutation_key: mutation_key
+                  call_options: call_options
                 )
               end
 
-              transaction_id = tx.transaction_id if tx.existing_transaction?
+              transaction_id = tx.transaction_id
               commit_resp = @project.service.commit(
                 tx.session.path,
                 tx.mutations,
@@ -2181,7 +2178,11 @@ module Google
               sleep(delay_from_aborted(e) || backoff *= 1.3)
 
               # Create new transaction on the session and retry the block
-              tx = session.create_empty_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              previous_transaction_id = tx.transaction_id if tx.existing_transaction?
+              tx = session.create_empty_transaction(
+                exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                previous_transaction_id: previous_transaction_id
+              )
               if request_options
                 tx.transaction_tag = request_options[:transaction_tag]
               end
