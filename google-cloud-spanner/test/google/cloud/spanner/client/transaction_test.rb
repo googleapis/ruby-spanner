@@ -157,6 +157,37 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     ]
   }
 
+  it "can read rows by id" do
+    columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :streaming_read, results_enum, [{
+      session: session_grpc.name, table: "my-table",
+      columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+      key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([3]).list_value]),
+      transaction: tx_selector, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+      request_options: nil,
+      order_by: nil, lock_hint: nil
+    }, default_options]
+    mock.expect :commit, commit_resp, [{
+      session: session_grpc.name, mutations: [], transaction_id: transaction_id,
+      single_use_transaction: nil, request_options: nil, precommit_token: nil
+    }, default_options]
+    session.service.mocked_service = mock
+
+    results = nil
+    timestamp = client.transaction do |tx|
+      _(tx).must_be_kind_of Google::Cloud::Spanner::Transaction
+      results = tx.read "my-table", columns, keys: [1, 2, 3]
+    end
+    _(timestamp).must_equal commit_time
+
+    mock.verify
+
+    assert_results results
+  end
+
   it "can execute a simple query" do
     mock = Minitest::Mock.new
     spanner.service.mocked_service = mock
@@ -785,17 +816,21 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  it "will run a single-use transaction commit when the end-user does not do anything with the yielded transaction" do
+  it "will run begin transaction when the end-user does not do anything with the yielded transaction" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name, 
+        options: tx_opts, 
+        request_options: nil,
+        mutation_key: nil
+      }, default_options]
 
-    # The transaction method would typically run explicit begin transaction
-    # except for the "empty" case where single-use is used instead.
     mock.expect :commit, commit_resp, [{
       session: session_grpc.name, 
       mutations: [],
-      transaction_id: nil, 
-      single_use_transaction: tx_no_dml_options,
+      transaction_id: transaction_id, 
+      single_use_transaction: nil,
       request_options: nil,
       precommit_token: nil
     }, default_options]
