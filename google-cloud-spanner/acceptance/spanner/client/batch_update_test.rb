@@ -116,7 +116,9 @@ describe "Spanner Client", :batch_update, :spanner do
           /3:(No statements in batch DML request|Request must contain at least one DML statement)/
         )
       end
-      _(timestamp).must_be_kind_of Time
+
+      # Emulator does not return timestamp for multiplex empty transaction commits for some reason
+      _(timestamp).must_be_kind_of Time unless emulator_enabled?
     end
 
     it "executes multiple DML statements in a batch with syntax error for #{dialect}" do
