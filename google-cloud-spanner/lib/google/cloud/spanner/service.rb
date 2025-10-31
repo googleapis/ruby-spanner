@@ -625,6 +625,10 @@ module Google
         #   If a read-write transaction on a multiplexed session commit mutations
         #   without performing any reads or queries, one of the mutations from the mutation set
         #   must be sent as a mutation key for `BeginTransaction`.
+        # @param previous_transaction_id [::String, nil] Optional.
+        #   An id of the previous transaction, if this new transaction wrapper is being created
+        #   as a part of a retry. Previous transaction id should be added to TransactionOptions
+        #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction]
         def begin_transaction session_name,
@@ -632,11 +636,21 @@ module Google
                               request_options: nil,
                               call_options: nil,
                               route_to_leader: nil,
-                              mutation_key: nil
+                              mutation_key: nil,
+                              previous_transaction_id: nil
+          read_write = if previous_transaction_id.nil?
+                         V1::TransactionOptions::ReadWrite.new
+                       else
+                         V1::TransactionOptions::ReadWrite.new(
+                           multiplexed_session_previous_transaction_id: previous_transaction_id
+                         )
+                       end
+
           tx_opts = V1::TransactionOptions.new(
-            read_write: V1::TransactionOptions::ReadWrite.new,
+            read_write: read_write,
             exclude_txn_from_change_streams: exclude_txn_from_change_streams
           )
+
           opts = default_options session_name: session_name,
                                  call_options: call_options,
                                  route_to_leader: route_to_leader

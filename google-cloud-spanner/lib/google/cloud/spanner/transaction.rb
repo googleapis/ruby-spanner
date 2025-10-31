@@ -104,18 +104,34 @@ module Google
         # @return [::Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken, nil]
         attr_accessor :precommit_token
 
+        # An id of the previous transaction, if this new transaction wrapper is being created
+        # as a part of a retry. Previous transaction id should be added to TransactionOptions
+        # of a new ReadWrite transaction when retry is attempted.
+        # @private
+        # @return [::String, nil]
+        attr_reader :previous_transaction_id
+
         # Creates a new `Spanner::Transaction` instance from a `V1::Transaction` object.
         # @param grpc [::Google::Cloud::Spanner::V1::Transaction] Underlying `V1::Transaction` object.
         # @param session [::Google::Cloud::Spanner::Session] The session this transaction is running in.
         # @param exclude_txn_from_change_streams [::Boolean]
         #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
+        # @param previous_transaction_id [::String, nil] Optional.
+        #   An id of the previous transaction, if this new transaction wrapper is being created
+        #   as a part of a retry. Previous transaction id should be added to TransactionOptions
+        #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def initialize grpc, session, exclude_txn_from_change_streams
+        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil
           @grpc = grpc
           @session = session
           @exclude_txn_from_change_streams = exclude_txn_from_change_streams
+
+          # throwing away empty strings for simplicity
+          unless previous_transaction_id.nil? || previous_transaction_id.empty?
+            @previous_transaction_id = previous_transaction_id
+          end
 
           @commit = Commit.new
           @seqno = 0
@@ -820,6 +836,8 @@ module Google
           request_options = build_request_options request_options
           route_to_leader = LARHeaders.read true
 
+          # require "pry"
+          # binding.pry
           safe_execute do
             results = session.read table, columns, keys: keys, index: index, limit: limit,
                                    transaction: tx_selector,
@@ -1228,10 +1246,14 @@ module Google
         # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
         #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
+        # @param previous_transaction_id [::String, nil] Optional.
+        #   An id of the previous transaction, if this new transaction wrapper is being created
+        #   as a part of a retry. Previous transaction id should be added to TransactionOptions
+        #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false
-          new grpc, session, exclude_txn_from_change_streams
+        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil
+          new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id
         end
 
         ##
@@ -1262,19 +1284,25 @@ module Google
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
         #   object, or `nil` if a transaction already exists.
-        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil,
-                                    mutation_key: nil
+        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil
+          # If this transaction contains mutations, we should select one to serve as a "mutation key"
+          mutation_key = mutations[0] if mutations.any?
+
           @mutex.synchronize do
             return if existing_transaction?
             ensure_session!
             route_to_leader = LARHeaders.begin_transaction true
+
+            # TODO: [virost@, 2025-10] fix this so it uses tx_selector
+            # instead of re-creating it within `Service#begin_transaction`
             @grpc = service.begin_transaction(
               session.path,
               exclude_txn_from_change_streams: exclude_from_change_streams,
               request_options: request_options,
               call_options: call_options,
               route_to_leader: route_to_leader,
-              mutation_key: mutation_key
+              mutation_key: mutation_key,
+              previous_transaction_id: previous_transaction_id
             )
           end
         end
@@ -1320,9 +1348,18 @@ module Google
         # @return [::Google::Cloud::Spanner::V1::TransactionSelector]
         def tx_selector exclude_txn_from_change_streams: false
           return V1::TransactionSelector.new id: transaction_id if existing_transaction?
+
+          read_write = if @previous_transaction_id.nil?
+                         V1::TransactionOptions::ReadWrite.new
+                       else
+                         V1::TransactionOptions::ReadWrite.new(
+                           multiplexed_session_previous_transaction_id: @previous_transaction_id
+                         )
+                       end
+
           V1::TransactionSelector.new(
             begin: V1::TransactionOptions.new(
-              read_write: V1::TransactionOptions::ReadWrite.new,
+              read_write: read_write,
               exclude_txn_from_change_streams: exclude_txn_from_change_streams
             )
           )

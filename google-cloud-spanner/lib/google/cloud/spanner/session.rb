@@ -1403,10 +1403,15 @@ module Google
         # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
         #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
+        # @param previous_transaction_id [::String, nil] Optional.
+        #   An id of the previous transaction, if this new transaction wrapper is being created
+        #   as a part of a retry. Previous transaction id should be added to TransactionOptions
+        #   of a new ReadWrite transaction when retry is attempted.
         # @private
-        # @return [::Google::Cloud::Spanner::Transaction] The new *empty* transaction object.
-        def create_empty_transaction exclude_txn_from_change_streams: false
-          Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
+        # @return [::Google::Cloud::Spanner::Transaction] The new *empty-wrapper* transaction object.
+        def create_empty_transaction exclude_txn_from_change_streams: false, previous_transaction_id: nil
+          Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+previous_transaction_id: previous_transaction_id
         end
 
         # If the session is non-multiplexed, keeps the session alive by executing `"SELECT 1"`.
