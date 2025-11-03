@@ -324,6 +324,39 @@ describe Google::Cloud::Spanner::Snapshot, :execute_query, :mock_spanner do
     assert_results results
   end
 
+  describe "priority request options" do
+    it "can execute a query" do
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
+      expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users",
+                                   transaction: tx_selector,
+                                   request_options: { priority: :PRIORITY_MEDIUM },
+                                   options: default_options
+
+      results = snapshot.execute_query "SELECT * FROM users",
+                                       request_options: { priority: :PRIORITY_MEDIUM }
+
+      mock.verify
+
+      assert_results results
+    end
+  end
+
+  it "can execute a query with request tag" do
+    mock = Minitest::Mock.new
+    session.service.mocked_service = mock
+    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users",
+                                 transaction: tx_selector,
+                                 request_options: { request_tag: "Tag-1" },
+                                 options: default_options
+
+    results = snapshot.execute_query "SELECT * FROM users", request_options: { tag: "Tag-1" }
+
+    mock.verify
+
+    assert_results results
+  end
+
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 
