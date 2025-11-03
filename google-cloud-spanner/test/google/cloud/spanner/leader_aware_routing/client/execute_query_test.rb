@@ -60,7 +60,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
     mock.verify
   end
 
-  it "sends header x-goog-spanner-route-to-leader when LAR is enabled" do
+  it "sends header x-goog-spanner-route-to-leader with true for queries without single_use when LAR is enabled" do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc do |request, gapic_options|
       gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
@@ -72,6 +72,55 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
 
     spanner.service.enable_leader_aware_routing = true
     results = client.execute_query "SELECT 1"
+
+    mock.verify
+  end
+
+  it "sends header x-goog-spanner-route-to-leader with false for queries with single_use strong option when LAR is enabled" do
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
+    end
+    mock.expect :execute_streaming_sql, results_enum do |request, gapic_options|
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'false'
+    end
+    spanner.service.mocked_service = mock
+
+    spanner.service.enable_leader_aware_routing = true
+    results = client.execute_query "SELECT 1", single_use: { strong: true }
+
+    mock.verify
+  end
+
+  it "sends header x-goog-spanner-route-to-leader with false for queries with single_use staleness option when LAR is enabled" do
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
+    end
+    mock.expect :execute_streaming_sql, results_enum do |request, gapic_options|
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'false'
+    end
+    spanner.service.mocked_service = mock
+
+    spanner.service.enable_leader_aware_routing = true
+    results = client.execute_query "SELECT 1", single_use: { staleness: 60 }
+
+    mock.verify
+  end
+
+  it "sends header x-goog-spanner-route-to-leader with false for queries with single_use timestamp option when LAR is enabled" do
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc do |request, gapic_options|
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
+    end
+    mock.expect :execute_streaming_sql, results_enum do |request, gapic_options|
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'false'
+    end
+    spanner.service.mocked_service = mock
+
+    spanner.service.enable_leader_aware_routing = true
+    timestamp = Time.now - 60
+    results = client.execute_query "SELECT 1", single_use: { timestamp: timestamp }
 
     mock.verify
   end
