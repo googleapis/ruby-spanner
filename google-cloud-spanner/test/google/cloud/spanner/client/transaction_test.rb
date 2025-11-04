@@ -109,6 +109,10 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
   let(:commit_time) { Time.now }
   let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
   let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp }
+  let(:precommit_token_0) {Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken.new seq_num: 0, precommit_token: "token0"}
+  let(:commit_resp_precommit_0) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp, precommit_token: precommit_token_0 }
+  let(:precommit_token_1) {Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken.new seq_num: 1, precommit_token: "token1"}
+  let(:commit_resp_precommit_1) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp, precommit_token: precommit_token_1 }
    let(:commit_stats_grpc) {
     Google::Cloud::Spanner::V1::CommitResponse::CommitStats.new(
       mutation_count: 5
@@ -657,6 +661,96 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       single_use_transaction: nil, precommit_token: nil,
       request_options: nil
     }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.transaction do |tx|
+      tx.update "users", [{ id: 1, name: "Charlie", active: false, address: { "postcode" => 1234 } }]
+      tx.insert "users", [{ id: 2, name: "Harvey",  active: true }]
+      tx.upsert "users", [{ id: 3, name: "Marley",  active: false }]
+      tx.replace "users", [{ id: 4, name: "Henry",  active: true }]
+      tx.delete "users", [1, 2, 3, 4, 5]
+    end
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "retries 'as is' commits with multiple mutations when precommit token is returned" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        update: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active address),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1, "Charlie", false, { postcode: 1234 }]).list_value]
+        )
+      ),
+      Google::Cloud::Spanner::V1::Mutation.new(
+        insert: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([2, "Harvey", true]).list_value]
+        )
+      ),
+      Google::Cloud::Spanner::V1::Mutation.new(
+        insert_or_update: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([3, "Marley", false]).list_value]
+        )
+      ),
+      Google::Cloud::Spanner::V1::Mutation.new(
+        replace: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([4, "Henry", true]).list_value]
+        )
+      ),
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(
+            keys: [1, 2, 3, 4, 5].map do |i|
+              Google::Cloud::Spanner::Convert.object_to_grpc_value([i]).list_value
+            end
+          )
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+
+    # Since the yielded transaction object was only used to add mutations,
+    # we expect an explicit `begin_transaction` call, and subsequently
+    # the id of the transaction returned to be issued in the `commit` request.
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name, 
+        options: tx_opts, 
+        request_options: nil,
+        mutation_key: mutations[0]
+      }, default_options]
+
+    mock.expect :commit, commit_resp_precommit_0, [{
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: nil,
+      request_options: nil
+    }, default_options]
+
+    mock.expect :commit, commit_resp_precommit_1, [{
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: precommit_token_0,
+      request_options: nil
+    }, default_options]
+
+    mock.expect :commit, commit_resp, [{
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: precommit_token_1,
+      request_options: nil
+    }, default_options]
+
     spanner.service.mocked_service = mock
 
     timestamp = client.transaction do |tx|

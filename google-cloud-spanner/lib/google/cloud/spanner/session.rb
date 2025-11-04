@@ -685,12 +685,24 @@ module Google
           ensure_service!
           commit = Commit.new
           yield commit
-          commit_resp = service.commit path, commit.mutations,
-                                       transaction_id: transaction_id,
-                                       exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                                       commit_options: commit_options,
-                                       request_options: request_options,
-                                       call_options: call_options
+
+          should_retry = true
+          # @type [Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken]
+          precommit_token = nil
+          while should_retry
+            commit_resp = service.commit(path,
+                                         commit.mutations,
+                                         transaction_id: transaction_id,
+                                         exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                                         commit_options: commit_options,
+                                         request_options: request_options,
+                                         call_options: call_options,
+                                         precommit_token: precommit_token)
+
+            precommit_token = commit_resp.precommit_token
+            should_retry = !precommit_token.nil?
+          end
+
           @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           resp = CommitResponse.from_grpc commit_resp
           commit_options ? resp : resp.timestamp

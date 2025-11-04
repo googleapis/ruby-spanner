@@ -22,6 +22,11 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
   let(:commit_time) { Time.now }
   let(:commit_timestamp) { Google::Cloud::Spanner::Convert.time_to_timestamp commit_time }
   let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp }
+  let(:precommit_token_0) {Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken.new seq_num: 0, precommit_token: "token0"}
+  let(:commit_resp_precommit_0) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp, precommit_token: precommit_token_0 }
+  let(:precommit_token_1) {Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken.new seq_num: 1, precommit_token: "token1"}
+  let(:commit_resp_precommit_1) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: commit_timestamp, precommit_token: precommit_token_1 }
+  
   let(:commit_stats_grpc) {
     Google::Cloud::Spanner::V1::CommitResponse::CommitStats.new(
       mutation_count: 5
@@ -81,6 +86,28 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, request_options: nil, precommit_token: nil }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.commit do |c|
+      c.update "users", [{ id: 1, name: "Charlie", active: false }]
+      c.insert "users", [{ id: 2, name: "Harvey",  active: true }]
+      c.upsert "users", [{ id: 3, name: "Marley",  active: false }]
+      c.replace "users", [{ id: 4, name: "Henry",  active: true }]
+      c.delete "users", [1, 2, 3, 4, 5]
+    end
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "retries commits using a block when precommit token is returned" do
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :commit, commit_resp_precommit_0, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, request_options: nil, precommit_token: nil }, default_options]
+    mock.expect :commit, commit_resp_precommit_1, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, request_options: nil, precommit_token: precommit_token_0 }, default_options]
+    mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts, request_options: nil, precommit_token: precommit_token_1 }, default_options]
     spanner.service.mocked_service = mock
 
     timestamp = client.commit do |c|

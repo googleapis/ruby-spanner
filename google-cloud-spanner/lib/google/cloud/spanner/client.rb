@@ -2157,16 +2157,28 @@ module Google
               end
 
               transaction_id = tx.transaction_id
-              commit_resp = @project.service.commit(
-                tx.session.path,
-                tx.mutations,
-                transaction_id: transaction_id,
-                exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                commit_options: commit_options,
-                request_options: request_options,
-                call_options: call_options,
-                precommit_token: tx.precommit_token
-              )
+
+              # This "inner retry" mechanism is for Commit Response protocol.
+              # Unlike the retry on `Aborted` errors it will not re-create a transaction.
+              # This is intentional, as these retries are not related to e.g.
+              # transactions deadlocking, so it's OK to retry "as-is".
+              should_retry = true
+              while should_retry
+                commit_resp = @project.service.commit(
+                  tx.session.path,
+                  tx.mutations,
+                  transaction_id: transaction_id,
+                  exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                  commit_options: commit_options,
+                  request_options: request_options,
+                  call_options: call_options,
+                  precommit_token: tx.precommit_token
+                )
+
+                tx.precommit_token = commit_resp.precommit_token
+                should_retry = !commit_resp.precommit_token.nil?
+              end
+
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
             rescue GRPC::Aborted,
