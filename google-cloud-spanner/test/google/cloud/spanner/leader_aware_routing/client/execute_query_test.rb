@@ -66,7 +66,7 @@ describe Google::Cloud::Spanner::Pool, :mock_spanner do
       gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
     end    
     mock.expect :execute_streaming_sql, results_enum do |request, gapic_options|
-      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
+      gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'false'
     end
     spanner.service.mocked_service = mock
 
