@@ -484,7 +484,7 @@ module Google
           request_options = Convert.to_request_options request_options,
                                                        tag_type: :request_tag
           single_use_tx = single_use_transaction single_use
-          route_to_leader = LARHeaders.execute_query true
+          route_to_leader = LARHeaders.execute_query false
           results = nil
           @pool.with_session do |session|
             results = session.execute_query \
