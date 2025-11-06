@@ -158,7 +158,9 @@ describe "Spanner Client", :batch_update, :spanner do
 
       prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
-      db[dialect].transaction do |tx|
+      # @type [::Google::Cloud::Spanner::Client]
+      dbd = db[dialect]
+      dbd.transaction do |tx|
         begin
           _(tx.no_existing_transaction?).must_equal true
           tx.batch_update do |b|
@@ -167,10 +169,15 @@ describe "Spanner Client", :batch_update, :spanner do
         rescue Google::Cloud::Spanner::BatchUpdateError => e
           _(e.cause).must_be_kind_of Google::Cloud::InvalidArgumentError
           _(e.cause.message).must_equal "Statement 0: 'UPDDDD accounts' is not valid DML."
+        rescue ::Google::Cloud::InternalError => e
+          # [TODO virost@ 2025-11] This is accomodating a temporary backend regression,
+          # after 2026-01 this rescue clause should be removed.
+          _(e.cause.code).must_equal 13
+          _(e.cause.details).must_equal "Internal error encountered."
         end
         _(tx.no_existing_transaction?).must_equal true
       end
-      prior_results = db[dialect].execute_sql "SELECT * FROM accounts"
+      prior_results = dbd.execute_sql "SELECT * FROM accounts"
       _(prior_results.rows.count).must_equal 3
     end
 

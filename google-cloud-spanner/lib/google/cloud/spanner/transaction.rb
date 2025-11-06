@@ -836,8 +836,6 @@ module Google
           request_options = build_request_options request_options
           route_to_leader = LARHeaders.read true
 
-          # require "pry"
-          # binding.pry
           safe_execute do
             results = session.read table, columns, keys: keys, index: index, limit: limit,
                                    transaction: tx_selector,
