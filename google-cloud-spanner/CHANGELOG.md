@@ -1,5 +1,14 @@
 # Release History
 
+### 2.29.0 (2025-11-06)
+
+#### Features
+
+* allow sending request tags for snapshot queries ([#200](https://github.com/googleapis/ruby-spanner/issues/200)) 
+#### Bug Fixes
+
+* Don't route to leader for single-use transactions in Client#execute_query ([#201](https://github.com/googleapis/ruby-spanner/issues/201)) 
+
 ### 2.28.0 (2025-10-22)
 
 #### Features
