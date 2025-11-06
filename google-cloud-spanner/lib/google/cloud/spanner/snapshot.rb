@@ -131,6 +131,18 @@ module Google
         #     available optimizer version.
         #   * `:optimizer_statistics_package` (String) Statistics package to
         #     use. Empty to use the database default.
+        # @param [Hash] request_options Common request options.
+        #
+        #   * `:priority` (Symbol) The relative priority for requests.
+        #     The priority acts as a hint to the Cloud Spanner scheduler
+        #     and does not guarantee priority or order of execution.
+        #     Valid values are `:PRIORITY_LOW`, `:PRIORITY_MEDIUM`,
+        #     `:PRIORITY_HIGH`. If priority not set then default is
+        #     `PRIORITY_UNSPECIFIED` is equivalent to `:PRIORITY_HIGH`.
+        #   * `:tag` (String) A per-request tag which can be applied to
+        #     queries or reads, used for statistics collection. Tag must be a
+        #     valid identifier of the form: `[a-zA-Z][a-zA-Z0-9_\-]` between 2
+        #     and 64 characters in length.
         # @param [Hash] call_options A hash of values to specify the custom
         #   call options, e.g., timeout, retries, etc. Call options are
         #   optional. The following settings can be provided:
@@ -304,13 +316,17 @@ module Google
         #   end
         #
         def execute_query sql, params: nil, types: nil, query_options: nil,
-                          call_options: nil, directed_read_options: nil
+                          request_options: nil, call_options: nil,
+                          directed_read_options: nil
           ensure_session!
 
           params, types = Convert.to_input_params_and_types params, types
+          request_options = Convert.to_request_options request_options,
+                                                       tag_type: :request_tag
           session.execute_query sql, params: params, types: types,
                                      transaction: tx_selector,
                                      query_options: query_options,
+                                     request_options: request_options,
                                      call_options: call_options,
                                      directed_read_options: directed_read_options || @directed_read_options
         end
@@ -334,6 +350,18 @@ module Google
         #   Optional.
         # @param [Integer] limit If greater than zero, no more than this number
         #   of rows will be returned. The default is no limit.
+        # @param [Hash] request_options Common request options.
+        #
+        #   * `:priority` (Symbol) The relative priority for requests.
+        #     The priority acts as a hint to the Cloud Spanner scheduler
+        #     and does not guarantee priority or order of execution.
+        #     Valid values are `:PRIORITY_LOW`, `:PRIORITY_MEDIUM`,
+        #     `:PRIORITY_HIGH`. If priority not set then default is
+        #     `PRIORITY_UNSPECIFIED` is equivalent to `:PRIORITY_HIGH`.
+        #   * `:tag` (String) A per-request tag which can be applied to
+        #     queries or reads, used for statistics collection. Tag must be a
+        #     valid identifier of the form: `[a-zA-Z][a-zA-Z0-9_\-]` between 2
+        #     and 64 characters in length.
         # @param [Hash] call_options A hash of values to specify the custom
         #   call options, e.g., timeout, retries, etc. Call options are
         #   optional. The following settings can be provided:
@@ -380,7 +408,7 @@ module Google
         #   end
         #
         def read table, columns, keys: nil, index: nil, limit: nil,
-                 call_options: nil, directed_read_options: nil
+                 request_options: nil, call_options: nil, directed_read_options: nil
           ensure_session!
 
           columns = Array(columns).map(&:to_s)
@@ -388,6 +416,7 @@ module Google
 
           session.read table, columns, keys: keys, index: index, limit: limit,
                                        transaction: tx_selector,
+                                       request_options: request_options,
                                        call_options: call_options,
                                        directed_read_options: directed_read_options || @directed_read_options
         end
