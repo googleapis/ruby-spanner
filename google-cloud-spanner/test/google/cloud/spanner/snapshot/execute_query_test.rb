@@ -324,37 +324,40 @@ describe Google::Cloud::Spanner::Snapshot, :execute_query, :mock_spanner do
     assert_results results
   end
 
-  describe "priority request options" do
-    it "can execute a query" do
+  describe "request options" do
+    it "can execute a query with priority option" do
       mock = Minitest::Mock.new
       session.service.mocked_service = mock
+
+      request_options = { priority: :PRIORITY_MEDIUM }
+
       expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users",
                                    transaction: tx_selector,
-                                   request_options: { priority: :PRIORITY_MEDIUM },
+                                   request_options: request_options,
                                    options: default_options
 
-      results = snapshot.execute_query "SELECT * FROM users",
-                                       request_options: { priority: :PRIORITY_MEDIUM }
+      results = snapshot.execute_query "SELECT * FROM users", request_options: request_options
 
       mock.verify
-
       assert_results results
     end
-  end
 
-  it "can execute a query with request tag" do
-    mock = Minitest::Mock.new
-    session.service.mocked_service = mock
-    expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users",
-                                 transaction: tx_selector,
-                                 request_options: { request_tag: "Tag-1" },
-                                 options: default_options
+    it "can execute a query with request tag" do
+      mock = Minitest::Mock.new
+      session.service.mocked_service = mock
 
-    results = snapshot.execute_query "SELECT * FROM users", request_options: { tag: "Tag-1" }
+      request_options = { request_tag: "Tag-1" }
 
-    mock.verify
+      expect_execute_streaming_sql results_enum, session.path, "SELECT * FROM users",
+                                  transaction: tx_selector,
+                                  request_options: request_options,
+                                  options: default_options
 
-    assert_results results
+      results = snapshot.execute_query "SELECT * FROM users", request_options: request_options
+
+      mock.verify
+      assert_results results
+    end
   end
 
   def assert_results results

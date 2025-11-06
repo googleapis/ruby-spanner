@@ -280,6 +280,52 @@ describe Google::Cloud::Spanner::Snapshot, :read, :mock_spanner do
     assert_results results
   end
 
+  describe "request options" do
+    it "can execute a query with priority option" do
+      columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+      request_options = { priority: :PRIORITY_MEDIUM }
+
+      mock = Minitest::Mock.new
+      mock.expect :streaming_read, results_enum, [{
+        session: session_grpc.name, table: "my-table",
+        columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+        key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([3]).list_value]),
+        transaction: tx_selector, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+        request_options: request_options, order_by: nil, lock_hint: nil
+      }, default_options]
+      session.service.mocked_service = mock
+
+      results = snapshot.read "my-table", columns, keys: [1, 2, 3], request_options: request_options
+
+      mock.verify
+
+      assert_results results
+    end
+
+    it "can execute a query with request tag" do
+      columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
+
+       request_options = { request_tag: "Tag-1" }
+
+      mock = Minitest::Mock.new
+      mock.expect :streaming_read, results_enum, [{
+        session: session_grpc.name, table: "my-table",
+        columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
+        key_set: Google::Cloud::Spanner::V1::KeySet.new(keys: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, Google::Cloud::Spanner::Convert.object_to_grpc_value([3]).list_value]),
+        transaction: tx_selector, index: nil, limit: nil, resume_token: nil, partition_token: nil,
+        request_options: request_options, order_by: nil, lock_hint: nil
+      }, default_options]
+      session.service.mocked_service = mock
+
+      results = snapshot.read "my-table", columns, keys: [1, 2, 3], request_options: request_options
+
+      mock.verify
+
+      assert_results results
+    end
+  end
+ 
   def assert_results results
     _(results).must_be_kind_of Google::Cloud::Spanner::Results
 
