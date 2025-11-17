@@ -501,8 +501,6 @@ module Google
           Database::Job.from_grpc grpc, service
         end
 
-        # rubocop:disable Lint/UnusedMethodArgument
-
         ##
         # Creates a Cloud Spanner client. A client is used to read and/or modify
         # data in a Cloud Spanner database.
@@ -580,14 +578,15 @@ module Google
           else
             query_options = query_options.merge @query_options unless @query_options.nil?
           end
+
+          _pool = pool # unused. Here only to avoid having to disable Rubocop's Lint/UnusedMethodArgument
+
           Client.new self, instance_id, database_id,
                      session_labels: labels,
                      query_options: query_options,
                      database_role: database_role,
                      directed_read_options: directed_read_options
         end
-
-        # rubocop:enable Lint/UnusedMethodArgument
 
         ##
         # Creates a Cloud Spanner batch client. A batch client is used to read

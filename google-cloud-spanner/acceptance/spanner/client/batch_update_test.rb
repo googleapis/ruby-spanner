@@ -118,7 +118,7 @@ describe "Spanner Client", :batch_update, :spanner do
       end
 
       # Emulator does not return timestamp for multiplex empty transaction commits for some reason
-      _(timestamp).must_be_kind_of Time unless emulator_enabled?
+      _(timestamp).must_be_kind_of Time
     end
 
     it "executes multiple DML statements in a batch with syntax error for #{dialect}" do
@@ -151,7 +151,7 @@ describe "Spanner Client", :batch_update, :spanner do
     end
 
     it "raises BatchUpdateError when the first statement in Batch DML is a syntax error for #{dialect}" do
-      # ** When using the emulator with multiplexed sessions**
+      # ** When using the emulator with multiplexed sessions **
       # the BatchUpdate transaction in this test will not get cleaned up and that will cause the
       # "The emulator only supports one transaction at a time." failure.
       skip if emulator_enabled?
@@ -212,7 +212,7 @@ describe "Spanner Client", :batch_update, :spanner do
 
     describe "request options for #{dialect}" do
       it "execute batch update with priority options for #{dialect}" do
-        # ** When using the emulator with multiplexed sessions**
+        # ** When using the emulator with multiplexed sessions **
         # the BatchUpdate transaction in this test will not get cleaned up and that will cause the
         # "The emulator only supports one transaction at a time." failure.
         skip if emulator_enabled?

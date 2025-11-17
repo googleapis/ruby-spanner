@@ -56,8 +56,6 @@ module Google
         # @private
         IS_TRANSACTION_RUNNING_KEY = "ruby_spanner_is_transaction_running".freeze
 
-        # rubocop:disable Lint/UnusedMethodArgument
-
         # Creates a new Spanner Client instance.
         # @param project [::Google::Cloud::Spanner::Project] A `Spanner::Project` ref.
         # @param instance_id [::String] Instance id, e.g. `"my-instance"`.
@@ -86,6 +84,8 @@ module Google
           @query_options = query_options
           @directed_read_options = directed_read_options
 
+          _pool_opts = pool_opts # unused. Here only to avoid having to disable Rubocop's Lint/UnusedMethodArgument
+
           session_creation_options = SessionCreationOptions.new(
             database_path:  Admin::Database::V1::DatabaseAdmin::Paths.database_path(
               project: @project.service.project, instance: instance_id, database: database_id
@@ -97,8 +97,6 @@ module Google
 
           @pool = SessionCache.new @project.service, session_creation_options
         end
-
-        # rubocop:enable Lint/UnusedMethodArgument
 
         # The unique identifier for the project.
         # @return [String]
