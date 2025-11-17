@@ -1,5 +1,11 @@
 # Release History
 
+### 2.30.0 (2025-11-17)
+
+#### Features
+
+* implement support for Multiplexed Sessions ([#195](https://github.com/googleapis/ruby-spanner/issues/195)) 
+
 ### 2.29.0 (2025-11-06)
 
 #### Features
