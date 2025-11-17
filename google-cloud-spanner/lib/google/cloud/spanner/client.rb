@@ -16,7 +16,8 @@
 require "google/cloud/spanner/errors"
 require "google/cloud/spanner/project"
 require "google/cloud/spanner/data"
-require "google/cloud/spanner/pool"
+require "google/cloud/spanner/session_cache"
+require "google/cloud/spanner/session_creation_options"
 require "google/cloud/spanner/session"
 require "google/cloud/spanner/transaction"
 require "google/cloud/spanner/snapshot"
@@ -61,8 +62,9 @@ module Google
         # @param database_id [::String] Database id, e.g. `"my-database"`.
         # @param session_labels [::Hash, nil] Optional. The labels to be applied to all sessions
         #   created by the client. Example: `"team" => "billing-service"`.
-        # @param pool_opts [::Hash] Optional. `Spanner::Pool` creation options.
-        #   Example parameter: `:keepalive`.
+        # @param pool_opts [::Hash] Optional. Defaults to `{}`. Deprecated.
+        #   @deprecated This parameter is non-functional since the multiplexed SessionCache does not require
+        #   pool options.
         # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
         #   query options for executing SQL query. Example parameter `:optimizer_version`.
         # @param database_role [::String, nil] Optional. The Spanner session creator role.
@@ -79,9 +81,21 @@ module Google
           @database_id = database_id
           @database_role = database_role
           @session_labels = session_labels
-          @directed_read_options = directed_read_options
-          @pool = Pool.new self, **pool_opts
           @query_options = query_options
+          @directed_read_options = directed_read_options
+
+          _pool_opts = pool_opts # unused. Here only to avoid having to disable Rubocop's Lint/UnusedMethodArgument
+
+          session_creation_options = SessionCreationOptions.new(
+            database_path:  Admin::Database::V1::DatabaseAdmin::Paths.database_path(
+              project: @project.service.project, instance: instance_id, database: database_id
+            ),
+            session_labels: @session_labels,
+            session_creator_role: @database_role,
+            query_options: @query_options
+          )
+
+          @pool = SessionCache.new @project.service, session_creation_options
         end
 
         # The unique identifier for the project.
@@ -1943,7 +1957,8 @@ module Google
         # rubocop:disable Metrics/AbcSize
         # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/BlockLength
-
+        # rubocop:disable Metrics/CyclomaticComplexity
+        # rubocop:disable Metrics/PerceivedComplexity
 
         ##
         # Creates a transaction for reads and writes that execute atomically at
@@ -2128,9 +2143,10 @@ module Google
               yield tx
 
               unless tx.existing_transaction?
-                # This can happen if the yielded `tx` object was only used to add mutations.
+                # This typically will happen if the yielded `tx` object was only used to add mutations.
                 # Then it never called any RPCs and didn't create a server-side Transaction object.
                 # In which case we should make an explicit BeginTransaction call here.
+
                 tx.safe_begin_transaction!(
                   exclude_from_change_streams: exclude_txn_from_change_streams,
                   request_options: request_options,
@@ -2139,15 +2155,28 @@ module Google
               end
 
               transaction_id = tx.transaction_id
-              commit_resp = @project.service.commit(
-                tx.session.path,
-                tx.mutations,
-                transaction_id: transaction_id,
-                exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                commit_options: commit_options,
-                request_options: request_options,
-                call_options: call_options
-              )
+
+              # This "inner retry" mechanism is for Commit Response protocol.
+              # Unlike the retry on `Aborted` errors it will not re-create a transaction.
+              # This is intentional, as these retries are not related to e.g.
+              # transactions deadlocking, so it's OK to retry "as-is".
+              should_retry = true
+              while should_retry
+                commit_resp = @project.service.commit(
+                  tx.session.path,
+                  tx.mutations,
+                  transaction_id: transaction_id,
+                  exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                  commit_options: commit_options,
+                  request_options: request_options,
+                  call_options: call_options,
+                  precommit_token: tx.precommit_token
+                )
+
+                tx.precommit_token = commit_resp.precommit_token
+                should_retry = !commit_resp.precommit_token.nil?
+              end
+
               resp = CommitResponse.from_grpc commit_resp
               commit_options ? resp : resp.timestamp
             rescue GRPC::Aborted,
@@ -2157,8 +2186,16 @@ module Google
               check_and_propagate_err! e, (current_time - start_time > deadline)
               # Sleep the amount from RetryDelay, or incremental backoff
               sleep(delay_from_aborted(e) || backoff *= 1.3)
+
               # Create new transaction on the session and retry the block
-              tx = session.create_transaction exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              previous_transaction_id = tx.transaction_id if tx.existing_transaction?
+              tx = session.create_empty_transaction(
+                exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                previous_transaction_id: previous_transaction_id
+              )
+              if request_options
+                tx.transaction_tag = request_options[:transaction_tag]
+              end
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
@@ -2176,6 +2213,9 @@ module Google
         # rubocop:enable Metrics/AbcSize
         # rubocop:enable Metrics/MethodLength
         # rubocop:enable Metrics/BlockLength
+        # rubocop:enable Metrics/CyclomaticComplexity
+        # rubocop:enable Metrics/PerceivedComplexity
+
 
         ##
         # Creates a snapshot read-only transaction for reads that execute
@@ -2262,7 +2302,7 @@ module Google
                             staleness: staleness || exact_staleness,
                             call_options: call_options
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
-            snp = Snapshot.from_grpc snp_grpc, session, @directed_read_options
+            snp = Snapshot.from_grpc snp_grpc, session, directed_read_options: @directed_read_options
             yield snp if block_given?
           ensure
             Thread.current[IS_TRANSACTION_RUNNING_KEY] = nil
@@ -2442,58 +2482,8 @@ module Google
         ##
         # Reset the client sessions.
         #
-        def reset
-          @pool.reset
-        end
-
-        # Creates a new Session objece.
-        # @param multiplexed [::Boolean] Optional. Default to `false`.
-        #   If `true`, specifies a multiplexed session.
-        # @private
-        # @return [::Google::Cloud::Spanner::Session]
-        def create_new_session multiplexed: false
-          ensure_service!
-          grpc = @project.service.create_session \
-            Admin::Database::V1::DatabaseAdmin::Paths.database_path(
-              project: project_id, instance: instance_id, database: database_id
-            ),
-            labels: @session_labels,
-            database_role: @database_role,
-            multiplexed: multiplexed
-
-          Session.from_grpc grpc, @project.service, query_options: @query_options
-        end
-
-        ##
-        # @private
-        # Creates a batch of new session objects of size `total`.
-        # Makes multiple RPCs if necessary. Returns empty array if total is 0.
-        def batch_create_new_sessions total
-          sessions = []
-          remaining = total
-          while remaining.positive?
-            sessions += batch_create_sessions remaining
-            remaining = total - sessions.count
-          end
-          sessions
-        end
-
-        ##
-        # @private
-        # The response may have fewer sessions than requested in the RPC.
-        #
-        def batch_create_sessions session_count
-          ensure_service!
-          resp = @project.service.batch_create_sessions \
-            Admin::Database::V1::DatabaseAdmin::Paths.database_path(
-              project: project_id, instance: instance_id, database: database_id
-            ),
-            session_count,
-            labels: @session_labels,
-            database_role: @database_role
-          resp.session.map do |grpc|
-            Session.from_grpc grpc, @project.service, query_options: @query_options
-          end
+        def reset!
+          @pool.reset!
         end
 
         # @private
@@ -2516,23 +2506,51 @@ module Google
           raise "Must have active connection to service" unless @project.service
         end
 
-        ##
-        # Check for valid snapshot arguments
+        # Checks that the options hash contains exactly one valid single-use key.
+        #
+        # @param opts [::Hash, nil] The options hash to validate.
+        # @private
+        # @raise [ArgumentError] If the hash does not contain exactly one valid
+        #   single-use key.
+        # @return [void]
         def validate_single_use_args! opts
-          return true if opts.nil? || opts.empty?
-          valid_keys = %i[strong timestamp read_timestamp staleness
-                          exact_staleness bounded_timestamp
-                          min_read_timestamp bounded_staleness max_staleness]
-          if opts.keys.count == 1 && valid_keys.include?(opts.keys.first)
-            return true
-          end
+          # An empty options hash is valid.
+          return if opts.nil? || opts.empty?
+
+          keys = opts.keys
+
+          valid_keys = Set.new(%i[
+                                 strong timestamp read_timestamp staleness exact_staleness
+                                 bounded_timestamp min_read_timestamp bounded_staleness max_staleness
+                               ]).freeze
+
+          # Raise an error unless there is exactly one key and it's in the valid set.
+          return if keys.length == 1 && valid_keys.include?(keys.first)
           raise ArgumentError,
-                "Must provide only one of the following single_use values: " \
-                "#{valid_keys}"
+                "Options must contain exactly one of the following keys: " \
+                "#{valid_keys.to_a.join ', '}"
         end
 
-        ##
-        # Create a single-use TransactionSelector
+        # Creates a selector for a single-use, read-only transaction.
+        #
+        # @param opts [::Hash] Options for creating the transaction selector.
+        #   If those are `nil` or empty, a `nil` will be returned instead of a `V1::TransactionSelector`.
+        # @option opts [::Boolean] :strong
+        #   Executes a strong read.
+        # @option opts [::Time, ::DateTime] :read_timestamp
+        #   Executes a read at the provided time. Alias: `:timestamp`.
+        # @option opts [::Numeric] :exact_staleness
+        #   Executes a read at a time that is exactly this stale (in seconds).
+        #   Alias: `:staleness`.
+        # @option opts [::Time, ::DateTime] :min_read_timestamp
+        #   Executes a read at a time that is at least this timestamp.
+        #   Alias: `:bounded_timestamp`.
+        # @option opts [::Numeric] :max_staleness
+        #   Executes a read at a time that is at most this stale (in seconds).
+        #   Alias: `:bounded_staleness`.
+        # @private
+        # @return [V1::TransactionSelector, nil] The transaction selector object, or
+        #   `nil` if the `opts` hash is nil or empty.
         def single_use_transaction opts
           return nil if opts.nil? || opts.empty?
 

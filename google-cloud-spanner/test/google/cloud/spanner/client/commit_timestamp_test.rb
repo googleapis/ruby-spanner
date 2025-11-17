@@ -21,7 +21,7 @@ describe Google::Cloud::Spanner::Client, :commit_timestamp, :mock_spanner do
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:commit_resp) { Google::Cloud::Spanner::V1::CommitResponse.new commit_timestamp: Google::Protobuf::Timestamp.new() }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
 
   after do
     shutdown_client! client

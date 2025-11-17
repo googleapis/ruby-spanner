@@ -33,25 +33,35 @@ class MockSpanner < Minitest::Spec
       Google::Cloud::Spanner::Service.new(project, credentials, enable_leader_aware_routing: false)
     )
   end
-  let(:default_session_request) {nil}
+  let(:default_session_request) {Google::Cloud::Spanner::V1::Session.new name: "", labels: {}, creator_role: "", multiplexed: true}
 
   # Register this spec type for when :spanner is used.
   register_spec_type(self) do |desc, *addl|
     addl.include? :mock_spanner
   end
 
+  # Shutdown client is complicated if the default non-multiplex pool is used
+  # since we don't want to do a slow-shutdown for that every time.
+  # If a SessionCache is used the cleanup is simplified
+  # @param client [::Google::Cloud::Spanner::Client]
   def shutdown_client! client
     # extract the pool
+    # @type [::Google::Cloud::Spanner::Pool, ::Google::Cloud::Spanner::SessionCache]
     pool = client.instance_variable_get :@pool
-    # remove all sessions so we don't have to handle the calls to session_delete
-    pool.sessions_available = []
-    pool.sessions_in_use = {}
 
-    # close the client
-    client.close
+    if (pool.is_a? ::Google::Cloud::Spanner::SessionCache)
+      client.close
+    else
+      # remove all sessions so we don't have to handle the calls to session_delete
+      pool.sessions_available = []
+      pool.sessions_in_use = {}
 
-    # close the client
-    shutdown_pool! pool
+      # close the client
+      client.close
+
+      # close the client
+      shutdown_pool! pool
+    end
   end
 
   def shutdown_pool! pool

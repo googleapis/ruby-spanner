@@ -20,7 +20,7 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
   let(:user_mutations) {
     [
       Google::Cloud::Spanner::V1::Mutation.new(
@@ -116,7 +116,7 @@ describe Google::Cloud::Spanner::Client, :batch_write, :mock_spanner do
 
   it "batch writes using groups of mutations" do
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
+    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
     mock.expect :batch_write, responses_enum, [{ session: session_grpc.name, mutation_groups: mutation_groups, request_options: nil, exclude_txn_from_change_streams: true }, default_options]
     spanner.service.mocked_service = mock
 

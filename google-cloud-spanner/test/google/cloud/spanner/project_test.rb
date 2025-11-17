@@ -42,13 +42,19 @@ describe Google::Cloud::Spanner::Project, :mock_spanner do
     _(spanner.universe_domain).must_equal universe
   end
 
-  it "creates client with database role" do
+  it "creates client with multiplexed pool by default" do
     mock = Minitest::Mock.new
-    request_session = Google::Cloud::Spanner::V1::Session.new labels: nil, creator_role: "test_role"
-    mock.expect :batch_create_sessions, batch_create_sessions_grpc, [Hash,::Gapic::CallOptions]
     spanner.service.mocked_service = mock
 
-    client = spanner.client instance_id, database_id, pool: { min: 1, max: 1 }, database_role: "test-role"
+    client = spanner.client instance_id, database_id
+    _(client.instance_variable_get :@pool).must_be_kind_of ::Google::Cloud::Spanner::SessionCache
+  end
+
+  it "creates client with database role" do
+    mock = Minitest::Mock.new
+    spanner.service.mocked_service = mock
+
+    client = spanner.client instance_id, database_id, database_role: "test-role"
     _(client.database_role).must_equal "test-role"
   end
 end

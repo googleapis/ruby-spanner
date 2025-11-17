@@ -41,8 +41,25 @@ module Google
       #   end
       #
       class Snapshot
-        # @private The Session object.
+        # A `V1::Session` reference.
+        # @private
+        # @return [::Google::Cloud::Spanner::V1::Session]
         attr_accessor :session
+
+        # Creates a new `Spanner::Snapshot` instance.
+        # @param grpc [::Google::Cloud::Spanner::V1::Transaction]
+        #   Underlying `V1::Transaction` object.
+        # @param session [::Google::Cloud::Spanner::Session] A `Spanner::Session` reference.
+        # @param directed_read_options [::Hash, nil] Optional. Client options used to set
+        #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
+        #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @private
+        # @return [::Google::Cloud::Spanner::Snapshot]
+        def initialize grpc, session, directed_read_options: nil
+          @grpc = grpc
+          @session = session
+          @directed_read_options = directed_read_options
+        end
 
         ##
         # Identifier of the transaction results were run in.
@@ -536,15 +553,18 @@ module Google
                     exclude_end: exclude_end
         end
 
-        ##
-        # @private Creates a new Snapshot instance from a
+        # Creates a new `Spanner::Snapshot` instance from a
         # `Google::Cloud::Spanner::V1::Transaction`.
-        def self.from_grpc grpc, session, directed_read_options
-          new.tap do |s|
-            s.instance_variable_set :@grpc,    grpc
-            s.instance_variable_set :@session, session
-            s.instance_variable_set :@directed_read_options, directed_read_options
-          end
+        # @param grpc [::Google::Cloud::Spanner::V1::Transaction]
+        #   Underlying `V1::Transaction` object.
+        # @param session [::Google::Cloud::Spanner::Session] A `Spanner::Session` reference.
+        # @param directed_read_options [::Hash, nil] Optional. Client options used to set
+        #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
+        #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @private
+        # @return [::Google::Cloud::Spanner::Snapshot]
+        def self.from_grpc grpc, session, directed_read_options: nil
+          new grpc, session, directed_read_options: directed_read_options
         end
 
         protected

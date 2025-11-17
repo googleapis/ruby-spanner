@@ -68,17 +68,17 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
      Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash2),
      Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash3)].to_enum
   end
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
 
   let(:labels) { { "env" => "production" } }
-  let(:client_labels) { spanner.client instance_id, database_id, pool: { min: 0 }, labels: labels }
+  let(:client_labels) { spanner.client instance_id, database_id, labels: labels }
 
   it "can read all rows" do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 # puts Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash2).inspect
 # puts Google::Cloud::Spanner::V1::PartialResultSet.new(Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash2)).inspect
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -101,7 +101,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
 
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -126,7 +126,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
 
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -151,7 +151,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -178,7 +178,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -201,7 +201,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -224,7 +224,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -248,7 +248,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -271,7 +271,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -294,7 +294,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    session_labels_grpc = Google::Cloud::Spanner::V1::Session.new labels: labels
+    session_labels_grpc = Google::Cloud::Spanner::V1::Session.new labels: labels, multiplexed: true
     session_labels_resp_grpc = Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id), labels: labels
     mock.expect :create_session, session_labels_resp_grpc, [{ database: database_path(instance_id, database_id), session: session_labels_grpc }, default_options]
     mock.expect :streaming_read, results_enum, [{
@@ -328,7 +328,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
 
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -352,7 +352,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       columns = [:id, :name]
 
       mock = Minitest::Mock.new
-      mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+      mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
       mock.expect :streaming_read, results_enum, [{
         session: session_grpc.name, table: "my-table",
         columns: ["id", "name"],
@@ -374,7 +374,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
 
   it "can read with request tag" do
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id"],
@@ -405,7 +405,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -436,7 +436,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, results_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -445,7 +445,7 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
       request_options: nil, directed_read_options: expect_directed_read_options, order_by: nil, lock_hint: nil
      }, default_options]
     spanner.service.mocked_service = mock
-    client = spanner.client instance_id, database_id, pool: { min: 0 }, directed_read_options: expect_directed_read_options
+    client = spanner.client instance_id, database_id, directed_read_options: expect_directed_read_options
 
     results = client.read "my-table", columns, keys: 1, limit: 1
 

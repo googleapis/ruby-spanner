@@ -94,13 +94,13 @@ describe Google::Cloud::Spanner::Client, :read, :error, :mock_spanner do
       Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash6)
     ].to_enum
   end
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
 
   it "raises unhandled errors" do
     columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, RaiseableEnumerator.new(results_enum1), [{
       session: session_grpc.name,
       table: "my-table",

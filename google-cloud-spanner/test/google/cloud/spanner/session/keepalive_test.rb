@@ -20,6 +20,9 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
   let(:session_id) { "session123" }
   let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
+  let(:session_grpc_multiplexed) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id), multiplexed: true }
+  let(:session_multiplexed) { Google::Cloud::Spanner::Session.from_grpc session_grpc_multiplexed, spanner.service }
+
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let :results_hash do
     {
@@ -41,6 +44,17 @@ describe Google::Cloud::Spanner::Session, :keepalive, :mock_spanner do
   let(:labels) { { "env" => "production" } }
   let(:session_grpc_labels) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id), labels: labels }
   let(:session_labels) { Google::Cloud::Spanner::Session.from_grpc session_grpc_labels, spanner.service }
+
+  it "will NOP on keepalive if the session is multiplexed" do
+    mock = Minitest::Mock.new
+    session_multiplexed.service.mocked_service = mock
+
+    result = session_multiplexed.keepalive!
+
+    _(result).must_equal true
+
+    mock.verify
+  end
 
   it "can call keepalive" do
     mock = Minitest::Mock.new

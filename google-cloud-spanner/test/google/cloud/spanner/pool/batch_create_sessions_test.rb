@@ -13,17 +13,14 @@
 # limitations under the License.
 
 require "helper"
+require "google/cloud/spanner/pool"
 
 describe Google::Cloud::Spanner::Pool, :batch_create_sessions, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0, max: 4 } }
   let(:tx_opts) { Google::Cloud::Spanner::V1::TransactionOptions.new(read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new) }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
-
-  after do
-    shutdown_client! client
-  end
+  let(:session_creation_options) { ::Google::Cloud::Spanner::SessionCreationOptions.new database_path: database_path(instance_id, database_id)}
 
   it "calls batch_create_sessions until min number of sessions are returned" do
     mock = Minitest::Mock.new
@@ -41,7 +38,7 @@ describe Google::Cloud::Spanner::Pool, :batch_create_sessions, :mock_spanner do
     mock.expect :batch_create_sessions, sessions_1, [{ database: database_path(instance_id, database_id), session_count: 2, session_template: nil }, default_options]
     mock.expect :batch_create_sessions, sessions_2, [{ database: database_path(instance_id, database_id), session_count: 1, session_template: nil }, default_options]
 
-    pool = Google::Cloud::Spanner::Pool.new client, min: 2
+    pool = Google::Cloud::Spanner::Pool.new(spanner.service, session_creation_options, min: 2, max: 4)
 
     shutdown_pool! pool
 

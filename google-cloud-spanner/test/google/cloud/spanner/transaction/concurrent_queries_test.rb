@@ -37,7 +37,8 @@ describe Google::Cloud::Spanner::Transaction, :mock_spanner do
     {
       session: session.path,
       options: tx_opts,
-      request_options: nil
+      request_options: nil,
+      mutation_key: nil
     }
   end
   let :results_hash do

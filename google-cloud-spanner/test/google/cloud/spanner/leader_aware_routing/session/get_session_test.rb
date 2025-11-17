@@ -14,35 +14,34 @@
 
 require "helper"
 
-describe Google::Cloud::Spanner::Session, :reload, :mock_spanner do
+describe Google::Cloud::Spanner::Service, :get_sessions, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
   let(:session_id) { "session123" }
-  let(:session_grpc) { Google::Cloud::Spanner::V1::Session.new name: session_path(instance_id, database_id, session_id) }
-  let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
-
+  let(:session_full_path) { session_path(instance_id, database_id, session_id) }
+  let(:service) {spanner.service}
+  
   it "does not send header x-goog-spanner-route-to-leader when LAR is disabled" do
     mock = Minitest::Mock.new
-    mock.expect :get_session, session_grpc do |request, gapic_options|
+    mock.expect :get_session, nil do |request, gapic_options|
       !gapic_options.metadata.key? "x-goog-spanner-route-to-leader"
     end
-    session.service.mocked_service = mock
-    spanner.service.enable_leader_aware_routing = false
-
-    session.reload!
+    service.mocked_service = mock
+    service.enable_leader_aware_routing = false
+    service.get_session session_full_path
 
     mock.verify
   end
 
   it "sends header x-goog-spanner-route-to-leader when LAR is enabled" do
     mock = Minitest::Mock.new
-    mock.expect :get_session, session_grpc do |request, gapic_options|
+    mock.expect :get_session, nil do |request, gapic_options|
       gapic_options.metadata["x-goog-spanner-route-to-leader"] == 'true'
     end
-    session.service.mocked_service = mock
-    spanner.service.enable_leader_aware_routing = true
+    service.mocked_service = mock
+    service.enable_leader_aware_routing = true
 
-    session.reload!
+    service.get_session session_full_path
 
     mock.verify
   end

@@ -53,8 +53,11 @@ module Google
       #   puts commit_resp.stats.mutation_count
       #
       class CommitResponse
-        ##
-        # @private Creates a new CommitResponse instance.
+        # Creates a new CommitResponse instance.
+        #
+        # @param grpc [::Google::Cloud::Spanner::V1::CommitResponse]
+        #   Underlying `V1::CommitResponse` object.
+        # @private
         def initialize grpc
           @grpc = grpc
         end
@@ -74,10 +77,13 @@ module Google
           CommitStats.from_grpc @grpc.commit_stats if @grpc.commit_stats
         end
 
-        ##
-        # @private
-        # Creates a new Commit responsee instance from a
+        # Creates a new `Spanner::CommitResponse` instance from a
         # `Google::Cloud::Spanner::V1::CommitResponse`.
+        #
+        # @param grpc [::Google::Cloud::Spanner::V1::CommitResponse]
+        #   Underlying `V1::CommitResponse` object.
+        # @private
+        # @return [::Google::Cloud::Spanner::CommitResponse]
         def self.from_grpc grpc
           new grpc
         end

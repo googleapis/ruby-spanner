@@ -72,7 +72,8 @@ describe "Fine Grained Access Control", :spanner do
     skip if emulator_enabled?
 
     error = assert_raises Google::Cloud::PermissionDeniedError do
-      db.client $spanner_instance_id, $spanner_database_id, database_role: "unknown"
+      db_client = db.client $spanner_instance_id, $spanner_database_id, database_role: "unknown"
+      (db_client.instance_variable_get :@pool).with_session { |s| } # rubocop:disable Lint/EmptyBlock
     end
 
     assert_includes error.message, "Role not found: unknown"

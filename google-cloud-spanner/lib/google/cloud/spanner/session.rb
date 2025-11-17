@@ -44,8 +44,8 @@ module Google
       #
       class Session
         # The wrapped `V1::Session` protobuf session object.
-        # @return [::Google::Cloud::Spanner::V1::Session]
         # @private
+        # @return [::Google::Cloud::Spanner::V1::Session]
         attr_accessor :grpc
 
         # The `Spanner::Service` object.
@@ -59,7 +59,7 @@ module Google
         # @return [::Hash, nil]
         attr_accessor :query_options
 
-        # Creates a new Session instance.
+        # Creates a new `Spanner::Session` instance.
         # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` object.
         # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
@@ -69,6 +69,7 @@ module Google
           @grpc = grpc
           @service = service
           @query_options = query_options
+          @created_time = Process.clock_gettime Process::CLOCK_MONOTONIC
         end
 
         # The unique identifier for the project.
@@ -216,6 +217,9 @@ module Google
         #     * `:retry_codes` (`Array<String>`) - The error codes that should
         #       trigger a retry.
         #
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
+        #
         # @return [Google::Cloud::Spanner::Results] The results of the query
         #   execution.
         #
@@ -357,7 +361,8 @@ module Google
         def execute_query sql, params: nil, types: nil, transaction: nil,
                           partition_token: nil, seqno: nil, query_options: nil,
                           request_options: nil, call_options: nil, data_boost_enabled: nil,
-                          directed_read_options: nil, route_to_leader: nil
+                          directed_read_options: nil, route_to_leader: nil,
+                          precommit_token_notify: nil
           ensure_service!
           query_options = merge_if_present query_options, @query_options
 
@@ -373,7 +378,8 @@ module Google
 
           response = service.execute_streaming_sql path, sql, **execute_query_options
 
-          results = Results.from_execute_query_response response, service, path, sql, execute_query_options
+          results = Results.from_execute_query_response response, service, path, sql, execute_query_options,
+                                                        precommit_token_notify: precommit_token_notify
           @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           results
         end
@@ -428,8 +434,8 @@ module Google
         #   number of rows that were modified for each successful statement
         #   before the error.
         #
-        # @return [Array<Integer>] A list with the exact number of rows that
-        #   were modified for each DML statement.
+        # @return [::Google::Cloud::Spanner::V1::ExecuteBatchDmlResponse]
+        #   An unwrapped result of the service call -- a `V1::ExecuteBatchDmlResponse` object.
         #
         def batch_update transaction, seqno, request_options: nil,
                          call_options: nil
@@ -506,6 +512,9 @@ module Google
         #   To see the available options refer to
         #   ['Google::Cloud::Spanner::V1::ReadRequest::LockHint'](https://cloud.google.com/ruby/docs/reference/google-cloud-spanner-v1/latest/Google-Cloud-Spanner-V1-ReadRequest-LockHint)
         #
+        # @param precommit_token_notify [::Proc, nil] Optional.
+        #   The notification function for the precommit token.
+        #
         # @return [Google::Cloud::Spanner::Results] The results of the read
         #   operation.
         #
@@ -525,7 +534,7 @@ module Google
         def read table, columns, keys: nil, index: nil, limit: nil,
                  transaction: nil, partition_token: nil, request_options: nil,
                  call_options: nil, data_boost_enabled: nil, directed_read_options: nil,
-                 route_to_leader: nil, order_by: nil, lock_hint: nil
+                 route_to_leader: nil, order_by: nil, lock_hint: nil, precommit_token_notify: nil
           ensure_service!
 
           read_options = {
@@ -544,7 +553,8 @@ module Google
           response = service.streaming_read_table \
             path, table, columns, **read_options
 
-          results = Results.from_read_response response, service, path, table, columns, read_options
+          results = Results.from_read_response response, service, path, table, columns, read_options,
+                                               precommit_token_notify: precommit_token_notify
 
           @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
 
@@ -675,12 +685,24 @@ module Google
           ensure_service!
           commit = Commit.new
           yield commit
-          commit_resp = service.commit path, commit.mutations,
-                                       transaction_id: transaction_id,
-                                       exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                                       commit_options: commit_options,
-                                       request_options: request_options,
-                                       call_options: call_options
+
+          should_retry = true
+          # @type [Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken]
+          precommit_token = nil
+          while should_retry
+            commit_resp = service.commit(path,
+                                         commit.mutations,
+                                         transaction_id: transaction_id,
+                                         exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                                         commit_options: commit_options,
+                                         request_options: request_options,
+                                         call_options: call_options,
+                                         precommit_token: precommit_token)
+
+            precommit_token = commit_resp.precommit_token
+            should_retry = !precommit_token.nil?
+          end
+
           @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
           resp = CommitResponse.from_grpc commit_resp
           commit_options ? resp : resp.timestamp
@@ -1369,9 +1391,15 @@ module Google
           true
         end
 
-        ##
+        # Explicitly begins a new transaction and creates a server-side transaction object.
+        # Unlike {#create_empty_transaction}, this method makes an immediate
+        # `BeginTransaction` RPC call.
+        #
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
         # @private
-        # Creates a new transaction object every time.
+        # @return [::Google::Cloud::Spanner::Transaction]
         def create_transaction exclude_txn_from_change_streams: false
           route_to_leader = LARHeaders.begin_transaction true
           tx_grpc = service.begin_transaction path,
@@ -1380,37 +1408,34 @@ module Google
           Transaction.from_grpc tx_grpc, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
         end
 
-        ##
+        # Creates a new empty transaction wrapper without a server-side object.
+        # This is used for inline-begin transactions and does not make an RPC call.
+        # See {#create_transaction} for the RPC-based method.
+        #
+        # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
+        #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
+        #   or write transactions from being tracked in change streams.
+        # @param previous_transaction_id [::String, nil] Optional.
+        #   An id of the previous transaction, if this new transaction wrapper is being created
+        #   as a part of a retry. Previous transaction id should be added to TransactionOptions
+        #   of a new ReadWrite transaction when retry is attempted.
         # @private
-        # Creates a new transaction object without the grpc object
-        # within it. Use it for inline-begin of a transaction.
-        def create_empty_transaction exclude_txn_from_change_streams: false
-          Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams
+        # @return [::Google::Cloud::Spanner::Transaction] The new *empty-wrapper* transaction object.
+        def create_empty_transaction exclude_txn_from_change_streams: false, previous_transaction_id: nil
+          Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+previous_transaction_id: previous_transaction_id
         end
 
-        ##
-        # Reloads the session resource. Useful for determining if the session is
-        # still valid on the Spanner API.
-        def reload!
-          ensure_service!
-          @grpc = service.get_session path
-          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
-          self
-        rescue Google::Cloud::NotFoundError
-          labels = @grpc.labels.to_h unless @grpc.labels.to_h.empty?
-          @grpc = service.create_session \
-            V1::Spanner::Paths.database_path(
-              project: project_id, instance: instance_id, database: database_id
-            ),
-            labels: labels
-          @last_updated_at = Process.clock_gettime Process::CLOCK_MONOTONIC
-          self
-        end
-
-        ##
+        # If the session is non-multiplexed, keeps the session alive by executing `"SELECT 1"`.
+        # This method will re-create the session if necessary.
+        # For multiplexed session the keepalive is not required and this method immediately returns `true`.
         # @private
-        # Keeps the session alive by executing `"SELECT 1"`.
+        # @return [::Boolean]
+        #   `true` if the session is multiplexed or if the keepalive was successful for non-multiplexed session,
+        #   `false` if the non-multiplexed session was not found and the had to be recreated.
         def keepalive!
+          return true if multiplexed?
+
           ensure_service!
           route_to_leader = LARHeaders.execute_query false
           execute_query "SELECT 1", route_to_leader: route_to_leader
@@ -1425,15 +1450,19 @@ module Google
           false
         end
 
-        ##
-        # Permanently deletes the session.
+        # Permanently deletes the session unless this session is multiplexed.
+        # Multiplexed sessions can not be deleted, and this method immediately returns.
+        # @private
+        # @return [void]
         def release!
+          return if multiplexed?
           ensure_service!
           service.delete_session path
         end
 
         # Determines if the session has been idle longer than the given
-        # duration.
+        # duration in seconds.
+        #
         # @param duration_sec [::Numeric] interval in seconds
         # @private
         # @return [::Boolean]
@@ -1442,7 +1471,17 @@ module Google
           Process.clock_gettime(Process::CLOCK_MONOTONIC) > @last_updated_at + duration_sec
         end
 
-        # Creates a new Session instance from a `V1::Session`.
+        # Determines if the session did exist for at least the given
+        # duration in seconds.
+        #
+        # @param duration_sec [::Numeric] interval in seconds
+        # @private
+        # @return [::Boolean]
+        def existed_since? duration_sec
+          Process.clock_gettime(Process::CLOCK_MONOTONIC) > @created_time + duration_sec
+        end
+
+        # Creates a new `Spanner::Session` instance from a `V1::Session` object.
         # @param grpc [::Google::Cloud::Spanner::V1::Session] Underlying `V1::Session` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` ref.
         # @param query_options [::Hash, nil] Optional. A hash of values to specify the custom
@@ -1460,6 +1499,13 @@ module Google
         end
 
         protected
+
+        # Whether this session is multiplexed.
+        # @private
+        # @return [::Boolean]
+        def multiplexed?
+          @grpc.multiplexed
+        end
 
         ##
         # @private Raise an error unless an active connection to the service is

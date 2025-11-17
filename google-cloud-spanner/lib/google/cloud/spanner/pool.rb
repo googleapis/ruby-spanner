@@ -16,6 +16,7 @@
 require "concurrent"
 require "google/cloud/spanner/errors"
 require "google/cloud/spanner/session"
+require "google/cloud/spanner/session_creation_options"
 
 module Google
   module Cloud
@@ -37,7 +38,9 @@ module Google
         attr_accessor :sessions_in_use
 
         # Creates a new Session pool that manages non-multiplexed sessions.
-        # @param client [::Google::Cloud::Spanner::Client] A `Spanner::Client` reference
+        # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
+        # @param session_creation_options [::Google::Cloud::Spanner::SessionCreationOptions] Required.
+        #   Options used for session creation. E.g. session labels.
         # @param min [::Integer] Min number of sessions to keep
         # @param max [::Integer] Max number of sessions to keep
         # @param keepalive [::Numeric] How long after their last usage the sessions can be reclaimed
@@ -46,9 +49,10 @@ module Google
         # @param threads [::Integer, nil] Number of threads in the thread pool that is used for keepalive and
         #   release session actions. If `nil` the Pool will choose a reasonable default.
         # @private
-        def initialize client, min: 10, max: 100, keepalive: 1800,
+        def initialize service, session_creation_options, min: 10, max: 100, keepalive: 1800,
                        fail: true, threads: nil
-          @client = client
+          @service = service
+          @session_creation_options = session_creation_options
           @min = min
           @max = max
           @keepalive = keepalive
@@ -127,7 +131,7 @@ module Google
           nil
         end
 
-        def reset
+        def reset!
           close
           init
 
@@ -137,6 +141,7 @@ module Google
 
           true
         end
+        alias reset reset!
 
         def close
           shutdown
@@ -181,7 +186,7 @@ module Google
           # init the keepalive task
           create_keepalive_task!
           # init session stack
-          @sessions_available = @client.batch_create_new_sessions @min
+          @sessions_available = batch_create_new_sessions @min
           @sessions_in_use = {}
         end
 
@@ -209,7 +214,7 @@ module Google
           end
 
           begin
-            session = @client.create_new_session
+            session = create_new_session
           rescue StandardError => e
             @mutex.synchronize do
               @new_sessions_in_process -= 1
@@ -238,6 +243,60 @@ module Google
 
         def future(&)
           Concurrent::Future.new(executor: @thread_pool, &).execute
+        end
+
+        # Creates a new `Spanner::Session`.
+        # @private
+        # @return [::Google::Cloud::Spanner::Session]
+        def create_new_session
+          ensure_service!
+          grpc = @service.create_session(
+            @session_creation_options.database_path,
+            labels:  @session_creation_options.session_labels,
+            database_role: @session_creation_options.session_creator_role
+          )
+
+          Session.from_grpc grpc, @service, query_options: @query_options
+        end
+
+        # Creates a batch of new session objects of size `total`.
+        # Makes multiple RPCs if necessary. Returns empty array if total is 0.
+        # @private
+        # @return [::Array<::Google::Cloud::Spanner::Session>]
+        def batch_create_new_sessions total
+          sessions = []
+          remaining = total
+          while remaining.positive?
+            sessions += batch_create_sessions remaining
+            remaining = total - sessions.count
+          end
+          sessions
+        end
+
+        # Tries to creates a batch of new session objects of size `session_count`.
+        # The response may have fewer sessions than requested in the RPC.
+        # @private
+        # @return [::Array<::Google::Cloud::Spanner::Session>]
+        def batch_create_sessions session_count
+          ensure_service!
+          resp = @service.batch_create_sessions(
+            @session_creation_options.database_path,
+            session_count,
+            labels:  @session_creation_options.session_labels,
+            database_role: @session_creation_options.session_creator_role
+          )
+
+          resp.session.map do |grpc|
+            Session.from_grpc grpc, @service, query_options: @query_options
+          end
+        end
+
+        # Raise an error unless an active connection to the service is available.
+        # @private
+        # @raise [::StandardError]
+        # @return [void]
+        def ensure_service!
+          raise "Must have active connection to service" unless @service
         end
       end
     end

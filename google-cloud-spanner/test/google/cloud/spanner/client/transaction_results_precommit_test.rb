@@ -41,6 +41,10 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
   
   let(:client) { spanner.client instance_id, database_id }
 
+  let(:precommit_token_0) {"hello"}
+  let(:precommit_token_1) {"goodbye"}
+
+
   describe :read do
     let :results_hash1_tx do
       {
@@ -60,6 +64,10 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
             ]
           },
           transaction: tx
+        },
+        precommit_token: {
+          precommit_token: precommit_token_0,
+          seq_num: 0,
         }
       }
     end
@@ -101,29 +109,25 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
           { list_value: { values: [ { string_value: "1"},
                                   { string_value: "2"},
                                   { string_value: "3"} ]}}
-        ]
+        ],
+        precommit_token: {
+          precommit_token: precommit_token_1,
+          seq_num: 1,
+        }
       }
     end
-    let(:results_enum_tx_1) do
-      [
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash1_tx),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash2),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash3),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash4),
-        GRPC::Unavailable,
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash5),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash6)
-      ].to_enum
+    let :partial_results6 do
+      # need this to grab a protobuf form of precommit token for commit mock
+      Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash6)
     end
-
-    let(:results_enum_tx_2) do
+    let(:results_enum) do
       [
         Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash1_tx),
         Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash2),
         Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash3),
         Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash4),
         Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash5),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash6)
+        partial_results6
       ].to_enum
     end
 
@@ -136,13 +140,13 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       )
     end
 
-    it "read retries retriable errors with correct transaction" do
+    it "read updates precommit token on transaction" do
       columns = [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids]
 
       service_mock = Minitest::Mock.new
       service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
       
-      streaming_read_request_1 = [{
+      streaming_read_request = [{
         session: session_grpc.name,
         table: "my-table",
         columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -153,28 +157,15 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
         order_by: nil, lock_hint: nil
       }, default_options]
 
-      # Key part of this test: when request is re-issued for retry, the transaction selector uses the
-      # transaction id that was returned from the original request.
-      streaming_read_request_2 = [{
-        session: session_grpc.name,
-        table: "my-table",
-        columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
-        key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true), 
-        transaction: tx_selector_with_id,
-        index: nil, limit: nil, resume_token: nil, partition_token: nil,
-        request_options: nil,
-        order_by: nil, lock_hint: nil
-      }, default_options]
-
-      service_mock.expect :streaming_read, RaiseableEnumerator.new(results_enum_tx_1), streaming_read_request_1
-      service_mock.expect :streaming_read, RaiseableEnumerator.new(results_enum_tx_2), streaming_read_request_2
+      service_mock.expect :streaming_read, RaiseableEnumerator.new(results_enum), streaming_read_request
 
       commit_request = [{
         session: session_grpc.name, 
         transaction_id: tx_id,
         single_use_transaction: nil,
         mutations: [],
-        request_options: nil, precommit_token: nil
+        request_options: nil,
+        precommit_token: partial_results6.precommit_token
       }, default_options]
 
       service_mock.expect :commit, commit_resp, commit_request
@@ -185,10 +176,12 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       sp_client = client
       
       sp_client.transaction do |tx|
-        res = tx.read("my-table", columns)
-        res.rows.to_a
-        _(tx.transaction_id).must_equal tx_id # the transaction object has been updated with the returned transaction
-        _(res.transaction.id).must_equal tx_id # the results object has been updated with the returned transaction
+        results = tx.read("my-table", columns)
+        _(tx.precommit_token.precommit_token).must_equal precommit_token_0
+        _(tx.precommit_token.seq_num).must_equal 0
+        results.rows.to_a
+        _(tx.precommit_token.precommit_token).must_equal precommit_token_1
+        _(tx.precommit_token.seq_num).must_equal 1
       end
 
       shutdown_client! sp_client
@@ -218,6 +211,10 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
           ]
         },
         transaction: tx
+      },
+      precommit_token: {
+        precommit_token: precommit_token_0,
+        seq_num: 0,
       }
     }
     end
@@ -259,8 +256,17 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
           { list_value: { values: [ { string_value: "1"},
                                   { string_value: "2"},
                                   { string_value: "3"} ]}}
-        ]
+        ],
+        precommit_token: {
+          precommit_token: precommit_token_1,
+          seq_num: 1,
+        }
       }
+    end
+
+    let(:partial_results_5) do
+      # need this to grab a protobuf form of precommit token for commit mock
+       Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_5)
     end
 
     let(:commit_resp) do
@@ -269,26 +275,20 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       )
     end
 
-    it "execute_query retries retriable errors with correct transaction" do
-      resulting_stream_1 = [
+    it "execute_query updates precommit token on transaction" do
+      resulting_stream = [
         Google::Cloud::Spanner::V1::PartialResultSet.new(metadata_result),
         Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_1),
         Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_2),
         Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_3),
         Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_4),
-        GRPC::Unavailable,
-        Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_5)
-      ].to_enum
-      resulting_stream_2 = [
-        Google::Cloud::Spanner::V1::PartialResultSet.new(metadata_result),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_4),
-        Google::Cloud::Spanner::V1::PartialResultSet.new(partial_row_5)
+        partial_results_5
       ].to_enum
 
       service_mock = Minitest::Mock.new
       service_mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
 
-      execute_streaming_sql_request_1 = [{
+      execute_streaming_sql_request = [{
         session: session_grpc.name,
         sql: sql_query,
         transaction: tx_selector_inline_begin,
@@ -298,25 +298,15 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
         query_options: nil, request_options: nil, directed_read_options: nil
       }, default_options]
 
-      execute_streaming_sql_request_2 = [{
-        session: session_grpc.name,
-        sql: sql_query,
-        transaction: tx_selector_with_id,
-        params: nil, param_types: nil,
-        resume_token: nil, partition_token: nil,
-        seqno: 1,
-        query_options: nil, request_options: nil, directed_read_options: nil
-      }, default_options]
-
-      service_mock.expect :execute_streaming_sql, RaiseableEnumerator.new(resulting_stream_1), execute_streaming_sql_request_1
-      service_mock.expect :execute_streaming_sql, RaiseableEnumerator.new(resulting_stream_2), execute_streaming_sql_request_2
+      service_mock.expect :execute_streaming_sql, RaiseableEnumerator.new(resulting_stream), execute_streaming_sql_request
       
       commit_request = [{
         session: session_grpc.name, 
         transaction_id: tx_id,
         single_use_transaction: nil,
         mutations: [],
-        request_options: nil, precommit_token: nil
+        request_options: nil,
+        precommit_token: partial_results_5.precommit_token
       }, default_options]
 
       service_mock.expect :commit, commit_resp, commit_request
@@ -327,10 +317,12 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       sp_client = client
       
       sp_client.transaction do |tx|
-        res = tx.execute_query sql_query
-        res.rows.to_a
-        _(tx.transaction_id).must_equal tx_id # the transaction object has been updated with the returned transaction
-        _(res.transaction.id).must_equal tx_id # the results object has been updated with the returned transaction
+        results = tx.execute_query sql_query
+        _(tx.precommit_token.precommit_token).must_equal precommit_token_0
+        _(tx.precommit_token.seq_num).must_equal 0
+        results.rows.to_a
+                _(tx.precommit_token.precommit_token).must_equal precommit_token_1
+        _(tx.precommit_token.seq_num).must_equal 1
       end
 
       shutdown_client! sp_client

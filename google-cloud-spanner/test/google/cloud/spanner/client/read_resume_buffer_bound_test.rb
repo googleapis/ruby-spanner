@@ -81,7 +81,7 @@ describe Google::Cloud::Spanner::Client, :read, :resume, :buffer_bound, :mock_sp
       ]
     }
   end
-  let(:client) { spanner.client instance_id, database_id, pool: { min: 0 } }
+  let(:client) { spanner.client instance_id, database_id }
   let(:columns) { [:id, :name, :active, :age, :score, :updated_at, :birthday, :avatar, :project_ids] }
 
   it "returns all rows even when there is no resume_token" do
@@ -105,7 +105,7 @@ describe Google::Cloud::Spanner::Client, :read, :resume, :buffer_bound, :mock_sp
     ].to_enum
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, no_tokens_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -149,7 +149,7 @@ describe Google::Cloud::Spanner::Client, :read, :resume, :buffer_bound, :mock_sp
     ].to_enum
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, all_tokens_enum, [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],
@@ -194,7 +194,7 @@ describe Google::Cloud::Spanner::Client, :read, :resume, :buffer_bound, :mock_sp
     ].to_enum
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
     mock.expect :streaming_read, RaiseableEnumerator.new(bounds_with_abort_enum), [{
       session: session_grpc.name, table: "my-table",
       columns: ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"],

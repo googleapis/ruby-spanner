@@ -22,7 +22,7 @@ describe Google::Cloud::Spanner::Snapshot, :read, :mock_spanner do
   let(:session) { Google::Cloud::Spanner::Session.from_grpc session_grpc, spanner.service }
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
-  let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session, nil }
+  let(:snapshot) { Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session }
   let(:tx_selector) { Google::Cloud::Spanner::V1::TransactionSelector.new id: transaction_id }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let :results_hash1 do
@@ -272,7 +272,7 @@ describe Google::Cloud::Spanner::Snapshot, :read, :mock_spanner do
     }, default_options]
 
 
-    snapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session, expect_directed_read_options
+    snapshot = Google::Cloud::Spanner::Snapshot.from_grpc transaction_grpc, session, directed_read_options: expect_directed_read_options
     results = snapshot.read "my-table", ["id", "name", "active", "age", "score", "updated_at", "birthday", "avatar", "project_ids"], keys: 1
 
     mock.verify

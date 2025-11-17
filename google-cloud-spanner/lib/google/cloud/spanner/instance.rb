@@ -81,7 +81,7 @@ module Google
 
         # Creates a new `Spanner::Instance` instance.
         # @param grpc [::Google::Cloud::Spanner::Admin::Instance::V1::Instance]
-        #   The protobuf `V1::Instance` underlying object.
+        #   Underlying `V1::Instance` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
         # @private
         def initialize grpc, service
@@ -965,7 +965,7 @@ module Google
         # Creates a new Instance instance from a
         # `Google::Cloud::Spanner::Admin::Instance::V1::Instance`.
         # @param grpc [::Google::Cloud::Spanner::Admin::Instance::V1::Instance]
-        #   The protobuf `V1::Instance` underlying object.
+        #   Underlying `V1::Instance` object.
         # @param service [::Google::Cloud::Spanner::Service] A `Spanner::Service` reference.
         # @private
         # @return [::Google::Cloud::Spanner::Instance]

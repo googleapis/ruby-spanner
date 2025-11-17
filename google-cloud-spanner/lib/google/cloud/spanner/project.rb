@@ -509,25 +509,9 @@ module Google
         #   Required.
         # @param [String] database_id The unique identifier for the database.
         #   Required.
-        # @param [Hash] pool Settings to control how and when sessions are
-        #   managed by the client. The following settings can be provided:
-        #
-        #   * `:min` (Integer) Minimum number of sessions that the client will
-        #     maintain at any point in time. The default is 10.
-        #   * `:max` (Integer) Maximum number of sessions that the client will
-        #     have at any point in time. The default is 100.
-        #   * `:keepalive` (Numeric) The amount of time a session can be idle
-        #     before an attempt is made to prevent the idle sessions from being
-        #     closed by the Cloud Spanner service. The default is 1800 (30
-        #     minutes).
-        #   * `:fail` (true/false) When `true` the client raises a
-        #     {SessionLimitError} when the client has allocated the `max` number
-        #     of sessions. When `false` the client blocks until a session
-        #     becomes available. The default is `true`.
-        #   * `:threads` (Integer) The number of threads in the thread pool. The
-        #     default is twice the number of available CPUs.
-        #   * `:write_ratio` (Float) Deprecated. This field is no longer needed
-        #     and will be removed in a future release.
+        # @param [Hash] pool Optional. Defaults to `{}`. Deprecated.
+        #   @deprecated This parameter is non-functional since the multiplexed SessionCache does not require
+        #   pool options.
         # @param [Hash] labels The labels to be applied to all sessions
         #   created by the client. Cloud Labels are a flexible and lightweight
         #   mechanism for organizing cloud resources into groups that reflect a
@@ -567,7 +551,7 @@ module Google
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
-        # @return [Client] The newly created client.
+        # @return [::Google::Cloud::Spanner::Client] The newly created client.
         #
         # @example
         #   require "google/cloud/spanner"
@@ -594,9 +578,11 @@ module Google
           else
             query_options = query_options.merge @query_options unless @query_options.nil?
           end
+
+          _pool = pool # unused. Here only to avoid having to disable Rubocop's Lint/UnusedMethodArgument
+
           Client.new self, instance_id, database_id,
                      session_labels: labels,
-                     pool_opts: valid_session_pool_options(pool),
                      query_options: query_options,
                      database_role: database_role,
                      directed_read_options: directed_read_options
@@ -649,7 +635,7 @@ module Google
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
-        # @return [Client] The newly created client.
+        # @return [::Google::Cloud::Spanner::BatchClient] The newly created client.
         #
         # @example
         #   require "google/cloud/spanner"

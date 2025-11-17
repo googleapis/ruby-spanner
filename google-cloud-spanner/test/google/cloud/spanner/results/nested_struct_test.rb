@@ -38,7 +38,7 @@ describe Google::Cloud::Spanner::Results, :nested_struct, :mock_spanner do
   let(:results_enum) do
     [Google::Cloud::Spanner::V1::PartialResultSet.new(results_hash)].to_enum
   end
-  let(:results) { Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request&.name }
+  let(:results) { Google::Cloud::Spanner::Results.from_partial_result_sets results_enum, spanner.service, default_session_request.name }
 
   it "handles nested structs" do
     _(results).must_be_kind_of Google::Cloud::Spanner::Results

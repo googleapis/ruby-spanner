@@ -34,6 +34,8 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
   let(:timestamp) { Time.parse "2017-01-01 20:04:05.06 -0700" }
   let(:date) { Date.parse "2017-01-02" }
   let(:file) { StringIO.new "contents" }
+  let(:precommit_token_0) { "hello" }
+  let(:precommit_token_1) { "goodbye" }
 
   it "can execute a single DML query" do
     mock = Minitest::Mock.new
@@ -49,6 +51,9 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
     end
 
     mock.verify
+
+    _(transaction.transaction_id).must_equal transaction_id
+    _(transaction.precommit_token.precommit_token).must_equal precommit_token_1
 
     _(row_counts.count).must_equal 1
     _(row_counts.first).must_equal 1
@@ -217,6 +222,22 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
       sql: sql, params: params, param_types: param_types
   end
 
+  def batch_result_sets_precommit_token index, is_last
+    if is_last
+     Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken.new(
+        precommit_token: precommit_token_1,
+        seq_num: 1
+      )
+    elsif index == 0
+      Google::Cloud::Spanner::V1::MultiplexedSessionPrecommitToken.new(
+        precommit_token: precommit_token_0,
+        seq_num: 0
+      )
+    else
+      nil
+    end
+  end
+
   def batch_result_sets_metadata_grpc begin_transaction
     if begin_transaction
       Google::Cloud::Spanner::V1::ResultSetMetadata.new(
@@ -235,7 +256,8 @@ describe Google::Cloud::Spanner::Transaction, :batch_update, :mock_spanner do
         metadata: batch_result_sets_metadata_grpc(index == 0), # include transaction in first result set
         stats: Google::Cloud::Spanner::V1::ResultSetStats.new(
           row_count_exact: row_count_exact
-        )
+        ),
+        precommit_token: batch_result_sets_precommit_token(index, index == count - 1)
       )
     end
   end
