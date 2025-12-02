@@ -1,5 +1,11 @@
 # Release History
 
+### 2.31.0 (2025-12-02)
+
+#### Features
+
+* Support isolation level in Transaction Options ([#206](https://github.com/googleapis/ruby-spanner/issues/206)) 
+
 ### 2.30.0 (2025-11-17)
 
 #### Features
