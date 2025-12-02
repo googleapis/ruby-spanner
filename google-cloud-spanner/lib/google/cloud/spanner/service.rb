@@ -524,6 +524,8 @@ module Google
         # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
         #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
+        # @param isolation_level [::Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] Optional.
+        #   The isolation level for the transaction.
         # @param commit_options [::Hash, nil]  Optional. A hash of commit options.
         #   Example option: `:return_commit_stats`.
         # @param request_options [::Hash, nil] Optional. Common request options.
@@ -537,14 +539,15 @@ module Google
         # @return [::Google::Cloud::Spanner::V1::CommitResponse]
         def commit session_name, mutations = [],
                    transaction_id: nil, exclude_txn_from_change_streams: false,
-                   commit_options: nil, request_options: nil, call_options: nil,
-                   precommit_token: nil
+                   isolation_level: nil, commit_options: nil, request_options: nil,
+                   call_options: nil, precommit_token: nil
           route_to_leader = LARHeaders.commit
           tx_opts = nil
           if transaction_id.nil?
             tx_opts = V1::TransactionOptions.new(
               read_write: V1::TransactionOptions::ReadWrite.new,
-              exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+              isolation_level: isolation_level
             )
           end
           opts = default_options session_name: session_name,
