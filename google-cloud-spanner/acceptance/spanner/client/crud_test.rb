@@ -240,5 +240,16 @@ describe "Spanner Client", :crud, :spanner do
                                      request_options: { tag: "Tag-CRUD-5" }
       _(timestamp).wont_be :nil?
     end
+
+    it "commits with isolation_level SERIALIZABLE for #{dialect}" do
+      timestamp = db[dialect].commit isolation_level: :SERIALIZABLE do |c|
+        c.insert "accounts", @default_rows[dialect][0]
+      end
+      _(timestamp).wont_be :nil?
+
+      results = db[dialect].read "accounts", ["account_id"], single_use: { timestamp: timestamp }
+      _(results.rows.count).must_equal 1
+      _(results.timestamp).wont_be :nil?
+    end
   end
 end
