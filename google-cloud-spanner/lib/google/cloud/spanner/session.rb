@@ -651,9 +651,9 @@ module Google
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
         #   The read lock mode for the transaction.
         #   Can be one of the following:
-        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         #
@@ -901,9 +901,9 @@ module Google
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
         #   The read lock mode for the transaction.
         #   Can be one of the following:
-        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         #
@@ -1035,9 +1035,9 @@ module Google
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
         #   The read lock mode for the transaction.
         #   Can be one of the following:
-        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         #
@@ -1168,9 +1168,9 @@ module Google
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
         #   The read lock mode for the transaction.
         #   Can be one of the following:
-        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         #
@@ -1304,9 +1304,9 @@ module Google
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
         #   The read lock mode for the transaction.
         #   Can be one of the following:
-        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         #
@@ -1418,9 +1418,9 @@ module Google
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
         #   The read lock mode for the transaction.
         #   Can be one of the following:
-        #   * `:READ_LOCK_MODE_UNSPECIFIED` (0): The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` (1): The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` (2): The optimistic lock mode, where locks for reads are not acquired on read
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
         #
