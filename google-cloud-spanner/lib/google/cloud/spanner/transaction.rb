@@ -1255,8 +1255,10 @@ module Google
         #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil, read_lock_mode: nil
-          new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id, read_lock_mode: read_lock_mode
+        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil,
+                           read_lock_mode: nil
+          new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id,
+read_lock_mode: read_lock_mode
         end
 
         ##
@@ -1283,7 +1285,8 @@ module Google
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
         #   object, or `nil` if a transaction already exists.
-        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil, read_lock_mode: nil
+        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil,
+                                    read_lock_mode: nil
           # If a read-write transaction on a multiplexed session commit mutations
           # without performing any reads or queries, one of the mutations from the mutation set
           # must be sent as a mutation key for `BeginTransaction`.
@@ -1359,8 +1362,8 @@ module Google
                            multiplexed_session_previous_transaction_id: @previous_transaction_id
                          )
                        end
-          
-          if !read_lock_mode.nil?
+
+          unless read_lock_mode.nil?
             read_write.read_lock_mode = read_lock_mode
           end
 

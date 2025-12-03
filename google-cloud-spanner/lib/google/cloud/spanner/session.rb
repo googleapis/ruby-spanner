@@ -1508,7 +1508,8 @@ module Google
         #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction] The new *empty-wrapper* transaction object.
-        def create_empty_transaction exclude_txn_from_change_streams: false, previous_transaction_id: nil, read_lock_mode: nil
+        def create_empty_transaction exclude_txn_from_change_streams: false, previous_transaction_id: nil,
+                                     read_lock_mode: nil
           Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams,
 previous_transaction_id: previous_transaction_id, read_lock_mode: read_lock_mode
         end

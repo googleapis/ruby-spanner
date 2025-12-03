@@ -644,7 +644,6 @@ module Google
                               mutation_key: nil,
                               previous_transaction_id: nil,
                               read_lock_mode: nil
-
           read_write = if previous_transaction_id.nil?
                          V1::TransactionOptions::ReadWrite.new
                        else
@@ -652,8 +651,8 @@ module Google
                            multiplexed_session_previous_transaction_id: previous_transaction_id
                          )
                        end
-        
-          if !read_lock_mode.nil?
+
+          unless read_lock_mode.nil?
             read_write.read_lock_mode = read_lock_mode
           end
 
