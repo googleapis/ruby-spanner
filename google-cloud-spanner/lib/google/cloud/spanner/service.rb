@@ -654,7 +654,8 @@ module Google
                        end
         
           if !read_lock_mode.nil?
-            read_write.read_lock_mode: read_lock_mode
+            read_write.read_lock_mode = read_lock_mode
+          end
 
           tx_opts = V1::TransactionOptions.new(
             read_write: read_write,

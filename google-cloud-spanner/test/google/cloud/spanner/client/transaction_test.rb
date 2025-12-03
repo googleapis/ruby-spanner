@@ -619,10 +619,20 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     ]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name,
+        options: tx_options_with_read_lock_mode, 
+        request_options: nil,
+        mutation_key: mutations[0]
+      }, default_options]
+
     mock.expect :commit, commit_resp, [{
-      session: session_grpc.name, mutations: mutations, transaction_id: nil,
-      single_use_transaction: tx_options_with_read_lock_mode, request_options: nil
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: nil,
+      request_options: nil
     }, default_options]
     spanner.service.mocked_service = mock
 
@@ -647,10 +657,20 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     ]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name,
+        options: tx_options_with_read_lock_mode, 
+        request_options: nil,
+        mutation_key: mutations[0]
+      }, default_options]
+
     mock.expect :commit, commit_resp, [{
-      session: session_grpc.name, mutations: mutations, transaction_id: nil,
-      single_use_transaction: tx_options_with_read_lock_mode, request_options: nil
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: nil,
+      request_options: nil
     }, default_options]
     spanner.service.mocked_service = mock
 

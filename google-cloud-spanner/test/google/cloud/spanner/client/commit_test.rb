@@ -495,8 +495,8 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     ]
 
     mock = Minitest::Mock.new
-    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: nil}, default_options]
-    mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_with_read_lock_mode, request_options: nil }, default_options]
+    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
+    mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_with_read_lock_mode, request_options: nil, precommit_token: nil }, default_options]
     spanner.service.mocked_service = mock
 
     timestamp = client.delete "users", [], read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC

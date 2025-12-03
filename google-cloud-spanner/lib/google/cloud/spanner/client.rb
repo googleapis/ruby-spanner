@@ -1931,7 +1931,7 @@ module Google
               commit_options: commit_options,
               request_options: request_options,
               call_options: call_options,
-              read_lock_mode: read_lock_mode
+              read_lock_mode: read_lock_mode,
               &block
             )
           end

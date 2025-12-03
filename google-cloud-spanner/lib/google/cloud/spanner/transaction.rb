@@ -1361,7 +1361,8 @@ module Google
                        end
           
           if !read_lock_mode.nil?
-            read_write.read_lock_mode: read_lock_mode
+            read_write.read_lock_mode = read_lock_mode
+          end
 
           V1::TransactionSelector.new(
             begin: V1::TransactionOptions.new(

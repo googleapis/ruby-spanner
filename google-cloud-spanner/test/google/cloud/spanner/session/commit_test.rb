@@ -328,7 +328,7 @@ describe Google::Cloud::Spanner::Session, :read, :mock_spanner do
     ]
 
     mock = Minitest::Mock.new
-    mock.expect :commit, commit_resp, [{ session: session.path, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_with_read_lock_mode, request_options: nil }, default_options]
+    mock.expect :commit, commit_resp, [{ session: session.path, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_with_read_lock_mode, request_options: nil, precommit_token: nil }, default_options]
     session.service.mocked_service = mock
 
     timestamp = session.delete "users", read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC
