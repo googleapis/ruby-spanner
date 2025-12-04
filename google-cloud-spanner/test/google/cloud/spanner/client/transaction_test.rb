@@ -48,6 +48,11 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
       exclude_txn_from_change_streams: true
     )
   end
+  let(:tx_options_with_read_lock_mode) do
+    Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(
+      read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC
+    )
+  end
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let :results_hash do
     {
@@ -596,6 +601,81 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
 
     timestamp = client.transaction(exclude_txn_from_change_streams: true) do |tx|
       tx.delete "users"
+    end
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "deletes while setting read lock mode" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name,
+        options: tx_options_with_read_lock_mode, 
+        request_options: nil,
+        mutation_key: mutations[0]
+      }, default_options]
+
+    mock.expect :commit, commit_resp, [{
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: nil,
+      request_options: nil
+    }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.transaction(read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC) do |tx|
+      tx.delete "users"
+    end
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "updates while setting read lock mode" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        update: Google::Cloud::Spanner::V1::Mutation::Write.new(
+          table: "users", columns: %w(id name active),
+          values: [Google::Cloud::Spanner::Convert.object_to_grpc_value([1, "Charlie", false]).list_value]
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{ database: database_path(instance_id, database_id), session: default_session_request }, default_options]
+    mock.expect :begin_transaction, transaction_grpc, [{
+        session: session_grpc.name,
+        options: tx_options_with_read_lock_mode, 
+        request_options: nil,
+        mutation_key: mutations[0]
+      }, default_options]
+
+    mock.expect :commit, commit_resp, [{
+      session: session_grpc.name, 
+      mutations: mutations, 
+      transaction_id: transaction_id, 
+      single_use_transaction: nil, precommit_token: nil,
+      request_options: nil
+    }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.transaction(read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC) do |tx|
+      tx.update "users", [{ id: 1, name: "Charlie", active: false }]
     end
     _(timestamp).must_equal commit_time
 

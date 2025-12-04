@@ -42,6 +42,11 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
                                                        exclude_txn_from_change_streams: true
   }
+  let(:tx_opts_with_read_lock_mode) {
+    Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(
+      read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC
+    )
+  }
   let(:default_options) { ::Gapic::CallOptions.new metadata: { "google-cloud-resource-prefix" => database_path(instance_id, database_id) } }
   let(:client) { spanner.client instance_id, database_id }
   let(:mutations) {
@@ -473,6 +478,28 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     spanner.service.mocked_service = mock
 
     timestamp = client.delete "users", [], exclude_txn_from_change_streams: true
+    _(timestamp).must_equal commit_time
+
+    shutdown_client! client
+
+    mock.verify
+  end
+
+  it "deletes all rows directly while setting read lock mode" do
+    mutations = [
+      Google::Cloud::Spanner::V1::Mutation.new(
+        delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+          table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+        )
+      )
+    ]
+
+    mock = Minitest::Mock.new
+    mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
+    mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_with_read_lock_mode, request_options: nil, precommit_token: nil }, default_options]
+    spanner.service.mocked_service = mock
+
+    timestamp = client.delete "users", [], read_lock_mode: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC
     _(timestamp).must_equal commit_time
 
     shutdown_client! client
