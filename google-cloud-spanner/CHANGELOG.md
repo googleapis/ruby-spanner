@@ -1,5 +1,11 @@
 # Release History
 
+### 2.32.0 (2025-12-04)
+
+#### Features
+
+* Add support for ReadLockMode ([#171](https://github.com/googleapis/ruby-spanner/issues/171)) 
+
 ### 2.31.0 (2025-12-02)
 
 #### Features
