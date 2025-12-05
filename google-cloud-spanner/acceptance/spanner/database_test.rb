@@ -64,6 +64,18 @@ describe "Spanner Databases", :spanner do
     _(first_database).must_be_kind_of Google::Cloud::Spanner::Database
   end
 
+  it "lists sessions" do
+    database = spanner.database instance_id, $spanner_database_id
+    _(database).wont_be :nil?
+
+    sessions = database.sessions
+    _(sessions).must_be_kind_of Google::Cloud::Spanner::Session::List
+    _(sessions).wont_be :empty?
+    sessions.each do |session|
+      _(session).must_be_kind_of Google::Cloud::Spanner::Session
+    end
+  end
+
   it "creates database with pitr retention period" do
     skip if emulator_enabled?
 
