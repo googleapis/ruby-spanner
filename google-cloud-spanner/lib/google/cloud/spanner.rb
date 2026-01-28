@@ -107,7 +107,7 @@ module Google
         credentials   ||= keyfile
         lib_name      ||= configure.lib_name
         lib_version   ||= configure.lib_version
-        interceptors  = [RequestIdInterceptor.new(process_id: process_id)]
+        interceptors = [RequestIdInterceptor.new(process_id: process_id)]
         universe_domain ||= configure.universe_domain
 
         if emulator_host

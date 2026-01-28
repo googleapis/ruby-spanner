@@ -28,7 +28,7 @@ module Google
         @channel_mutex = Mutex.new
         @request_id_counter = 0
         @request_id_mutex = Mutex.new
-        @process_id = nil;
+        @process_id = nil
         @process_id_mutex = Mutex.new
 
         def self.next_client_id
@@ -46,25 +46,26 @@ module Google
         def self.get_process_id process_id = nil
           @process_id_mutex.synchronize do
             if process_id.nil? || !@process_id.nil?
-              return @process_id ||= SecureRandom.hex(8)
+              return @process_id ||= (SecureRandom.hex 8)
             end
 
             case process_id
             when Integer
               if process_id >= 0 && process_id.bit_length <= 64
-                return process_id.to_s(16).rjust(16,'0')
+                return process_id.to_s(16).rjust(16, "0")
               end
             when String
-              if (process_id =~ /\A[0-9a-fA-F]{16}\z/)
+              if process_id =~ /\A[0-9a-fA-F]{16}\z/
                 return process_id
               end
             end
 
-            raise ArgumentError,'process_id must be a 64-bit integer or 16-character hex string'
+            raise ArgumentError, "process_id must be a 64-bit integer or 16-character hex string"
           end
         end
 
         def initialize process_id: nil
+          super
           @version = 1
           @process_id = self.class.get_process_id process_id
           @client_id = self.class.next_client_id
@@ -73,39 +74,43 @@ module Google
           @request_mutex = Mutex.new
         end
 
-        def request_response method:, request:, call:, metadata:
-          update_metadata_for_call call, metadata do
-            yield
-          end
+        def request_response method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
         end
 
-        def client_streamer method:, request:, call:, metadata:
-          update_metadata_for_call call, metadata do
-            yield
-          end
+        def client_streamer method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
         end
 
-        def server_streamer method:, request:, call:, metadata:
-          update_metadata_for_call call, metadata do
-            yield
-          end
+        def server_streamer method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
         end
 
-        def bidi_streamer method:, request:, call:, metadata:
-          update_metadata_for_call call, metadata do
-            yield
-          end
+        def bidi_streamer method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
         end
 
         private
 
-        def validate_process_id process_id
-          value.is_a?(Integer) && value >=0 && value.bit_length <= 64
-        end
-
-        def update_metadata_for_call call, metadata
+        def update_metadata_for_call metadata
           request_id = nil
-          attempt = 1;
+          attempt = 1
 
           if metadata.include? :"x-goog-spanner-request-id"
             request_id, attempt = get_header_info metadata[:"x-goog-spanner-request-id"]
@@ -116,11 +121,10 @@ module Google
           formatted_request_id = format_request_id request_id, attempt
           metadata[:"x-goog-spanner-request-id"] = formatted_request_id
 
-          response = yield
-          response
-        rescue => ex
-          ex.instance_variable_set :@spanner_header_id, formatted_request_id
-          raise ex
+          yield
+        rescue StandardError => e
+          e.instance_variable_set :@spanner_header_id, formatted_request_id
+          raise e
         end
 
         def format_request_id request_id, attempt
@@ -128,8 +132,8 @@ module Google
         end
 
         def get_header_info header
-          version, process_id, client_id, channel_id, request_id, attempt = header.split('.')
-          [request_id, attempt.to_i + 1];
+          _, _, _, _, request_id, attempt = header.split "."
+          [request_id, attempt.to_i + 1]
         end
       end
     end
