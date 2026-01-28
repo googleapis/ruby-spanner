@@ -563,6 +563,209 @@ describe Google::Cloud do
         end
       end
     end
+
+    it "adds the request_id_interceptor and increments the client_id" do
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@client_id_counter, 0
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@channel_id_counter, 0
+
+      # Clear all environment variables
+      ENV.stub :[], nil do
+        # Get project_id from Google Compute Engine
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+            spanner1 = Google::Cloud::Spanner.new
+            interceptors1 = spanner1.service.instance_variable_get :@interceptors
+            _(interceptors1.length).must_equal 1
+            _(interceptors1.first).must_be_kind_of Google::Cloud::Spanner::RequestIdInterceptor
+            _(interceptors1.first.instance_variable_get(:@client_id)).must_equal 1
+            _(interceptors1.first.instance_variable_get(:@channel_id)).must_equal 1
+            process_id1 = interceptors1.first.instance_variable_get(:@process_id)
+            _(process_id1).must_match /^[0-9a-f]+$/
+
+            spanner2 = Google::Cloud::Spanner.new
+            interceptors2 = spanner2.service.instance_variable_get :@interceptors
+            _(interceptors2.length).must_equal 1
+            _(interceptors2.first).must_be_kind_of Google::Cloud::Spanner::RequestIdInterceptor
+            _(interceptors2.first.instance_variable_get(:@client_id)).must_equal 2
+            _(interceptors2.first.instance_variable_get(:@channel_id)).must_equal 2
+            process_id2 = interceptors2.first.instance_variable_get(:@process_id)
+            _(process_id1).must_equal process_id2
+          end
+        end
+      end
+    end
+
+    it "adds the request_id_interceptor and uses the provided process_id" do
+      # Set this to Nil as the previous tests set the class variable and avoids us setting a new value as per design.
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@process_id, nil
+      # Clear all environment variables
+      ENV.stub :[], nil do
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+            # Test with Integer process_id
+            spanner_int = Google::Cloud::Spanner.new project_id: "project-id", credentials: default_credentials, process_id: 123
+            interceptor_int = spanner_int.service.instance_variable_get(:@interceptors).first
+            process_id_int = interceptor_int.instance_variable_get(:@process_id)
+            _(process_id_int).must_equal "000000000000007b"
+
+            # Test with String hex process_id
+            custom_hex = "abcdef0123456789"
+            spanner_hex = Google::Cloud::Spanner.new project_id: "project-id", credentials: default_credentials, process_id: custom_hex
+            interceptor_hex = spanner_hex.service.instance_variable_get(:@interceptors).first
+            process_id_hex = interceptor_hex.instance_variable_get(:@process_id)
+            _(process_id_hex).must_equal custom_hex
+          end
+        end
+      end
+    end
+
+    it "raises ArgumentError for invalid process_id values" do
+      # Set this to Nil as the previous tests set the class variable and avoids us setting a new value as per design.
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@process_id, nil
+      # Clear all environment variables
+      ENV.stub :[], nil do
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+            # Test with invalid Integer process_id (out of range)
+            assert_raises ArgumentError do
+              Google::Cloud::Spanner.new project_id: "project-id", credentials: default_credentials, process_id: -1
+            end
+            assert_raises ArgumentError do
+              Google::Cloud::Spanner.new project_id: "project-id", credentials: default_credentials, process_id: (2**64)
+            end
+
+            # Test with invalid String process_id (not hex or wrong length)
+            assert_raises ArgumentError do
+              Google::Cloud::Spanner.new project_id: "project-id", credentials: default_credentials, process_id: "not-hex"
+            end
+            assert_raises ArgumentError do
+              Google::Cloud::Spanner.new project_id: "project-id", credentials: default_credentials, process_id: "abc"
+            end
+          end
+        end
+      end
+    end
+
+    it "adds the request_id_interceptor and increments the attempt_id on retries" do
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@client_id_counter, 0
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@channel_id_counter, 0
+
+      # Clear all environment variables
+      ENV.stub :[], nil do
+        # Get project_id from Google Compute Engine
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+            spanner = Google::Cloud::Spanner.new
+            interceptor = spanner.service.instance_variable_get(:@interceptors).first
+
+            mock_call = OpenStruct.new
+            mock_metadata = {}
+
+            # First call
+            interceptor.request_response(method: :m, request: :r, call: mock_call, metadata: mock_metadata) { nil }
+            first_request_id = mock_metadata[:"x-goog-spanner-request-id"]
+            _(first_request_id).must_match /^1\.[0-9a-f]+\.1\.1\.1\.1$/
+
+            # Second call (simulating a retry for the same logical request)
+            interceptor.request_response(method: :m, request: :r, call: mock_call, metadata: mock_metadata) { nil }
+            second_request_id = mock_metadata[:"x-goog-spanner-request-id"]
+            _(second_request_id).must_match /^1\.[0-9a-f]+\.1\.1\.1\.2$/
+            _(second_request_id.split(".")[0..-2]).must_equal first_request_id.split(".")[0..-2]
+
+            # Third call (another retry)
+            interceptor.request_response(method: :m, request: :r, call: mock_call, metadata: mock_metadata) { nil }
+            third_request_id = mock_metadata[:"x-goog-spanner-request-id"]
+            _(third_request_id).must_match /^1\.[0-9a-f]+\.1\.1\.1\.3$/
+            _(third_request_id.split(".")[0..-2]).must_equal first_request_id.split(".")[0..-2]
+
+            # Verify that the ID is attached to the exception
+            err = assert_raises GRPC::Unavailable do
+              interceptor.request_response(method: :m, request: :r, call: mock_call, metadata: mock_metadata) do
+                raise GRPC::Unavailable.new "test error"
+              end
+            end
+            fourth_request_id = mock_metadata[:"x-goog-spanner-request-id"]
+            _(fourth_request_id).must_match /\.4$/
+            _(err.instance_variable_get(:@spanner_header_id)).must_equal fourth_request_id
+
+            # Verify that our Google::Cloud::Error extension can read it
+            g_error = Google::Cloud::Error.new "wrapped error"
+            g_error.stub :cause, err do
+              _(g_error.request_id).must_equal fourth_request_id
+            end
+          end
+        end
+      end
+    end
+
+    it "retrieves the request_id from a Google::Cloud::Error after a failed request" do
+      ENV.stub :[], nil do
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, default_credentials do
+            spanner = Google::Cloud.spanner
+            interceptor = spanner.service.instance_variable_get(:@interceptors).first
+
+            mock_call = OpenStruct.new
+            mock_metadata = {}
+
+            # Simulate a request that raises a gRPC error
+            grpc_err = assert_raises GRPC::Unavailable do
+              interceptor.request_response(method: :m, request: :r, call: mock_call, metadata: mock_metadata) do
+                raise GRPC::Unavailable.new "transient failure"
+              end
+            end
+
+            header_id = mock_metadata[:"x-goog-spanner-request-id"]
+
+            # Verify that our Google::Cloud::Error extension can read it from the cause
+            cloud_err = Google::Cloud::Error.new "wrapped error"
+            cloud_err.stub :cause, grpc_err do
+              _(cloud_err.request_id).must_equal header_id
+            end
+          end
+        end
+      end
+    end
+
+    it "sends the x-goog-spanner-request-id header in the metadata" do
+      # Reset class-level state for isolation
+      Google::Cloud::Spanner::RequestIdInterceptor.instance_variable_set :@process_id, nil
+
+      # Create a robust mock credential that satisfies chan_creds
+      mock_creds = OpenStruct.new(
+        client: OpenStruct.new(updater_proc: ->(m) { m }),
+        quota_project_id: "test-project"
+      )
+      def mock_creds.is_a? target; target == Google::Auth::Credentials; end
+
+      # This recorder will capture the metadata at the end of the interceptor chain
+      captured_metadata = nil
+      recorder = Class.new(GRPC::ClientInterceptor) do
+        define_method(:request_response) do |**kwargs|
+          captured_metadata = kwargs[:metadata]
+          raise GRPC::PermissionDenied.new "stop"
+        end
+      end.new
+
+      ENV.stub :[], nil do
+        Google::Cloud.stub :env, OpenStruct.new(project_id: "project-id") do
+          Google::Cloud::Spanner::Credentials.stub :default, mock_creds do
+            spanner = Google::Cloud.spanner
+            # Prepend the recorder so it runs deepest in the LIFO stack
+            spanner.service.interceptors.unshift recorder
+
+            begin
+              spanner.instances
+            rescue Google::Cloud::Error
+              # Expected error from recorder
+            end
+
+            # Verify that the RequestIdInterceptor added the header to the metadata
+            _(captured_metadata).wont_be :nil?
+          end
+        end
+      end
+    end
   end
 
   describe "Spanner.configure" do

@@ -36,6 +36,7 @@ module Google
         attr_accessor :lib_name
         attr_accessor :lib_version
         attr_accessor :quota_project
+        attr_accessor :interceptors
         attr_accessor :enable_leader_aware_routing
 
         attr_reader :universe_domain
@@ -51,13 +52,15 @@ module Google
         # @param timeout [::Numeric, nil] Optional. Timeout for Gapic client.
         # @param lib_name [::String, nil] Optional. Library name for headers.
         # @param lib_version [::String, nil] Optional. Library version for headers.
+        # @param interceptors [::Array<GRPC::ClientInterceptor>, nil] Optional.
+        #   An array of interceptors that are run before calls are executed.
         # @param enable_leader_aware_routing [::Boolean, nil] Optional. Whether Leader
         #   Aware Routing should be enabled.
         # @param universe_domain [::String, nil] Optional. The domain of the universe to connect to.
         # @private
         def initialize project, credentials, quota_project: nil,
                        host: nil, timeout: nil, lib_name: nil, lib_version: nil,
-                       enable_leader_aware_routing: nil, universe_domain: nil
+                       interceptors: nil, enable_leader_aware_routing: nil, universe_domain: nil
           @project = project
           @credentials = credentials
           @quota_project = quota_project || (credentials.quota_project_id if credentials.respond_to? :quota_project_id)
@@ -73,6 +76,7 @@ module Google
           @timeout = timeout
           @lib_name = lib_name
           @lib_version = lib_version
+          @interceptors = interceptors
           @enable_leader_aware_routing = enable_leader_aware_routing
         end
 
@@ -106,6 +110,7 @@ module Google
               config.lib_name = lib_name_with_prefix
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{@project}" }
+              config.interceptors = @interceptors if @interceptors
             end
         end
         attr_accessor :mocked_service
@@ -122,6 +127,7 @@ module Google
               config.lib_name = lib_name_with_prefix
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{@project}" }
+              config.interceptors = @interceptors if @interceptors
             end
         end
         attr_accessor :mocked_instances
@@ -138,6 +144,7 @@ module Google
               config.lib_name = lib_name_with_prefix
               config.lib_version = Google::Cloud::Spanner::VERSION
               config.metadata = { "google-cloud-resource-prefix" => "projects/#{@project}" }
+              config.interceptors = @interceptors if @interceptors
             end
         end
         attr_accessor :mocked_databases

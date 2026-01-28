@@ -15,6 +15,8 @@
 
 require "google-cloud-spanner"
 require "google/cloud/spanner/project"
+require "google/cloud/spanner/spanner_error"
+require "google/cloud/spanner/request_id_interceptor"
 require "google/cloud/config"
 require "google/cloud/env"
 
@@ -96,7 +98,7 @@ module Google
       def self.new project_id: nil, credentials: nil, scope: nil, timeout: nil,
                    endpoint: nil, project: nil, keyfile: nil,
                    emulator_host: nil, lib_name: nil, lib_version: nil,
-                   enable_leader_aware_routing: true, universe_domain: nil
+                   enable_leader_aware_routing: true, universe_domain: nil, process_id: nil
         project_id    ||= project || default_project_id
         scope         ||= configure.scope
         timeout       ||= configure.timeout
@@ -105,6 +107,7 @@ module Google
         credentials   ||= keyfile
         lib_name      ||= configure.lib_name
         lib_version   ||= configure.lib_version
+        interceptors  = [RequestIdInterceptor.new(process_id: process_id)]
         universe_domain ||= configure.universe_domain
 
         if emulator_host
@@ -127,7 +130,8 @@ module Google
           Spanner::Service.new(
             project_id, credentials, quota_project: configure.quota_project,
             host: endpoint, timeout: timeout, lib_name: lib_name,
-            lib_version: lib_version, universe_domain: universe_domain,
+            lib_version: lib_version, interceptors: interceptors,
+            universe_domain: universe_domain,
             enable_leader_aware_routing: enable_leader_aware_routing
           ),
           query_options: configure.query_options
