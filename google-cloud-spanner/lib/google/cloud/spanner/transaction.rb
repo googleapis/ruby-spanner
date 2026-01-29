@@ -111,6 +111,9 @@ module Google
         # @return [::String, nil]
         attr_reader :previous_transaction_id
 
+        # @private Whether to add a read lock mode on the transaction.
+        attr_accessor :read_lock_mode
+
         # Creates a new `Spanner::Transaction` instance from a `V1::Transaction` object.
         # @param grpc [::Google::Cloud::Spanner::V1::Transaction] Underlying `V1::Transaction` object.
         # @param session [::Google::Cloud::Spanner::Session] The session this transaction is running in.
@@ -123,10 +126,11 @@ module Google
         #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil
+        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil, read_lock_mode: nil
           @grpc = grpc
           @session = session
           @exclude_txn_from_change_streams = exclude_txn_from_change_streams
+          @read_lock_mode = read_lock_mode
 
           # throwing away empty strings for simplicity
           unless previous_transaction_id.nil? || previous_transaction_id.empty?
@@ -136,6 +140,7 @@ module Google
           @commit = Commit.new
           @seqno = 0
           @exclude_txn_from_change_streams = false
+          @read_lock_mode = nil
 
           # Mutex to enfore thread safety for transaction creation and query executions.
           #
@@ -1250,8 +1255,10 @@ module Google
         #   of a new ReadWrite transaction when retry is attempted.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil
-          new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id
+        def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil,
+                           read_lock_mode: nil
+          new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id,
+read_lock_mode: read_lock_mode
         end
 
         ##
@@ -1278,7 +1285,8 @@ module Google
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
         #   object, or `nil` if a transaction already exists.
-        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil
+        def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil,
+                                    read_lock_mode: nil
           # If a read-write transaction on a multiplexed session commit mutations
           # without performing any reads or queries, one of the mutations from the mutation set
           # must be sent as a mutation key for `BeginTransaction`.
@@ -1299,7 +1307,8 @@ module Google
               call_options: call_options,
               route_to_leader: route_to_leader,
               mutation_key: mutation_key,
-              previous_transaction_id: previous_transaction_id
+              previous_transaction_id: previous_transaction_id,
+              read_lock_mode: read_lock_mode
             )
           end
         end
@@ -1343,7 +1352,7 @@ module Google
         #   or write transactions from being tracked in change streams.
         # @private
         # @return [::Google::Cloud::Spanner::V1::TransactionSelector]
-        def tx_selector exclude_txn_from_change_streams: false
+        def tx_selector exclude_txn_from_change_streams: false, read_lock_mode: nil
           return V1::TransactionSelector.new id: transaction_id if existing_transaction?
 
           read_write = if @previous_transaction_id.nil?
@@ -1353,6 +1362,10 @@ module Google
                            multiplexed_session_previous_transaction_id: @previous_transaction_id
                          )
                        end
+
+          unless read_lock_mode.nil?
+            read_write.read_lock_mode = read_lock_mode
+          end
 
           V1::TransactionSelector.new(
             begin: V1::TransactionOptions.new(

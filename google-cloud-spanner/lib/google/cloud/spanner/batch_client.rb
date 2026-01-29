@@ -334,6 +334,7 @@ module Google
         #   * `:INT64`
         #   * `:STRING`
         #   * `:TIMESTAMP`
+        #   * `:UUID`
         #   * `Array` - Lists are specified by providing the type code in an
         #     array. For example, an array of integers are specified as
         #     `[:INT64]`.

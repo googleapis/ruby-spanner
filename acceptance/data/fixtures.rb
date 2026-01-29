@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+require "securerandom"
 
 module Acceptance
   module Fixtures
@@ -49,6 +50,7 @@ module Acceptance
               byte BYTES(MAX),
               date DATE,
               timestamp TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+              uuid UUID,
               numeric NUMERIC,
               json JSON,
               ints ARRAY<INT64>,
@@ -59,6 +61,7 @@ module Acceptance
               bytes ARRAY<BYTES(MAX)>,
               dates ARRAY<DATE>,
               timestamps ARRAY<TIMESTAMP>,
+              uuids ARRAY<UUID>,
               numerics ARRAY<NUMERIC>,
               json_array ARRAY<JSON>
           ) PRIMARY KEY (id)
@@ -236,6 +239,7 @@ module Acceptance
           byte: :BYTES,
           date: :DATE,
           timestamp: :TIMESTAMP,
+          uuid: :UUID,
           json: :JSON,
           ints: [:INT64],
           floats: [:FLOAT64],
@@ -258,6 +262,7 @@ module Acceptance
         byte: File.open("acceptance/data/face.jpg", "rb"),
         date: Date.today + rand(-100..100),
         timestamp: Time.now + rand((-60 * 60 * 24.0)..(60 * 60 * 24.0)),
+        uuid: SecureRandom.uuid,
         json: { venue: "Yellow Lake", rating: 10 },
         ints: rand(2..10).times.map { rand(0..1000) },
         floats: rand(2..10).times.map { rand(0.0..100.0) },

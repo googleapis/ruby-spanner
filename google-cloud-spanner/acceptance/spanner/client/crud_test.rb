@@ -251,5 +251,16 @@ describe "Spanner Client", :crud, :spanner do
       _(results.rows.count).must_equal 1
       _(results.timestamp).wont_be :nil?
     end
+
+    it "commits with read_lock_mode PESSIMISTIC for #{dialect}" do
+      timestamp = db[dialect].commit read_lock_mode: :PESSIMISTIC do |c|
+        c.insert "accounts", @default_rows[dialect][0]
+      end
+      _(timestamp).wont_be :nil?
+
+      results = db[dialect].read "accounts", ["account_id"], single_use: { timestamp: timestamp }
+      _(results.rows.count).must_equal 1
+      _(results.timestamp).wont_be :nil?
+    end
   end
 end
