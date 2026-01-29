@@ -16,7 +16,8 @@
 require "google/cloud/errors"
 
 # This is a monkey patch for Google::Cloud::Error to add support for the request_id method
-# to keep this spanner exclusive method inside the spanner code.
+# to keep this Spanner exclusive method inside the Spanner code.
+# This may be moved into the errors gem itself based on later assessment.
 module Google
   module Cloud
     class Error

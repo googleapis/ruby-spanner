@@ -21,6 +21,10 @@ require "google/cloud/spanner/errors"
 module Google
   module Cloud
     module Spanner
+      ##
+      # RequestIdInterceptor is a GRPC interceptor class that captures all the rpc calls
+      # made by the GRPC layer inserting a new Header with a specific ID for debugging purposes.
+      #
       class RequestIdInterceptor < GRPC::ClientInterceptor
         @client_id_counter = 0
         @client_mutex = Mutex.new
@@ -31,6 +35,7 @@ module Google
         @process_id = nil
         @process_id_mutex = Mutex.new
 
+        # @private
         # Gets the next client ID and increments it.
         #
         # @return [Integer]
@@ -40,6 +45,7 @@ module Google
           end
         end
 
+        # @private
         # Gets the next channel ID and increments it.
         #
         # @return [Integer]
@@ -49,6 +55,7 @@ module Google
           end
         end
 
+        # @private
         # Returns a process ID for the context of the request id header.
         # A process ID is a Hex encoded 64 bit value
         #
@@ -151,7 +158,8 @@ module Google
 
         private
 
-        # Inserts the spanner request id header to the metadata for the RPC call
+        # @private
+        # Inserts the Spanner request id header to the metadata for the RPC call
         #
         # @param [Hash] metadata The metadata to be sent to the RPC call
         # @return [void]
@@ -174,6 +182,7 @@ module Google
           raise e
         end
 
+        # @private
         # Creates the Spanner request id header in the correct format
         #
         # @param [String] request_id The request id of the Spanner request
@@ -183,6 +192,7 @@ module Google
           "#{@version}.#{@process_id}.#{@client_id}.#{@channel_id}.#{request_id}.#{attempt}"
         end
 
+        # @private
         # Parses a request id header and returns the request id and the attempt
         #
         # @param [String] header A string representation of a Spanner request ID.
