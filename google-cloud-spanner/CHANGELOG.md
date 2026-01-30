@@ -1,5 +1,11 @@
 # Release History
 
+### 2.34.0 (2026-01-30)
+
+#### Features
+
+* Support request id header feature ([#215](https://github.com/googleapis/ruby-spanner/issues/215)) 
+
 ### 2.33.0 (2025-12-12)
 
 #### Features
