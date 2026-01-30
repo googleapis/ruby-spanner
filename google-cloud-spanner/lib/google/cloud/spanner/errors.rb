@@ -14,6 +14,7 @@
 
 
 require "google/cloud/errors"
+require "google/cloud/spanner/spanner_error"
 
 module Google
   module Cloud

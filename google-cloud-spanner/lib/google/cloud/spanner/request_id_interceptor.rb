@@ -1,0 +1,207 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+require "grpc"
+require "securerandom"
+require "mutex_m"
+require "google/cloud/spanner/errors"
+
+module Google
+  module Cloud
+    module Spanner
+      ##
+      # RequestIdInterceptor is a GRPC interceptor class that captures all the rpc calls
+      # made by the GRPC layer inserting a new Header with a specific ID for debugging purposes.
+      #
+      class RequestIdInterceptor < GRPC::ClientInterceptor
+        @client_id_counter = 0
+        @client_mutex = Mutex.new
+        @channel_id_counter = 0
+        @channel_mutex = Mutex.new
+        @request_id_counter = 0
+        @request_id_mutex = Mutex.new
+        @process_id = nil
+        @process_id_mutex = Mutex.new
+
+        # @private
+        # Gets the next client ID and increments it.
+        #
+        # @return [Integer]
+        private_class_method def self.next_client_id
+          @client_mutex.synchronize do
+            @client_id_counter += 1
+          end
+        end
+
+        # @private
+        # Gets the next channel ID and increments it.
+        #
+        # @return [Integer]
+        private_class_method def self.next_channel_id
+          @channel_mutex.synchronize do
+            @channel_id_counter += 1
+          end
+        end
+
+        # @private
+        # Returns a process ID for the context of the request id header.
+        # A process ID is a Hex encoded 64 bit value
+        #
+        # @param [String, int] process_id A 64 bit value in Hex or Integer format
+        # @return [String]
+        private_class_method def self.get_process_id process_id = nil
+          @process_id_mutex.synchronize do
+            if process_id.nil? || !@process_id.nil?
+              return @process_id ||= (SecureRandom.hex 8)
+            end
+
+            case process_id
+            when Integer
+              if process_id >= 0 && process_id.bit_length <= 64
+                return process_id.to_s(16).rjust(16, "0")
+              end
+            when String
+              if process_id =~ /\A[0-9a-fA-F]{16}\z/
+                return process_id
+              end
+            end
+
+            raise ArgumentError, "process_id must be a 64-bit integer or 16-character hex string"
+          end
+        end
+
+        # Initializes a request_id_interceptor instance.
+        #
+        # @param [String, int] process_id A 64 bit value in Hex or Integer format
+        # @return [Google::Cloud::Spanner::RequestIdInterceptor]
+        def initialize process_id: nil
+          super
+          @version = 1
+          @process_id = self.class.send :get_process_id, process_id
+          @client_id = self.class.send :next_client_id
+          @channel_id = self.class.send :next_channel_id
+          @request_id_counter = 0
+          @request_mutex = Mutex.new
+        end
+
+        # Intercepts a request_response rpc call
+        #
+        # @param [String] method The RPC method name
+        # @param [Google::Protobuf::MessageExts] request The request to be sent to the RPC call
+        # @param [GRPC::ActiveCall::InterceptableView] call An interceptable view object for the call class
+        # @param [Hash] metadata All the metadata to be sent to the RPC call
+        # @return [void]
+        def request_response method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
+        end
+
+        # Intercepts a client_streamer rpc call
+        #
+        # @param [String] method The RPC method name
+        # @param [Google::Protobuf::MessageExts] request The request to be sent to the RPC call
+        # @param [GRPC::ActiveCall::InterceptableView] call An interceptable view object for the call class
+        # @param [Hash] metadata All the metadata to be sent to the RPC call
+        # @return [void]
+        def client_streamer method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
+        end
+
+        # Intercepts a server_streamer rpc call
+        #
+        # @param [String] method The RPC method name
+        # @param [Google::Protobuf::MessageExts] request The request to be sent to the RPC call
+        # @param [GRPC::ActiveCall::InterceptableView] call An interceptable view object for the call class
+        # @param [Hash] metadata All the metadata to be sent to the RPC call
+        # @return [void]
+        def server_streamer method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
+        end
+
+        # Intercepts a bidi_streamer rpc call
+        #
+        # @param [String] method The RPC method name
+        # @param [Google::Protobuf::MessageExts] request The request to be sent to the RPC call
+        # @param [GRPC::ActiveCall::InterceptableView] call An interceptable view object for the call class
+        # @param [Hash] metadata The metadata to be sent to the RPC call
+        # @return [void]
+        def bidi_streamer method:, request:, call:, metadata:, &block
+          # Unused. This is to avoid Rubocop's Lint/UnusedMethodArgument
+          _method = method
+          _request = request
+          _call = call
+          update_metadata_for_call metadata, &block
+        end
+
+        private
+
+        # @private
+        # Inserts the Spanner request id header to the metadata for the RPC call
+        #
+        # @param [Hash] metadata The metadata to be sent to the RPC call
+        # @return [void]
+        def update_metadata_for_call metadata
+          request_id = nil
+          attempt = 1
+
+          if metadata.include? :"x-goog-spanner-request-id"
+            request_id, attempt = get_header_request_id_and_attempt metadata[:"x-goog-spanner-request-id"]
+          else
+            request_id = @request_mutex.synchronize { @request_id_counter += 1 }
+          end
+
+          formatted_request_id = format_request_id request_id, attempt
+          metadata[:"x-goog-spanner-request-id"] = formatted_request_id
+
+          yield
+        rescue StandardError => e
+          e.instance_variable_set :@spanner_header_id, formatted_request_id
+          raise e
+        end
+
+        # @private
+        # Creates the Spanner request id header in the correct format
+        #
+        # @param [String] request_id The request id of the Spanner request
+        # @param [String] attempt The attempt of the current request after retries
+        # @return [String]
+        def format_request_id request_id, attempt
+          "#{@version}.#{@process_id}.#{@client_id}.#{@channel_id}.#{request_id}.#{attempt}"
+        end
+
+        # @private
+        # Parses a request id header and returns the request id and the attempt
+        #
+        # @param [String] header A string representation of a Spanner request ID.
+        # @return [array]
+        def get_header_request_id_and_attempt header
+          _, _, _, _, request_id, attempt = header.split "."
+          [request_id, attempt.to_i + 1]
+        end
+      end
+    end
+  end
+end
