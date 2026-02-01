@@ -49,7 +49,7 @@ module Google
         # @param threads [::Integer, nil] Number of threads in the thread pool that is used for keepalive and
         #   release session actions. If `nil` the Pool will choose a reasonable default.
         # @private
-        def initialize service, session_creation_options, min: 10, max: 100, keepalive: 1800,
+        def initialize service, session_creation_options, min: 10, max: 100, keepalive: 120,
                        fail: true, threads: nil
           @service = service
           @session_creation_options = session_creation_options
