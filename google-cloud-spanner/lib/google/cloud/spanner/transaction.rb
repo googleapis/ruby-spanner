@@ -1297,6 +1297,7 @@ read_lock_mode: read_lock_mode
             return if existing_transaction?
             ensure_session!
             route_to_leader = LARHeaders.begin_transaction true
+            request_options = build_request_options request_options
 
             # TODO: [virost@, 2025-10] fix this so it uses tx_selector
             # instead of re-creating it within `Service#begin_transaction`
