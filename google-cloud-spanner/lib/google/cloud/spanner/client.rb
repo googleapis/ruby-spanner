@@ -2227,11 +2227,11 @@ module Google
             request_options, tag_type: :transaction_tag
 
           @pool.with_session do |session|
+            transaction_tag = request_options[:transaction_tag] if request_options
             tx = session.create_empty_transaction \
-              exclude_txn_from_change_streams: exclude_txn_from_change_streams, read_lock_mode: read_lock_mode
-            if request_options
-              tx.transaction_tag = request_options[:transaction_tag]
-            end
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+              read_lock_mode: read_lock_mode,
+              transaction_tag: transaction_tag
 
             begin
               Thread.current[IS_TRANSACTION_RUNNING_KEY] = true
@@ -2289,11 +2289,9 @@ module Google
               tx = session.create_empty_transaction(
                 exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                 previous_transaction_id: previous_transaction_id,
-                read_lock_mode: read_lock_mode
+                read_lock_mode: read_lock_mode,
+                transaction_tag: transaction_tag
               )
-              if request_options
-                tx.transaction_tag = request_options[:transaction_tag]
-              end
               retry
             rescue StandardError => e
               # Rollback transaction when handling unexpected error
