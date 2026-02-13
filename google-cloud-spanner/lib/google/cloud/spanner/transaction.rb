@@ -128,8 +128,8 @@ module Google
         #   A tag used for statistics collection about this transaction.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil, read_lock_mode: nil,
-                       transaction_tag: nil
+        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil,
+                       read_lock_mode: nil, transaction_tag: nil
           @grpc = grpc
           @session = session
           @exclude_txn_from_change_streams = exclude_txn_from_change_streams
@@ -1384,7 +1384,7 @@ module Google
 
         ##
         # @private Build request options. If transaction tag is set
-        #   then add into request options.
+        #   then add it to the request options.
         def build_request_options options
           options = Convert.to_request_options options, tag_type: :request_tag
 
