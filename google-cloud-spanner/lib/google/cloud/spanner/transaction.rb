@@ -124,13 +124,17 @@ module Google
         #   An id of the previous transaction, if this new transaction wrapper is being created
         #   as a part of a retry. Previous transaction id should be added to TransactionOptions
         #   of a new ReadWrite transaction when retry is attempted.
+        # @param transaction_tag [::String, nil] Optional.
+        #   A tag used for statistics collection about this transaction.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil, read_lock_mode: nil
+        def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil,
+                       read_lock_mode: nil, transaction_tag: nil
           @grpc = grpc
           @session = session
           @exclude_txn_from_change_streams = exclude_txn_from_change_streams
           @read_lock_mode = read_lock_mode
+          @transaction_tag = transaction_tag
 
           # throwing away empty strings for simplicity
           unless previous_transaction_id.nil? || previous_transaction_id.empty?
@@ -1253,12 +1257,14 @@ module Google
         #   An id of the previous transaction, if this new transaction wrapper is being created
         #   as a part of a retry. Previous transaction id should be added to TransactionOptions
         #   of a new ReadWrite transaction when retry is attempted.
+        # @param transaction_tag [::String, nil] Optional.
+        #   A tag used for statistics collection about this transaction.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
         def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil,
-                           read_lock_mode: nil
+                           read_lock_mode: nil, transaction_tag: nil
           new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id,
-read_lock_mode: read_lock_mode
+              read_lock_mode: read_lock_mode, transaction_tag: transaction_tag
         end
 
         ##
@@ -1297,6 +1303,7 @@ read_lock_mode: read_lock_mode
             return if existing_transaction?
             ensure_session!
             route_to_leader = LARHeaders.begin_transaction true
+            request_options = build_request_options request_options
 
             # TODO: [virost@, 2025-10] fix this so it uses tx_selector
             # instead of re-creating it within `Service#begin_transaction`
@@ -1377,7 +1384,7 @@ read_lock_mode: read_lock_mode
 
         ##
         # @private Build request options. If transaction tag is set
-        #   then add into request options.
+        #   then add it to the request options.
         def build_request_options options
           options = Convert.to_request_options options, tag_type: :request_tag
 

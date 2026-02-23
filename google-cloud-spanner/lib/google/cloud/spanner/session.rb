@@ -1488,17 +1488,24 @@ module Google
         # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
         #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
+        # @param request_options [::Hash, nil] Optional. Common request options.
+        #   Example option: `:priority`.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
-        def create_transaction exclude_txn_from_change_streams: false, read_lock_mode: nil
+        def create_transaction exclude_txn_from_change_streams: false, read_lock_mode: nil,
+                               request_options: nil
           route_to_leader = LARHeaders.begin_transaction true
+          request_options = Convert.to_request_options request_options, tag_type: :transaction_tag
+          transaction_tag = request_options[:transaction_tag] if request_options
           tx_grpc = service.begin_transaction path,
                                               route_to_leader: route_to_leader,
                                               exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+                                              request_options: request_options,
                                               read_lock_mode: read_lock_mode
           Transaction.from_grpc \
             tx_grpc, self,
-            exclude_txn_from_change_streams: exclude_txn_from_change_streams, read_lock_mode: read_lock_mode
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams, read_lock_mode: read_lock_mode,
+            transaction_tag: transaction_tag
         end
 
         # Creates a new empty transaction wrapper without a server-side object.
@@ -1512,12 +1519,15 @@ module Google
         #   An id of the previous transaction, if this new transaction wrapper is being created
         #   as a part of a retry. Previous transaction id should be added to TransactionOptions
         #   of a new ReadWrite transaction when retry is attempted.
+        # @param transaction_tag [::String, nil] Optional.
+        #   A tag used for statistics collection about this transaction.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction] The new *empty-wrapper* transaction object.
         def create_empty_transaction exclude_txn_from_change_streams: false, previous_transaction_id: nil,
-                                     read_lock_mode: nil
+                                     read_lock_mode: nil, transaction_tag: nil
           Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-previous_transaction_id: previous_transaction_id, read_lock_mode: read_lock_mode
+                                previous_transaction_id: previous_transaction_id, read_lock_mode: read_lock_mode,
+                                transaction_tag: transaction_tag
         end
 
         # If the session is non-multiplexed, keeps the session alive by executing `"SELECT 1"`.
