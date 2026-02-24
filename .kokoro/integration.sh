@@ -32,5 +32,8 @@ for ruby_version in "${ruby_versions[@]}"; do
 
   gem install --no-document toys
 
+  echo "**** CURRENT CONTAINER SYSTEM TIME ****"
+  date -u -R
+
   toys ci -v --load-kokoro-context $EXTRA_CI_ARGS < /dev/null
 done

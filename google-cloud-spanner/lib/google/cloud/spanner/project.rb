@@ -179,7 +179,7 @@ module Google
         #
         def instance instance_id
           ensure_service!
-          grpc = service.get_instance instance_id
+          grpc = service.get_instance instance_id, call_options: { timeout: 10 }
           Instance.from_grpc grpc, service
         rescue Google::Cloud::NotFoundError
           nil
