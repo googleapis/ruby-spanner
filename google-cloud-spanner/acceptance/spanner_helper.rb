@@ -18,6 +18,9 @@ gem "minitest"
 require "minitest/autorun"
 require "minitest/focus"
 
+ENV["GRPC_TRACE"] ||= "all"
+ENV["GRPC_VERBOSITY"] ||= "DEBUG"
+
 require "google/cloud/spanner"
 require "google/cloud/spanner/admin/database"
 
