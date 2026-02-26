@@ -1,5 +1,11 @@
 # Release History
 
+### 2.35.0 (2026-02-23)
+
+#### Features
+
+* propagate transaction tag correctly in all scenarios ([#219](https://github.com/googleapis/ruby-spanner/issues/219)) 
+
 ### 2.34.0 (2026-01-30)
 
 #### Features
