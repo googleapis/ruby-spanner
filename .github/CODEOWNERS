@@ -8,5 +8,3 @@
 # @googleapis/cloud-sdk-ruby-team is the default owner for anything not
 # explicitly taken by someone else.
 *                                    @googleapis/cloud-sdk-ruby-team
-
-/google-cloud-spanner*/              @googleapis/cloud-sdk-ruby-team @googleapis/api-spanner-ruby
