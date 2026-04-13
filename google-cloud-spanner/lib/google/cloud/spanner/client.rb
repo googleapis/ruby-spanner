@@ -71,10 +71,25 @@ module Google
         # @param directed_read_options [::Hash, nil] Optional. Client options used to set
         #   the `directed_read_options` for all ReadRequests and ExecuteSqlRequests.
         #   Converts to `V1::DirectedReadOptions`. Example option: `:exclude_replicas`.
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transactions.
+        #   Can be overridden by the isolation level set on the transaction.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transactions.
+        #   Can be overridden by the read lock mode set on the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
         # @private
         def initialize project, instance_id, database_id, session_labels: nil,
                        pool_opts: {}, query_options: nil, database_role: nil,
-                       directed_read_options: nil
+                       directed_read_options: nil, isolation_level: nil, read_lock_mode: nil
           @project = project
           @instance_id = instance_id
           @database_id = database_id
@@ -82,6 +97,8 @@ module Google
           @session_labels = session_labels
           @query_options = query_options
           @directed_read_options = directed_read_options
+          @isolation_level = isolation_level
+          @read_lock_mode = read_lock_mode
 
           _pool_opts = pool_opts # unused. Here only to avoid having to disable Rubocop's Lint/UnusedMethodArgument
 
@@ -1070,8 +1087,6 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
-        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level Optional. The
-        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1109,12 +1124,22 @@ module Google
         #       trigger a retry.
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   mode will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
-        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1178,11 +1203,11 @@ module Google
           @pool.with_session do |session|
             session.upsert table, rows,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                           isolation_level: isolation_level,
+                           isolation_level: isolation_level || @isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options,
-                           read_lock_mode: read_lock_mode
+                           read_lock_mode: read_lock_mode || @read_lock_mode
           end
         end
         alias save upsert
@@ -1229,8 +1254,6 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
-        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level Optional. The
-        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1269,13 +1292,22 @@ module Google
         #
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   mode will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
-        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
         #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1339,11 +1371,11 @@ module Google
           @pool.with_session do |session|
             session.insert table, rows,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                           isolation_level: isolation_level,
+                           isolation_level: isolation_level || @isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options,
-                           read_lock_mode: read_lock_mode
+                           read_lock_mode: read_lock_mode || @read_lock_mode
           end
         end
 
@@ -1389,8 +1421,6 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
-        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level Optional. The
-        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1428,13 +1458,22 @@ module Google
         #       trigger a retry.
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   mode will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
-        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
         #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1497,11 +1536,11 @@ module Google
           @pool.with_session do |session|
             session.update table, rows,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                           isolation_level: isolation_level,
+                           isolation_level: isolation_level || @isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options,
-                           read_lock_mode: read_lock_mode
+                           read_lock_mode: read_lock_mode || @read_lock_mode
           end
         end
 
@@ -1549,8 +1588,6 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
-        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level Optional. The
-        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1588,13 +1625,22 @@ module Google
         #       trigger a retry.
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   mode will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
-        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
         #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1654,11 +1700,11 @@ module Google
           @pool.with_session do |session|
             session.replace table, rows,
                             exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                            isolation_level: isolation_level,
+                            isolation_level: isolation_level || @isolation_level,
                             commit_options: commit_options,
                             request_options: request_options,
                             call_options: call_options,
-                            read_lock_mode: read_lock_mode
+                            read_lock_mode: read_lock_mode || @read_lock_mode
           end
         end
 
@@ -1685,8 +1731,6 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
-        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level Optional. The
-        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1724,13 +1768,22 @@ module Google
         #       trigger a retry.
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   mode will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
-        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
         #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1787,11 +1840,11 @@ module Google
           @pool.with_session do |session|
             session.delete table, keys,
                            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-                           isolation_level: isolation_level,
+                           isolation_level: isolation_level || @isolation_level,
                            commit_options: commit_options,
                            request_options: request_options,
                            call_options: call_options,
-                           read_lock_mode: read_lock_mode
+                           read_lock_mode: read_lock_mode || @read_lock_mode
           end
         end
 
@@ -1813,8 +1866,6 @@ module Google
         # @param [Boolean] exclude_txn_from_change_streams If set to true,
         #   mutations will not be recorded in change streams with DDL option
         #   `allow_txn_exclusion=true`.
-        # @param [Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel] isolation_level Optional. The
-        #   isolation level for the transaction.
         # @param [Hash] commit_options A hash of commit options.
         #   e.g., return_commit_stats. Commit options are optional.
         #   The following options can be provided:
@@ -1855,13 +1906,20 @@ module Google
         # @yieldparam [Google::Cloud::Spanner::Commit] commit The Commit object.
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   moce will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
         #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
         #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
         #       but instead on a commit to validate that the data has not changed since the transaction started.
         #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         # @return [Time, CommitResponse] The timestamp at which the operation
         #   committed. If commit options are set it returns {CommitResponse}.
@@ -1930,11 +1988,11 @@ module Google
           @pool.with_session do |session|
             session.commit(
               exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-              isolation_level: isolation_level,
+              isolation_level: isolation_level || @isolation_level,
               commit_options: commit_options,
               request_options: request_options,
               call_options: call_options,
-              read_lock_mode: read_lock_mode,
+              read_lock_mode: read_lock_mode || @read_lock_mode,
               &block
             )
           end
@@ -2102,12 +2160,22 @@ module Google
         #       trigger a retry.
         #
         # @param [Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode] read_lock_mode
-        #   The read lock mode for the transaction.
+        #   The read lock mode for the transaction. If not specified, the client-level read lock
+        #   mode will be used.
         #   Can be one of the following:
         #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
-        #   * `:PESSIMISTIC` : The pessimistic lock mode, where read locks are acquired immediately on read.
-        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks for reads are not acquired on read
-        #       but instead on a commit to validate that the data has not changed since the transaction started.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   If not specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         #
         #
         # @yield [transaction] The block for reading and writing data.
@@ -2212,7 +2280,8 @@ module Google
         #   end
         #
         def transaction deadline: 120, exclude_txn_from_change_streams: false,
-                        commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil
+                        commit_options: nil, request_options: nil, call_options: nil, read_lock_mode: nil,
+                        isolation_level: nil
           ensure_service!
           unless Thread.current[IS_TRANSACTION_RUNNING_KEY].nil?
             raise "Nested transactions are not allowed"
@@ -2229,8 +2298,9 @@ module Google
             transaction_tag = request_options[:transaction_tag] if request_options
             tx = session.create_empty_transaction \
               exclude_txn_from_change_streams: exclude_txn_from_change_streams,
-              read_lock_mode: read_lock_mode,
-              transaction_tag: transaction_tag
+              read_lock_mode: read_lock_mode || @read_lock_mode,
+              transaction_tag: transaction_tag,
+              isolation_level: isolation_level || @isolation_level
 
             begin
               Thread.current[IS_TRANSACTION_RUNNING_KEY] = true

@@ -1521,13 +1521,26 @@ module Google
         #   of a new ReadWrite transaction when retry is attempted.
         # @param transaction_tag [::String, nil] Optional.
         #   A tag used for statistics collection about this transaction.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction] The new *empty-wrapper* transaction object.
         def create_empty_transaction exclude_txn_from_change_streams: false, previous_transaction_id: nil,
-                                     read_lock_mode: nil, transaction_tag: nil
+                                     read_lock_mode: nil, transaction_tag: nil, isolation_level: nil
           Transaction.from_grpc nil, self, exclude_txn_from_change_streams: exclude_txn_from_change_streams,
                                 previous_transaction_id: previous_transaction_id, read_lock_mode: read_lock_mode,
-                                transaction_tag: transaction_tag
+                                transaction_tag: transaction_tag, isolation_level: isolation_level
         end
 
         # If the session is non-multiplexed, keeps the session alive by executing `"SELECT 1"`.

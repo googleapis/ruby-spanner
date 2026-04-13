@@ -640,6 +640,19 @@ module Google
         #   An id of the previous transaction, if this new transaction wrapper is being created
         #   as a part of a retry. Previous transaction id should be added to TransactionOptions
         #   of a new ReadWrite transaction when retry is attempted.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction]
         def begin_transaction session_name,
@@ -649,7 +662,8 @@ module Google
                               route_to_leader: nil,
                               mutation_key: nil,
                               previous_transaction_id: nil,
-                              read_lock_mode: nil
+                              read_lock_mode: nil,
+                              isolation_level: nil
           read_write = if previous_transaction_id.nil?
                          V1::TransactionOptions::ReadWrite.new
                        else
@@ -664,7 +678,8 @@ module Google
 
           tx_opts = V1::TransactionOptions.new(
             read_write: read_write,
-            exclude_txn_from_change_streams: exclude_txn_from_change_streams
+            exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+            isolation_level: isolation_level
           )
 
           opts = default_options session_name: session_name,

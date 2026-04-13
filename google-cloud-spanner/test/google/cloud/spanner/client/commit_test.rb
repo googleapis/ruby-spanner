@@ -790,6 +790,121 @@ describe Google::Cloud::Spanner::Client, :read, :mock_spanner do
     end
   end
 
+  describe "client-level isolation level" do
+    let(:client_with_isolation) { spanner.client instance_id, database_id, isolation_level: :SERIALIZABLE }
+    let(:tx_opts_serializable) {
+      Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+                                                         isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::SERIALIZABLE
+    }
+    let(:tx_opts_repeatable_read) {
+      Google::Cloud::Spanner::V1::TransactionOptions.new read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new,
+                                                         isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::REPEATABLE_READ
+    }
+
+    it "uses client-level isolation level in delete" do
+      mutations = [
+        Google::Cloud::Spanner::V1::Mutation.new(
+          delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+            table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+          )
+        )
+      ]
+
+      mock = Minitest::Mock.new
+      mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
+      mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_serializable, request_options: nil, precommit_token: nil }, default_options]
+      spanner.service.mocked_service = mock
+
+      timestamp = client_with_isolation.delete "users"
+      _(timestamp).must_equal commit_time
+
+      shutdown_client! client_with_isolation
+      mock.verify
+    end
+
+    it "overrides client-level isolation level in delete" do
+      mutations = [
+        Google::Cloud::Spanner::V1::Mutation.new(
+          delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+            table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+          )
+        )
+      ]
+
+      mock = Minitest::Mock.new
+      mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
+      mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_repeatable_read, request_options: nil, precommit_token: nil }, default_options]
+      spanner.service.mocked_service = mock
+
+      timestamp = client_with_isolation.delete "users", isolation_level: Google::Cloud::Spanner::V1::TransactionOptions::IsolationLevel::REPEATABLE_READ
+      _(timestamp).must_equal commit_time
+
+      shutdown_client! client_with_isolation
+      mock.verify
+    end
+  end
+
+  describe "client-level read lock mode" do
+    let(:read_lock_optimistic) { Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::OPTIMISTIC }
+    let(:read_lock_pessimistic) { Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite::ReadLockMode::PESSIMISTIC }
+    let(:tx_opts_optimistic) do
+      Google::Cloud::Spanner::V1::TransactionOptions.new(
+        read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(read_lock_mode: read_lock_optimistic)
+      )
+    end
+    let(:tx_opts_pessimistic) do
+      Google::Cloud::Spanner::V1::TransactionOptions.new(
+        read_write: Google::Cloud::Spanner::V1::TransactionOptions::ReadWrite.new(read_lock_mode: read_lock_pessimistic)
+      )
+    end
+
+    it "uses client-level read lock mode in commit" do
+      client_with_read_lock = spanner.client instance_id, database_id, read_lock_mode: :OPTIMISTIC
+
+      mutations = [
+        Google::Cloud::Spanner::V1::Mutation.new(
+          delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+            table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+          )
+        )
+      ]
+
+      mock = Minitest::Mock.new
+      mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
+      mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_optimistic, request_options: nil, precommit_token: nil }, default_options]
+      spanner.service.mocked_service = mock
+
+      timestamp = client_with_read_lock.delete "users"
+      _(timestamp).must_equal commit_time
+
+      shutdown_client! client_with_read_lock
+      mock.verify
+    end
+
+    it "overrides client-level read lock mode in commit" do
+      client_with_read_lock = spanner.client instance_id, database_id, read_lock_mode: :OPTIMISTIC
+
+      mutations = [
+        Google::Cloud::Spanner::V1::Mutation.new(
+          delete: Google::Cloud::Spanner::V1::Mutation::Delete.new(
+            table: "users", key_set: Google::Cloud::Spanner::V1::KeySet.new(all: true)
+          )
+        )
+      ]
+
+      mock = Minitest::Mock.new
+      mock.expect :create_session, session_grpc, [{database: database_path(instance_id, database_id), session: default_session_request}, default_options]
+      mock.expect :commit, commit_resp, [{ session: session_grpc.name, mutations: mutations, transaction_id: nil, single_use_transaction: tx_opts_pessimistic, request_options: nil, precommit_token: nil }, default_options]
+      spanner.service.mocked_service = mock
+
+      timestamp = client_with_read_lock.delete "users", read_lock_mode: :PESSIMISTIC
+      _(timestamp).must_equal commit_time
+
+      shutdown_client! client_with_read_lock
+      mock.verify
+    end
+  end
+
   def mock_commit_request mutations, request_options: nil
     mock = Minitest::Mock.new
     mock.expect :create_session, session_grpc, [{

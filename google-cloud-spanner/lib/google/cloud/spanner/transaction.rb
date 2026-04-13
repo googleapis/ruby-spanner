@@ -129,12 +129,13 @@ module Google
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
         def initialize grpc, session, exclude_txn_from_change_streams, previous_transaction_id: nil,
-                       read_lock_mode: nil, transaction_tag: nil
+                       read_lock_mode: nil, transaction_tag: nil, isolation_level: nil
           @grpc = grpc
           @session = session
           @exclude_txn_from_change_streams = exclude_txn_from_change_streams
           @read_lock_mode = read_lock_mode
           @transaction_tag = transaction_tag
+          @isolation_level = isolation_level
 
           # throwing away empty strings for simplicity
           unless previous_transaction_id.nil? || previous_transaction_id.empty?
@@ -144,7 +145,6 @@ module Google
           @commit = Commit.new
           @seqno = 0
           @exclude_txn_from_change_streams = false
-          @read_lock_mode = nil
 
           # Mutex to enfore thread safety for transaction creation and query executions.
           #
@@ -1259,12 +1259,25 @@ module Google
         #   of a new ReadWrite transaction when retry is attempted.
         # @param transaction_tag [::String, nil] Optional.
         #   A tag used for statistics collection about this transaction.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         # @private
         # @return [::Google::Cloud::Spanner::Transaction]
         def self.from_grpc grpc, session, exclude_txn_from_change_streams: false, previous_transaction_id: nil,
-                           read_lock_mode: nil, transaction_tag: nil
+                           read_lock_mode: nil, transaction_tag: nil, isolation_level: nil
           new grpc, session, exclude_txn_from_change_streams, previous_transaction_id: previous_transaction_id,
-              read_lock_mode: read_lock_mode, transaction_tag: transaction_tag
+              read_lock_mode: read_lock_mode, transaction_tag: transaction_tag, isolation_level: isolation_level
         end
 
         ##
@@ -1288,11 +1301,24 @@ module Google
         #   Example option: `:priority`.
         # @param call_options [::Hash, nil] Optional. A hash of values to specify the custom
         #   call options. Example option `:timeout`.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         # @private
         # @return [::Google::Cloud::Spanner::V1::Transaction, nil] The new transaction
         #   object, or `nil` if a transaction already exists.
         def safe_begin_transaction! exclude_from_change_streams: false, request_options: nil, call_options: nil,
-                                    read_lock_mode: nil
+                                    read_lock_mode: nil, isolation_level: nil
           # If a read-write transaction on a multiplexed session commit mutations
           # without performing any reads or queries, one of the mutations from the mutation set
           # must be sent as a mutation key for `BeginTransaction`.
@@ -1315,7 +1341,8 @@ module Google
               route_to_leader: route_to_leader,
               mutation_key: mutation_key,
               previous_transaction_id: previous_transaction_id,
-              read_lock_mode: read_lock_mode
+              read_lock_mode: read_lock_mode || @read_lock_mode,
+              isolation_level: isolation_level || @isolation_level
             )
           end
         end
@@ -1357,9 +1384,24 @@ module Google
         # @param exclude_txn_from_change_streams [::Boolean] Optional. Defaults to `false`.
         #   When `exclude_txn_from_change_streams` is set to `true`, it prevents read
         #   or write transactions from being tracked in change streams.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transaction. If not
+        #   specified, the client-level read lock mode will be used.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transaction. If not
+        #   specified, the client-level isolation level will be used.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
         # @private
         # @return [::Google::Cloud::Spanner::V1::TransactionSelector]
-        def tx_selector exclude_txn_from_change_streams: false, read_lock_mode: nil
+        def tx_selector exclude_txn_from_change_streams: false, read_lock_mode: nil, isolation_level: nil
           return V1::TransactionSelector.new id: transaction_id if existing_transaction?
 
           read_write = if @previous_transaction_id.nil?
@@ -1370,14 +1412,16 @@ module Google
                          )
                        end
 
-          unless read_lock_mode.nil?
-            read_write.read_lock_mode = read_lock_mode
+          read_lock = read_lock_mode || @read_lock_mode
+          unless read_lock.nil?
+            read_write.read_lock_mode = read_lock
           end
 
           V1::TransactionSelector.new(
             begin: V1::TransactionOptions.new(
               read_write: read_write,
-              exclude_txn_from_change_streams: exclude_txn_from_change_streams
+              exclude_txn_from_change_streams: exclude_txn_from_change_streams,
+              isolation_level: isolation_level || @isolation_level
             )
           )
         end

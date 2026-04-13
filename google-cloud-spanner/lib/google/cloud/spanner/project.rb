@@ -548,6 +548,22 @@ module Google
         #      Spanner will wait for a replica in the list to become available,
         #      requests may fail due to DEADLINE_EXCEEDED errors.
         #
+        # @param isolation_level [::Symbol, nil] Optional. The isolation level for the transactions. Can be
+        #   overridden by the isolation level set on the transaction.
+        #   Can be one of the following:
+        #   * `:ISOLATION_LEVEL_UNSPECIFIED` : The default unspecified isolation level.
+        #   * `:SERIALIZABLE` : The serializable isolation level.
+        #   * `:REPEATABLE_READ` : The repeatable read isolation level.
+        # @param read_lock_mode [::Symbol, nil] Optional. The read lock mode for the transactions. Can be
+        #   overridden by the read lock mode set on the transaction.
+        #   Can be one of the following:
+        #   * `:READ_LOCK_MODE_UNSPECIFIED` : The default unspecified read lock mode.
+        #   * `:PESSIMISTIC` : The pessimistic lock mode, where depending on the isolation level and/or lock
+        #       requested, locks are acquired on read.
+        #   * `:OPTIMISTIC` : The optimistic lock mode, where locks are not acquired on read. Depending on the
+        #       isolation level and/or lock requested on a read, data may be validated at commit time to be not
+        #       changed since the transaction started.
+        #
         # @return [::Google::Cloud::Spanner::Client] The newly created client.
         #
         # @example
@@ -566,7 +582,8 @@ module Google
         #   end
         #
         def client instance_id, database_id, pool: {}, labels: nil,
-                   query_options: nil, database_role: nil, directed_read_options: nil
+                   query_options: nil, database_role: nil, directed_read_options: nil,
+                   isolation_level: nil, read_lock_mode: nil
           # Convert from possible Google::Protobuf::Map
           labels = labels.to_h { |k, v| [String(k), String(v)] } if labels
           # Configs set by environment variables take over client-level configs.
@@ -582,7 +599,9 @@ module Google
                      session_labels: labels,
                      query_options: query_options,
                      database_role: database_role,
-                     directed_read_options: directed_read_options
+                     directed_read_options: directed_read_options,
+                     isolation_level: isolation_level,
+                     read_lock_mode: read_lock_mode
         end
 
         ##
