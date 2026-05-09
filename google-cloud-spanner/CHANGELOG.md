@@ -1,5 +1,26 @@
 # Release History
 
+### 2.36.0 (2026-05-08)
+
+#### Features
+
+* set txn opts at client level ([#234](https://github.com/googleapis/ruby-spanner/issues/234)) 
+#### Bug Fixes
+
+* lift up and fix circular requires ([#226](https://github.com/googleapis/ruby-spanner/issues/226)) 
+
+### 2.35.0 (2026-02-23)
+
+#### Features
+
+* propagate transaction tag correctly in all scenarios ([#219](https://github.com/googleapis/ruby-spanner/issues/219)) 
+
+### 2.34.0 (2026-01-30)
+
+#### Features
+
+* Support request id header feature ([#215](https://github.com/googleapis/ruby-spanner/issues/215)) 
+
 ### 2.33.0 (2025-12-12)
 
 #### Features

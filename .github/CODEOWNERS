@@ -5,8 +5,6 @@
 # https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
 
 
-# @googleapis/ruby-team is the default owner for anything not
+# @googleapis/cloud-sdk-ruby-team is the default owner for anything not
 # explicitly taken by someone else.
-*                                    @googleapis/ruby-team
-
-/google-cloud-spanner*/              @googleapis/ruby-team @googleapis/api-spanner-ruby
+*                                    @googleapis/cloud-sdk-ruby-team

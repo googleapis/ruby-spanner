@@ -1,4 +1,4 @@
-# Copyright 2016 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,23 @@
 # limitations under the License.
 
 
+require "google/cloud/errors"
+
+# This is a monkey patch for Google::Cloud::Error to add support for the request_id method
+# to keep this Spanner exclusive method inside the Spanner code.
+# This may be moved into the errors gem itself based on later assessment.
 module Google
   module Cloud
-    module Spanner
-      VERSION = "2.36.0".freeze
+    class Error
+      ##
+      # The Spanner header ID if there was an error on the request.
+      #
+      # @return [String, nil]
+      #
+      def request_id
+        return nil unless cause.instance_variable_defined? :@spanner_header_id
+        cause.instance_variable_get :@spanner_header_id
+      end
     end
   end
 end

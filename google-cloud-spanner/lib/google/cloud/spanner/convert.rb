@@ -18,7 +18,6 @@ require "date"
 require "stringio"
 require "base64"
 require "bigdecimal"
-require "google/cloud/spanner/data"
 require "google/cloud/spanner/interval"
 
 module Google
