@@ -35,18 +35,14 @@ there is a small amount of setup:
    $ gem install bundler
    ```
 
-3. Install the top-level project dependencies.
-
-   ```sh
-   $ bundle install
-   ```
-
-4. Install the Spanner dependencies.
+3. Install the Spanner dependencies.
 
    ```sh
    $ cd google-cloud-spanner/
    $ bundle install
    ```
+
+   Note: We commit `Gemfile.lock` to ensure consistent dependency versions in development and CI. If you update dependencies in `Gemfile` or `google-cloud-spanner.gemspec`, make sure to run `bundle update` and commit the updated `Gemfile.lock`.
 
 ## Console
 
