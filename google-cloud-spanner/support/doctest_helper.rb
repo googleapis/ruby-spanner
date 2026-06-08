@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require "minitest/focus"
+require "ostruct"
 
 require "google/cloud/spanner"
 require "grpc"

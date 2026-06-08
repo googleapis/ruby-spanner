@@ -14,6 +14,7 @@ Gem::Specification.new do |gem|
 
   gem.files         = `git ls-files -- lib/*`.split("\n") +
                       ["OVERVIEW.md", "AUTHENTICATION.md", "LOGGING.md", "CONTRIBUTING.md", "TROUBLESHOOTING.md", "CHANGELOG.md", "CODE_OF_CONDUCT.md", "LICENSE", ".yardopts"]
+  gem.files.reject! { |f| f.end_with? "Gemfile.lock" }
   gem.require_paths = ["lib"]
 
   gem.required_ruby_version = ">= 3.2"
