@@ -1,5 +1,11 @@
 # Release History
 
+### 2.37.0 (2026-06-08)
+
+#### Features
+
+* Add Gemfile.lock to google-cloud-spanner ([#238](https://github.com/googleapis/ruby-spanner/issues/238)) 
+
 ### 2.36.0 (2026-05-08)
 
 #### Features
