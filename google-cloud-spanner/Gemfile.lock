@@ -145,17 +145,15 @@ GEM
     lint_roller (1.1.0)
     logger (1.7.0)
     method_source (1.1.0)
-    minitest (5.27.0)
-    minitest-autotest (1.2.0)
-      minitest-server (~> 1.0)
-      path_expander (~> 2.0)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
+    minitest-autotest (1.2.2)
+      minitest (~> 6.0)
     minitest-focus (1.4.1)
       minitest (> 5.0)
     minitest-rg (5.4.0)
       minitest (>= 5.0, < 7)
-    minitest-server (1.0.10)
-      drb (~> 2.0)
-      minitest (~> 5.16)
     multi_json (1.21.1)
     mutex_m (0.3.0)
     net-http (0.9.1)
@@ -184,7 +182,6 @@ GEM
     parser (3.3.11.1)
       ast (~> 2.4.1)
       racc
-    path_expander (2.0.1)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -304,7 +301,7 @@ DEPENDENCIES
   grpc (~> 1.67)
   grpc-tools (~> 1.74, >= 1.74.1)
   irb (~> 1.17)
-  minitest (~> 5.25)
+  minitest (~> 6.0)
   minitest-autotest (~> 1.0)
   minitest-focus (~> 1.4)
   minitest-rg (~> 5.3)
@@ -376,11 +373,10 @@ CHECKSUMS
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
-  minitest (5.27.0) sha256=2d3b17f8a36fe7801c1adcffdbc38233b938eb0b4966e97a6739055a45fa77d5
-  minitest-autotest (1.2.0) sha256=60d031cba705215450662b0060f03f96507682b346a19c27f6756751ad92d2b4
+  minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
+  minitest-autotest (1.2.2) sha256=ce9844aae6a47f24ce5decb81a02555098185d71d389396112f59d591164583f
   minitest-focus (1.4.1) sha256=394517cbe2dcb2d992d8ffc41a3b2b6315777a4daa69239de4fefe7110dd810e
   minitest-rg (5.4.0) sha256=54d42bb8ce876381245be5866f3c1dd704ef79c06ba5c9ff280c0aa28c56effb
-  minitest-server (1.0.10) sha256=275439bf3ffc433fcbe161733248f1d9749ebf122892cf010bf864aaa95cef75
   multi_json (1.21.1) sha256=e6126a31808e3b4d19f483c775ceac34df190dffa62adfb63a165ee14ba68080
   mutex_m (0.3.0) sha256=cfcb04ac16b69c4813777022fdceda24e9f798e48092a2b817eb4c0a782b0751
   net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
@@ -398,7 +394,6 @@ CHECKSUMS
   ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
   parallel (2.1.0) sha256=b35258865c2e31134c5ecb708beaaf6772adf9d5efae28e93e99260877b09356
   parser (3.3.11.1) sha256=d17ace7aabe3e72c3cc94043714be27cc6f852f104d81aa284c2281aecc65d54
-  path_expander (2.0.1) sha256=2de201164bff4719cc4d0b3767286e9977cc832a59c4d70abab571ec86cb41e4
   pp (0.6.3) sha256=2951d514450b93ccfeb1df7d021cae0da16e0a7f95ee1e2273719669d0ab9df6
   prettyprint (0.2.0) sha256=2bc9e15581a94742064a3cc8b0fb9d45aae3d03a1baa6ef80922627a0766f193
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
