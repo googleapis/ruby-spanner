@@ -126,7 +126,7 @@ GEM
       google-protobuf (>= 3.18, < 5.a)
       googleapis-common-protos (~> 1.9.0)
       grpc (~> 1.41)
-    grpc-tools (1.81.0)
+    grpc-tools (1.81.1)
     io-console (0.8.2)
     irb (1.18.0)
       pp (>= 0.6.0)
@@ -364,7 +364,7 @@ CHECKSUMS
   grpc (1.81.0-x86_64-linux-gnu) sha256=9676501f1abd2305ca9bdc1247d4014f59547bef56800064c05a359023331a2c
   grpc (1.81.0-x86_64-linux-musl) sha256=380eaff6420972bc9916e514650ba7dd85251719b0038a98e832372e17f5a902
   grpc-google-iam-v1 (1.12.0) sha256=a70ecad8987e340d5e22e7bf01be31256c84b29a3f78bebd385a4a110e1f2aef
-  grpc-tools (1.81.0) sha256=0f0a9ece9b67fa4df385b57c5e42278c36ea454d30c648cbc75c37a80e6a81ad
+  grpc-tools (1.81.1) sha256=5084f9cbb1b48d21509a555afdc65406405049cb69b2094db4fc3d7f71f0a16b
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
   jaro_winkler (1.7.0) sha256=8daa05a5cd05bf7d27c1c65caa8ab0d47c05419d80210feaa17126db24044ada
