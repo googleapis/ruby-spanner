@@ -18,6 +18,19 @@ gem "minitest"
 require "minitest/autorun"
 require "minitest/focus"
 require "minitest/rg"
+
+if ENV["CI"] || ENV["KOKORO_JOB_NAME"]
+  # Load the shared JUnit preloader from googleapis/ruby-common-tools to format
+  # minitest output as JUnit XML (writing to tmp/reports/sponge_log.xml).
+  # This enables test result indexing and health tracking on TestGrid dashboards.
+  begin
+    require "gapic/minitest_junit_preloader"
+  rescue LoadError
+    # Fallback when running outside of Kokoro task environments without the preloader
+  end
+end
+
+
 require "ostruct"
 require "json"
 require "base64"

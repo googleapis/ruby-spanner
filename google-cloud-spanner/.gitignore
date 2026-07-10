@@ -7,3 +7,7 @@ jsondoc/*
 
 # Ignore YARD stuffs
 .yardoc
+
+# Ignore transient test outputs
+tmp
+
