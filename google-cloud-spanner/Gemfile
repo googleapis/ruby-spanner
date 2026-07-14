@@ -27,3 +27,5 @@ gem "simplecov", "~> 0.22"
 gem "solargraph", group: :development, require: false
 gem "yard", "~> 0.9"
 gem "yard-doctest", "~> 0.1.17", group: :development
+
+gem "google-protobuf", "4.36.0.rc.1"
