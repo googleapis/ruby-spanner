@@ -314,7 +314,7 @@ DEPENDENCIES
   minitest (~> 5.25)
   minitest-autotest (~> 1.0)
   minitest-focus (~> 1.4)
-  minitest-reporters (~> 1.7)
+  minitest-reporters (~> 1.8.0)
   minitest-rg (~> 5.3)
   mutex_m (~> 0.3.0)
   pry
