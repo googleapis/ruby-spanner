@@ -15,11 +15,11 @@
 require "helper"
 
 describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
-  it "builds a send mutation with scalar key" do
-    commit = Google::Cloud::Spanner::Commit.new
-    now = Time.now
+  let(:commit) { Google::Cloud::Spanner::Commit.new }
+  let(:deliver_time) { Time.now + 300 }
 
-    commit.send_message "TestQueue", 2, "Hello, Queues!", deliver_time: now
+  it "builds a send mutation with scalar key" do
+    commit.send_message "TestQueue", 2, "Hello, Queues!"
 
     assert_equal 1, commit.mutations.count
     mutation = commit.mutations.first
@@ -28,12 +28,10 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     assert_equal "TestQueue", mutation["send"].queue
     assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, mutation["send"].key
     assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value("Hello, Queues!"), mutation["send"].payload
-    assert_equal Google::Cloud::Spanner::Convert.time_to_timestamp(now), mutation["send"].deliver_time
+    assert_nil mutation["send"].deliver_time
   end
 
   it "builds a send mutation with composite key" do
-    commit = Google::Cloud::Spanner::Commit.new
-
     commit.send_message "TestQueue", ["tenant1", 2], "Hello, Queues!"
 
     assert_equal 1, commit.mutations.count
@@ -47,8 +45,6 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
   end
 
   it "encodes StringIO payloads as Base64" do
-    commit = Google::Cloud::Spanner::Commit.new
-
     raw_bytes = "\x00\x01\x02\xFF".b
     commit.send_message "TestQueue", 1, StringIO.new(raw_bytes)
 
@@ -57,7 +53,6 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
   end
 
   it "encodes Hash payload as JSON string" do
-    commit = Google::Cloud::Spanner::Commit.new
     hash_payload = { "event" => "user_created", "status" => "active" }
 
     commit.send_message "TestQueue", 1, hash_payload
@@ -69,17 +64,37 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
   end
 
   it "raises ArgumentError for unsupported payload types" do
-    commit = Google::Cloud::Spanner::Commit.new
-
     assert_raises ArgumentError do
       commit.send_message "TestQueue", 1, Object.new
     end
   end
 
-  it "builds an ack mutation with scalar and composite keys" do
-    commit = Google::Cloud::Spanner::Commit.new
+  it "sets deliver_time from SendOptions or a Hash" do
+    send_options = Google::Cloud::Spanner::SendOptions.new deliver_time: deliver_time
 
-    commit.ack_message "TestQueue", 2, ignore_not_found: true
+    commit.send_message "TestQueue", 1, "payload", send_options: send_options
+    commit.send_message "TestQueue", 2, "payload", send_options: { deliver_time: deliver_time }
+
+    expected = Google::Cloud::Spanner::Convert.time_to_timestamp deliver_time
+    assert_equal [expected, expected], commit.mutations.map { |mutation| mutation["send"].deliver_time }
+  end
+
+  it "raises ArgumentError for invalid send_options" do
+    assert_raises(ArgumentError) { commit.send_message "TestQueue", 1, "payload", send_options: { deliver_at: deliver_time } }
+    assert_raises(ArgumentError) { commit.send_message "TestQueue", 1, "payload", send_options: deliver_time }
+    assert_raises ArgumentError do
+      commit.send_message "TestQueue", 1, "payload", send_options: Google::Cloud::Spanner::AckOptions.new
+    end
+    assert_empty commit.mutations
+  end
+
+  it "returns the key from send_message" do
+    assert_equal 2, commit.send_message("TestQueue", 2, "payload")
+    assert_equal ["tenant1", 2], commit.send_message("TestQueue", ["tenant1", 2], "payload")
+  end
+
+  it "builds an ack mutation with scalar and composite keys" do
+    commit.ack_message "TestQueue", 2
     commit.ack_message "TestQueue", ["tenant1", 2]
 
     assert_equal 2, commit.mutations.count
@@ -89,11 +104,34 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     assert m1.ack
     assert_equal "TestQueue", m1.ack.queue
     assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, m1.ack.key
-    assert_equal true, m1.ack.ignore_not_found
+    assert_equal false, m1.ack.ignore_not_found
 
     assert m2.ack
     assert_equal "TestQueue", m2.ack.queue
     assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value(["tenant1", 2]).list_value, m2.ack.key
     assert_equal false, m2.ack.ignore_not_found
+  end
+
+  it "sets ignore_not_found from AckOptions or a Hash" do
+    ack_options = Google::Cloud::Spanner::AckOptions.new ignore_not_found: true
+
+    commit.ack_message "TestQueue", 1, ack_options: ack_options
+    commit.ack_message "TestQueue", 2, ack_options: { ignore_not_found: true }
+
+    assert_equal [true, true], commit.mutations.map { |mutation| mutation.ack.ignore_not_found }
+  end
+
+  it "raises ArgumentError for invalid ack_options" do
+    assert_raises(ArgumentError) { commit.ack_message "TestQueue", 1, ack_options: { ignore_missing: true } }
+    assert_raises(ArgumentError) { commit.ack_message "TestQueue", 1, ack_options: true }
+    assert_raises ArgumentError do
+      commit.ack_message "TestQueue", 1, ack_options: Google::Cloud::Spanner::SendOptions.new
+    end
+    assert_empty commit.mutations
+  end
+
+  it "returns the key from ack_message" do
+    assert_equal 2, commit.ack_message("TestQueue", 2)
+    assert_equal ["tenant1", 2], commit.ack_message("TestQueue", ["tenant1", 2])
   end
 end

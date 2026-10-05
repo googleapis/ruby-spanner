@@ -1091,48 +1091,72 @@ module Google
         #     no bytes type, so wrap binary data in a `StringIO`.
         #   * `Hash` - Serialized to a JSON string.
         #   * `Google::Protobuf::MessageExts` - Serialized and Base64-encoded.
-        # @param [Time] deliver_time An optional scheduled delivery time.
+        # @param [SendOptions, Hash] send_options A {SendOptions} or a hash of
+        #   send options. Send options are optional. The following options can
+        #   be provided:
         #
-        # @raise [ArgumentError] If the payload type is unsupported.
+        #   * `:deliver_time` (Time) The time at which Spanner begins trying to
+        #     deliver the message. If not set, the message is delivered
+        #     immediately. A time in the past is replaced with a time closer to
+        #     the current time.
         #
-        # @example
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @raise [ArgumentError] If the payload type is unsupported, or if
+        #   `send_options` is not a {SendOptions}, a hash of its options, or
+        #   `nil`.
+        #
+        # @example Send a message in the same transaction as the row it describes
         #   require "google/cloud/spanner"
         #
         #   spanner = Google::Cloud::Spanner.new
         #   db = spanner.client "my-instance", "my-database"
         #
         #   db.transaction do |tx|
-        #     tx.send_message "TestQueue", 42, "Hello, Queues!"
+        #     tx.insert "orders", [{ id: 101, status: "NEW" }]
+        #     tx.send_message "OrderQueue", 101, StringIO.new("Order payload")
         #   end
         #
-        def send_message queue, key, payload, deliver_time: nil
+        def send_message queue, key, payload, send_options: nil
           ensure_session!
-          @commit.send_message queue, key, payload, deliver_time: deliver_time
+          @commit.send_message queue, key, payload, send_options: send_options
         end
 
         ##
-        # Acknowledges a message in a queue.
+        # Acknowledges a message in a queue, which removes it from the queue.
         #
         # All changes are accumulated in memory until the block passed to
         # {Client#transaction} completes.
         #
         # @param [String] queue The name of the queue.
         # @param [Object, Array<Object>] key A single key or array of composite key parts to match.
-        # @param [Boolean] ignore_not_found If true, does not fail if message does not exist.
+        # @param [AckOptions, Hash] ack_options An {AckOptions} or a hash of ack
+        #   options. Ack options are optional. The following options can be
+        #   provided:
         #
-        # @example
+        #   * `:ignore_not_found` (Boolean) If `true`, the ack succeeds even if
+        #     the message doesn't exist. Default value is `false`, which fails
+        #     the commit with `NOT_FOUND` when the message doesn't exist.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @raise [ArgumentError] If `ack_options` is not an {AckOptions}, a
+        #   hash of its options, or `nil`.
+        #
+        # @example Ack a message in the same transaction as the write it caused
         #   require "google/cloud/spanner"
         #
         #   spanner = Google::Cloud::Spanner.new
         #   db = spanner.client "my-instance", "my-database"
         #
         #   db.transaction do |tx|
-        #     tx.ack_message "TestQueue", 42
+        #     tx.update "orders", [{ id: 101, status: "PROCESSED" }]
+        #     tx.ack_message "OrderQueue", 101
         #   end
         #
-        def ack_message queue, key, ignore_not_found: false
+        def ack_message queue, key, ack_options: nil
           ensure_session!
-          @commit.ack_message queue, key, ignore_not_found: ignore_not_found
+          @commit.ack_message queue, key, ack_options: ack_options
         end
 
         ##

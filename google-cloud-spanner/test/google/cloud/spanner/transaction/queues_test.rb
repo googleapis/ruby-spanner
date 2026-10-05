@@ -14,6 +14,9 @@
 
 require "helper"
 
+# Transaction#send_message and #ack_message delegate to the transaction's
+# Commit, so payload and key conversion is covered in commit_queues_test.rb.
+# These tests check that every argument reaches the transaction's mutations.
 describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
   let(:instance_id) { "my-instance-id" }
   let(:database_id) { "my-database-id" }
@@ -23,76 +26,50 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
   let(:transaction_id) { "tx789" }
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
+  let(:deliver_time) { Time.now + 300 }
 
-  it "builds a send mutation with scalar key" do
-    now = Time.now
-    transaction.send_message "TestQueue", 2, "Hello, Queues!", deliver_time: now
+  it "adds a send mutation to the transaction" do
+    key = transaction.send_message "TestQueue", ["tenant1", 2], "Hello, Queues!"
 
+    assert_equal ["tenant1", 2], key
     assert_equal 1, transaction.mutations.count
     mutation = transaction.mutations.first
 
-    assert mutation["send"]
-    assert_equal "TestQueue", mutation["send"].queue
-    assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, mutation["send"].key
-    assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value("Hello, Queues!"), mutation["send"].payload
-    assert_equal Google::Cloud::Spanner::Convert.time_to_timestamp(now), mutation["send"].deliver_time
-  end
-
-  it "builds a send mutation with composite key" do
-    transaction.send_message "TestQueue", ["tenant1", 2], "Hello, Queues!"
-
-    assert_equal 1, transaction.mutations.count
-    mutation = transaction.mutations.first
-
-    assert mutation["send"]
     assert_equal "TestQueue", mutation["send"].queue
     assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value(["tenant1", 2]).list_value, mutation["send"].key
     assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value("Hello, Queues!"), mutation["send"].payload
     assert_nil mutation["send"].deliver_time
   end
 
-  it "encodes StringIO payloads as Base64" do
-    raw_bytes = "\x00\x01\x02\xFF".b
-    transaction.send_message "TestQueue", 1, StringIO.new(raw_bytes)
+  it "passes send_options to the send mutation" do
+    send_options = Google::Cloud::Spanner::SendOptions.new deliver_time: deliver_time
 
-    assert_equal 1, transaction.mutations.count
-    assert_equal Base64.strict_encode64(raw_bytes), transaction.mutations.first["send"].payload.string_value
+    transaction.send_message "TestQueue", 1, "payload", send_options: send_options
+    transaction.send_message "TestQueue", 2, "payload", send_options: { deliver_time: deliver_time }
+
+    expected = Google::Cloud::Spanner::Convert.time_to_timestamp deliver_time
+    assert_equal [expected, expected], transaction.mutations.map { |mutation| mutation["send"].deliver_time }
   end
 
-  it "encodes Hash payload as JSON string" do
-    hash_payload = { "event" => "user_created", "status" => "active" }
+  it "adds an ack mutation to the transaction" do
+    key = transaction.ack_message "TestQueue", ["tenant1", 2]
 
-    transaction.send_message "TestQueue", 1, hash_payload
-
+    assert_equal ["tenant1", 2], key
     assert_equal 1, transaction.mutations.count
     mutation = transaction.mutations.first
 
-    assert_equal hash_payload.to_json, mutation["send"].payload.string_value
+    assert_equal "TestQueue", mutation.ack.queue
+    assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value(["tenant1", 2]).list_value, mutation.ack.key
+    assert_equal false, mutation.ack.ignore_not_found
   end
 
-  it "raises ArgumentError for unsupported payload types" do
-    assert_raises ArgumentError do
-      transaction.send_message "TestQueue", 1, Object.new
-    end
-  end
+  it "passes ack_options to the ack mutation" do
+    ack_options = Google::Cloud::Spanner::AckOptions.new ignore_not_found: true
 
-  it "builds an ack mutation with scalar and composite keys" do
-    transaction.ack_message "TestQueue", 2, ignore_not_found: true
-    transaction.ack_message "TestQueue", ["tenant1", 2]
+    transaction.ack_message "TestQueue", 1, ack_options: ack_options
+    transaction.ack_message "TestQueue", 2, ack_options: { ignore_not_found: true }
 
-    assert_equal 2, transaction.mutations.count
-    m1 = transaction.mutations[0]
-    m2 = transaction.mutations[1]
-
-    assert m1.ack
-    assert_equal "TestQueue", m1.ack.queue
-    assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value([2]).list_value, m1.ack.key
-    assert_equal true, m1.ack.ignore_not_found
-
-    assert m2.ack
-    assert_equal "TestQueue", m2.ack.queue
-    assert_equal Google::Cloud::Spanner::Convert.object_to_grpc_value(["tenant1", 2]).list_value, m2.ack.key
-    assert_equal false, m2.ack.ignore_not_found
+    assert_equal [true, true], transaction.mutations.map { |mutation| mutation.ack.ignore_not_found }
   end
 
   it "raises when session is missing" do
