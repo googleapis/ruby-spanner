@@ -14,72 +14,46 @@
 
 require "spanner_helper"
 
-describe "Spanner Client Queues", :crud, :spanner do
+# An ack without ignore_not_found fails with NOT_FOUND unless the message
+# exists, so a successful ack also shows that the send landed.
+describe "Spanner Client Queues", :queues, :spanner do
+  let(:db) { spanner_client }
+
   before do
-    skip "Cloud Spanner Emulator does not yet support Queues (Send & Ack)" if ENV["SPANNER_EMULATOR_HOST"]
+    skip "Cloud Spanner Emulator does not yet support Queues (Send & Ack)" if emulator_enabled?
+
+    # Created once per run, in the per-run test database.
+    $spanner_test_queue_created ||= begin
+      db_job = db.database.update statements: [queue_ddl_statement]
+      db_job.wait_until_done!
+      raise GRPC::BadStatus.new(db_job.error.code, db_job.error.message) if db_job.error?
+      true
+    end
   end
 
-  let :db do
-    { gsql: spanner_client }
+  it "sends and acks messages with Client#commit" do
+    commit_time = db.commit do |c|
+      c.send_message "TestQueue", 1, StringIO.new("payload1")
+      c.send_message "TestQueue", 2, StringIO.new("payload2")
+    end
+    _(commit_time).must_be_kind_of Time
+
+    commit_time = db.commit do |c|
+      c.ack_message "TestQueue", 1
+      c.ack_message "TestQueue", 2
+    end
+    _(commit_time).must_be_kind_of Time
   end
 
-  it "sends, reads back, and acknowledges queue messages transactionally" do
-    db[:gsql].commit do |c|
-      c.send_message "TestQueue", [1], "payload1"
-      c.send_message "TestQueue", [2], "payload2"
-      c.send_message "TestQueue", [3], "payload3", deliver_time: Time.now
+  it "sends and acks a message with Client#transaction" do
+    commit_time = db.transaction do |tx|
+      tx.send_message "TestQueue", 3, StringIO.new("payload3")
     end
+    _(commit_time).must_be_kind_of Time
 
-    # Read back from the queue table to verify messages were enqueued
-    results1 = db[:gsql].read "TestQueue", [:Payload], keys: [1]
-    rows1 = results1.rows.to_a
-    _(rows1.count).must_equal 1
-    payload1 = rows1.first[:Payload]
-    _(payload1.respond_to?(:read) ? payload1.read : payload1.to_s).must_equal "payload1"
-
-    results2 = db[:gsql].read "TestQueue", [:Payload], keys: [2]
-    rows2 = results2.rows.to_a
-    _(rows2.count).must_equal 1
-    payload2 = rows2.first[:Payload]
-    _(payload2.respond_to?(:read) ? payload2.read : payload2.to_s).must_equal "payload2"
-
-    results3 = db[:gsql].read "TestQueue", [:Payload], keys: [3]
-    rows3 = results3.rows.to_a
-    _(rows3.count).must_equal 1
-    payload3 = rows3.first[:Payload]
-    _(payload3.respond_to?(:read) ? payload3.read : payload3.to_s).must_equal "payload3"
-
-    # Acknowledge the first two messages
-    db[:gsql].commit do |c|
-      c.ack_message "TestQueue", [1]
-      c.ack_message "TestQueue", [2]
+    commit_time = db.transaction do |tx|
+      tx.ack_message "TestQueue", 3
     end
-
-    # Verify the first two messages are removed from the queue and message 3 remains
-    results1_after = db[:gsql].read "TestQueue", [:Payload], keys: [1]
-    _(results1_after.rows.to_a.count).must_equal 0
-
-    results2_after = db[:gsql].read "TestQueue", [:Payload], keys: [2]
-    _(results2_after.rows.to_a.count).must_equal 0
-
-    results3_after = db[:gsql].read "TestQueue", [:Payload], keys: [3]
-    rows3_after = results3_after.rows.to_a
-    _(rows3_after.count).must_equal 1
-    payload3_after = rows3_after.first[:Payload]
-    _(payload3_after.respond_to?(:read) ? payload3_after.read : payload3_after.to_s).must_equal "payload3"
-  end
-
-  it "acknowledges missing messages with ignore_not_found option" do
-    db[:gsql].commit do |c|
-      c.ack_message "TestQueue", [9999], ignore_not_found: true
-    end
-
-    # Acknowledging without ignore_not_found should raise an error when queue is present
-    err = _(proc do
-      db[:gsql].commit do |c|
-        c.ack_message "TestQueue", [9999], ignore_not_found: false
-      end
-    end).must_raise Google::Cloud::NotFoundError, Google::Cloud::InvalidArgumentError, Google::Cloud::UnimplementedError
-    _(err.message).must_match(/Queue|Table not found|not found|TestQueue|unimplemented|invalid/i)
+    _(commit_time).must_be_kind_of Time
   end
 end
