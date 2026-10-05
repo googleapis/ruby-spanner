@@ -24,9 +24,9 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
   let(:transaction_grpc) { Google::Cloud::Spanner::V1::Transaction.new id: transaction_id }
   let(:transaction) { Google::Cloud::Spanner::Transaction.from_grpc transaction_grpc, session }
 
-  it "builds an enqueue mutation with scalar key" do
+  it "builds a send mutation with scalar key" do
     now = Time.now
-    transaction.enqueue "TestQueue", 2, "Hello, Queues!", deliver_time: now
+    transaction.send_message "TestQueue", 2, "Hello, Queues!", deliver_time: now
 
     assert_equal 1, transaction.mutations.count
     mutation = transaction.mutations.first
@@ -38,8 +38,8 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
     assert_equal Google::Cloud::Spanner::Convert.time_to_timestamp(now), mutation["send"].deliver_time
   end
 
-  it "builds an enqueue mutation with composite key" do
-    transaction.enqueue "TestQueue", ["tenant1", 2], "Hello, Queues!"
+  it "builds a send mutation with composite key" do
+    transaction.send_message "TestQueue", ["tenant1", 2], "Hello, Queues!"
 
     assert_equal 1, transaction.mutations.count
     mutation = transaction.mutations.first
@@ -53,7 +53,7 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
 
   it "encodes StringIO payloads as Base64" do
     raw_bytes = "\x00\x01\x02\xFF".b
-    transaction.enqueue "TestQueue", 1, StringIO.new(raw_bytes)
+    transaction.send_message "TestQueue", 1, StringIO.new(raw_bytes)
 
     assert_equal 1, transaction.mutations.count
     assert_equal Base64.strict_encode64(raw_bytes), transaction.mutations.first["send"].payload.string_value
@@ -62,7 +62,7 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
   it "encodes Hash payload as JSON string" do
     hash_payload = { "event" => "user_created", "status" => "active" }
 
-    transaction.enqueue "TestQueue", 1, hash_payload
+    transaction.send_message "TestQueue", 1, hash_payload
 
     assert_equal 1, transaction.mutations.count
     mutation = transaction.mutations.first
@@ -72,13 +72,13 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
 
   it "raises ArgumentError for unsupported payload types" do
     assert_raises ArgumentError do
-      transaction.enqueue "TestQueue", 1, Object.new
+      transaction.send_message "TestQueue", 1, Object.new
     end
   end
 
   it "builds an ack mutation with scalar and composite keys" do
-    transaction.ack "TestQueue", 2, ignore_not_found: true
-    transaction.ack "TestQueue", ["tenant1", 2]
+    transaction.ack_message "TestQueue", 2, ignore_not_found: true
+    transaction.ack_message "TestQueue", ["tenant1", 2]
 
     assert_equal 2, transaction.mutations.count
     m1 = transaction.mutations[0]
@@ -99,11 +99,11 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
     transaction.session = nil
 
     assert_raises RuntimeError do
-      transaction.enqueue "TestQueue", 1, "test"
+      transaction.send_message "TestQueue", 1, "test"
     end
 
     assert_raises RuntimeError do
-      transaction.ack "TestQueue", 1
+      transaction.ack_message "TestQueue", 1
     end
   end
 end

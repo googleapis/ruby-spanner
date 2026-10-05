@@ -1102,12 +1102,12 @@ module Google
         #   db = spanner.client "my-instance", "my-database"
         #
         #   db.transaction do |tx|
-        #     tx.enqueue "TestQueue", 42, "Hello, Queues!"
+        #     tx.send_message "TestQueue", 42, "Hello, Queues!"
         #   end
         #
-        def enqueue queue, key, payload, deliver_time: nil
+        def send_message queue, key, payload, deliver_time: nil
           ensure_session!
-          @commit.enqueue queue, key, payload, deliver_time: deliver_time
+          @commit.send_message queue, key, payload, deliver_time: deliver_time
         end
 
         ##
@@ -1127,12 +1127,12 @@ module Google
         #   db = spanner.client "my-instance", "my-database"
         #
         #   db.transaction do |tx|
-        #     tx.ack "TestQueue", 42
+        #     tx.ack_message "TestQueue", 42
         #   end
         #
-        def ack queue, key, ignore_not_found: false
+        def ack_message queue, key, ignore_not_found: false
           ensure_session!
-          @commit.ack queue, key, ignore_not_found: ignore_not_found
+          @commit.ack_message queue, key, ignore_not_found: ignore_not_found
         end
 
         ##

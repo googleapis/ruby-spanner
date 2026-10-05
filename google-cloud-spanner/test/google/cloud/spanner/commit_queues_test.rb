@@ -15,11 +15,11 @@
 require "helper"
 
 describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
-  it "builds an enqueue mutation with scalar key" do
+  it "builds a send mutation with scalar key" do
     commit = Google::Cloud::Spanner::Commit.new
     now = Time.now
 
-    commit.enqueue "TestQueue", 2, "Hello, Queues!", deliver_time: now
+    commit.send_message "TestQueue", 2, "Hello, Queues!", deliver_time: now
 
     assert_equal 1, commit.mutations.count
     mutation = commit.mutations.first
@@ -31,10 +31,10 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     assert_equal Google::Cloud::Spanner::Convert.time_to_timestamp(now), mutation["send"].deliver_time
   end
 
-  it "builds an enqueue mutation with composite key" do
+  it "builds a send mutation with composite key" do
     commit = Google::Cloud::Spanner::Commit.new
 
-    commit.enqueue "TestQueue", ["tenant1", 2], "Hello, Queues!"
+    commit.send_message "TestQueue", ["tenant1", 2], "Hello, Queues!"
 
     assert_equal 1, commit.mutations.count
     mutation = commit.mutations.first
@@ -50,7 +50,7 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     commit = Google::Cloud::Spanner::Commit.new
 
     raw_bytes = "\x00\x01\x02\xFF".b
-    commit.enqueue "TestQueue", 1, StringIO.new(raw_bytes)
+    commit.send_message "TestQueue", 1, StringIO.new(raw_bytes)
 
     assert_equal 1, commit.mutations.count
     assert_equal Base64.strict_encode64(raw_bytes), commit.mutations.first["send"].payload.string_value
@@ -60,7 +60,7 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     commit = Google::Cloud::Spanner::Commit.new
     hash_payload = { "event" => "user_created", "status" => "active" }
 
-    commit.enqueue "TestQueue", 1, hash_payload
+    commit.send_message "TestQueue", 1, hash_payload
 
     assert_equal 1, commit.mutations.count
     mutation = commit.mutations.first
@@ -72,15 +72,15 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     commit = Google::Cloud::Spanner::Commit.new
 
     assert_raises ArgumentError do
-      commit.enqueue "TestQueue", 1, Object.new
+      commit.send_message "TestQueue", 1, Object.new
     end
   end
 
   it "builds an ack mutation with scalar and composite keys" do
     commit = Google::Cloud::Spanner::Commit.new
 
-    commit.ack "TestQueue", 2, ignore_not_found: true
-    commit.ack "TestQueue", ["tenant1", 2]
+    commit.ack_message "TestQueue", 2, ignore_not_found: true
+    commit.ack_message "TestQueue", ["tenant1", 2]
 
     assert_equal 2, commit.mutations.count
     m1 = commit.mutations[0]

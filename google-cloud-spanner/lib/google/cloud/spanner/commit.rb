@@ -300,7 +300,7 @@ module Google
         #
         # @raise [ArgumentError] If the payload type is unsupported.
         #
-        def enqueue queue, key, payload, deliver_time: nil
+        def send_message queue, key, payload, deliver_time: nil
           payload_value = Convert.object_to_grpc_value payload
 
           send_opts = {
@@ -327,7 +327,7 @@ module Google
         # @param [Object, Array<Object>] key A single key or array of composite key parts to match.
         # @param [Boolean] ignore_not_found If true, does not fail if message does not exist.
         #
-        def ack queue, key, ignore_not_found: false
+        def ack_message queue, key, ignore_not_found: false
           @mutations += [
             V1::Mutation.new(
               ack: V1::Mutation::Ack.new(

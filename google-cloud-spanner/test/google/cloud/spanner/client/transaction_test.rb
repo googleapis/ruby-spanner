@@ -454,7 +454,7 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     mock.verify
   end
 
-  it "enqueues and acks" do
+  it "sends and acks queue messages" do
     mutations = [
       Google::Cloud::Spanner::V1::Mutation.new(
         send: Google::Cloud::Spanner::V1::Mutation::Send.new(
@@ -491,8 +491,8 @@ describe Google::Cloud::Spanner::Client, :transaction, :mock_spanner do
     spanner.service.mocked_service = mock
 
     timestamp = client.transaction do |tx|
-      tx.enqueue "TestQueue", 101, "Hello, Queues!"
-      tx.ack "TestQueue", 102
+      tx.send_message "TestQueue", 101, "Hello, Queues!"
+      tx.ack_message "TestQueue", 102
     end
     _(timestamp).must_equal commit_time
 

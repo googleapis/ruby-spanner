@@ -23,11 +23,11 @@ describe "Spanner Client Queues", :crud, :spanner do
     { gsql: spanner_client }
   end
 
-  it "enqueues, reads back, and acknowledges queue messages transactionally" do
+  it "sends, reads back, and acknowledges queue messages transactionally" do
     db[:gsql].commit do |c|
-      c.enqueue "TestQueue", [1], "payload1"
-      c.enqueue "TestQueue", [2], "payload2"
-      c.enqueue "TestQueue", [3], "payload3", deliver_time: Time.now
+      c.send_message "TestQueue", [1], "payload1"
+      c.send_message "TestQueue", [2], "payload2"
+      c.send_message "TestQueue", [3], "payload3", deliver_time: Time.now
     end
 
     # Read back from the queue table to verify messages were enqueued
@@ -51,8 +51,8 @@ describe "Spanner Client Queues", :crud, :spanner do
 
     # Acknowledge the first two messages
     db[:gsql].commit do |c|
-      c.ack "TestQueue", [1]
-      c.ack "TestQueue", [2]
+      c.ack_message "TestQueue", [1]
+      c.ack_message "TestQueue", [2]
     end
 
     # Verify the first two messages are removed from the queue and message 3 remains
@@ -71,13 +71,13 @@ describe "Spanner Client Queues", :crud, :spanner do
 
   it "acknowledges missing messages with ignore_not_found option" do
     db[:gsql].commit do |c|
-      c.ack "TestQueue", [9999], ignore_not_found: true
+      c.ack_message "TestQueue", [9999], ignore_not_found: true
     end
 
     # Acknowledging without ignore_not_found should raise an error when queue is present
     err = _(proc do
       db[:gsql].commit do |c|
-        c.ack "TestQueue", [9999], ignore_not_found: false
+        c.ack_message "TestQueue", [9999], ignore_not_found: false
       end
     end).must_raise Google::Cloud::NotFoundError, Google::Cloud::InvalidArgumentError, Google::Cloud::UnimplementedError
     _(err.message).must_match(/Queue|Table not found|not found|TestQueue|unimplemented|invalid/i)
