@@ -16,7 +16,7 @@ gem "irb", "~> 1.17"
 gem "minitest", "~> 5.25"
 gem "minitest-autotest", "~> 1.0"
 gem "minitest-focus", "~> 1.4"
-gem "minitest-reporters", "~> 1.7"
+gem "minitest-reporters", "~> 1.8.0"
 gem "minitest-rg", "~> 5.3"
 
 gem "mutex_m", "~> 0.3.0"
