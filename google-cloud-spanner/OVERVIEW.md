@@ -298,6 +298,60 @@ db.snapshot do |snp|
 end
 ```
 
+## Using queues
+
+A queue holds messages for consumers to receive. You create queues with the
+`CREATE QUEUE` statement (see the [DDL
+reference](https://cloud.google.com/spanner/docs/reference/standard-sql/data-definition-language)).
+
+Use {Google::Cloud::Spanner::Commit#send_message Commit#send_message} to send a
+message. The payload is converted the same way as column values, so wrap binary
+data in a `StringIO`, as you would for a `BYTES` column:
+
+```ruby
+require "google/cloud/spanner"
+
+spanner = Google::Cloud::Spanner.new
+
+db = spanner.client "my-instance", "my-database"
+
+db.commit do |c|
+  c.send_message "OrderQueue", 101, StringIO.new("Order payload")
+end
+```
+
+Receive messages with the `RECEIVE_<queue>` table-valued function, and use
+{Google::Cloud::Spanner::Transaction#ack_message Transaction#ack_message} to
+acknowledge each one in the same transaction as the write it caused:
+
+```ruby
+require "google/cloud/spanner"
+
+spanner = Google::Cloud::Spanner.new
+
+db = spanner.client "my-instance", "my-database"
+
+results = db.execute_query "SELECT Id, Payload FROM RECEIVE_OrderQueue()"
+
+results.rows.each do |row|
+  db.transaction do |tx|
+    tx.update "orders", [{ id: row[:Id], status: "PROCESSED" }]
+    tx.ack_message "OrderQueue", row[:Id]
+  end
+end
+```
+
+Optional settings go in a {Google::Cloud::Spanner::SendOptions SendOptions} or
+{Google::Cloud::Spanner::AckOptions AckOptions}, or in a hash with the same
+keys:
+
+```ruby
+db.commit do |c|
+  c.send_message "OrderQueue", 102, StringIO.new("Order payload"),
+                 send_options: { deliver_time: Time.now + 300 }
+end
+```
+
 ## Deleting databases
 
 Use {Google::Cloud::Spanner::Admin::Database#database_admin
