@@ -762,6 +762,19 @@ YARD::Doctest.configure do |doctest|
     end
   end
 
+  # SendOptions and AckOptions
+
+  ["Google::Cloud::Spanner::SendOptions", "Google::Cloud::Spanner::AckOptions"].each do |options_class|
+    doctest.before options_class do
+      mock_spanner do |mock, mock_instances, mock_databases|
+        mock.expect :batch_create_sessions, OpenStruct.new(session: Array.new(10) { session_grpc }), [{database: "projects/my-project/instances/my-instance/databases/my-database", session_count: 10, session_template: nil }, Hash]
+        mock.expect :commit, commit_resp do |req|
+          verify_mock_params(req, session: "session-name", mutations: Array)
+        end
+      end
+    end
+  end
+
   # Data
 
   doctest.before "Google::Cloud::Spanner::Data" do

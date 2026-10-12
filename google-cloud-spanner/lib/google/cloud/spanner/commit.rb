@@ -15,6 +15,8 @@
 
 require "google/cloud/spanner/data"
 require "google/cloud/spanner/convert"
+require "google/cloud/spanner/send_options"
+require "google/cloud/spanner/ack_options"
 
 module Google
   module Cloud
@@ -280,6 +282,130 @@ module Google
           keys
         end
 
+        ##
+        # Sends a message to a queue.
+        #
+        # All changes are accumulated in memory until the block passed to
+        # {Client#commit} completes.
+        #
+        # @param [String] queue The name of the queue.
+        # @param [Object, Array<Object>] key A single key or array of composite key parts for the message.
+        # @param [String, IO, StringIO, Hash, Google::Protobuf::MessageExts] payload
+        #   The message payload. It is converted the same way as column values
+        #   (see {#upsert}):
+        #   * `String` - Sent as text.
+        #   * `IO`, `StringIO`, `File` - Sent as bytes (Base64-encoded). Ruby has
+        #     no bytes type, so wrap binary data in a `StringIO`.
+        #   * `Hash` - Serialized to a JSON string.
+        #   * `Google::Protobuf::MessageExts` - Serialized and Base64-encoded.
+        # @param [SendOptions, Hash] send_options A {SendOptions} or a hash of
+        #   send options. Send options are optional. The following options can
+        #   be provided:
+        #
+        #   * `:deliver_time` (Time) The time at which Spanner begins trying to
+        #     deliver the message. If not set, the message is delivered
+        #     immediately. A time in the past is replaced with a time closer to
+        #     the current time.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @raise [ArgumentError] If the payload type is unsupported, or if
+        #   `send_options` is not a {SendOptions}, a hash of its options, or
+        #   `nil`.
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.send_message "OrderQueue", 101, StringIO.new("Order payload")
+        #   end
+        #
+        # @example Deliver the message in five minutes
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   send_options = { deliver_time: Time.now + 300 }
+        #
+        #   db.commit do |c|
+        #     c.send_message "OrderQueue", 101, StringIO.new("Order payload"),
+        #                    send_options: send_options
+        #   end
+        #
+        def send_message queue, key, payload, send_options: nil
+          send_options = build_options send_options, SendOptions
+          send_mutation = V1::Mutation::Send.new(
+            queue: queue,
+            key: key_list_value(key),
+            payload: Convert.object_to_grpc_value(payload),
+            deliver_time: Convert.time_to_timestamp(send_options.deliver_time)
+          )
+          @mutations += [V1::Mutation.new(send: send_mutation)]
+          key
+        end
+
+        ##
+        # Acknowledges a message in a queue, which removes it from the queue.
+        #
+        # All changes are accumulated in memory until the block passed to
+        # {Client#commit} completes.
+        #
+        # @param [String] queue The name of the queue.
+        # @param [Object, Array<Object>] key A single key or array of composite key parts to match.
+        # @param [AckOptions, Hash] ack_options An {AckOptions} or a hash of ack
+        #   options. Ack options are optional. The following options can be
+        #   provided:
+        #
+        #   * `:ignore_not_found` (Boolean) If `true`, the ack succeeds even if
+        #     the message doesn't exist. Default value is `false`, which fails
+        #     the commit with `NOT_FOUND` when the message doesn't exist.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @raise [ArgumentError] If `ack_options` is not an {AckOptions}, a
+        #   hash of its options, or `nil`.
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.ack_message "OrderQueue", 101
+        #   end
+        #
+        # @example Ack a message whether or not it exists
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   ack_options = { ignore_not_found: true }
+        #
+        #   db.commit do |c|
+        #     c.ack_message "OrderQueue", 101, ack_options: ack_options
+        #   end
+        #
+        def ack_message queue, key, ack_options: nil
+          ack_options = build_options ack_options, AckOptions
+          ack_mutation = V1::Mutation::Ack.new(
+            queue: queue,
+            key: key_list_value(key),
+            ignore_not_found: ack_options.ignore_not_found
+          )
+          @mutations += [V1::Mutation.new(ack: ack_mutation)]
+          key
+        end
+
         # Return the current mutations added to this `Spanner::Commit` object.
         # @private
         # @return [Array<Google::Cloud::Spanner::V1::Mutation>]
@@ -323,6 +449,42 @@ module Google
             )
           end
           rows
+        end
+
+        ##
+        # @private
+        # Generates a `ListValue` protobuf containing gRPC values for the given primary key.
+        #
+        # @param [Object, Array<Object>] key A single, or array of keys to convert.
+        # @return [Google::Protobuf::ListValue]
+        #
+        def key_list_value key
+          key = [key] unless key.is_a? Array
+          key_list = key.map do |k|
+            Convert.object_to_grpc_value k
+          end
+          Google::Protobuf::ListValue.new values: key_list
+        end
+
+        ##
+        # @private
+        # Returns `options` as an instance of `options_class`, so callers can
+        # pass the options object, a hash of its keyword arguments, or `nil`.
+        #
+        # @param [Object, Hash, nil] options The options given by the caller.
+        # @param [Class] options_class The options class, e.g. {SendOptions}.
+        # @return [Object] An instance of `options_class`.
+        # @raise [ArgumentError] If `options` is any other type, or the hash
+        #   has a key that `options_class` doesn't accept.
+        #
+        def build_options options, options_class
+          case options
+          when options_class then options
+          when nil then options_class.new
+          when Hash then options_class.new(**options)
+          else
+            raise ArgumentError, "expected #{options_class}, Hash, or nil, got #{options.class}"
+          end
         end
 
         def key_set keys
