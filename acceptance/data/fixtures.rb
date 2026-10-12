@@ -196,6 +196,17 @@ module Acceptance
       ITEMS
     end
 
+    # Not part of schema_ddl_statements: queues need an Enterprise edition
+    # instance, and the emulator doesn't support them yet.
+    def queue_ddl_statement
+      <<~QUEUE
+        CREATE QUEUE IF NOT EXISTS TestQueue (
+        Id INT64 NOT NULL,
+        Payload BYTES(MAX) NOT NULL
+        ) PRIMARY KEY (Id)
+      QUEUE
+    end
+
     def schema_pg_ddl_statements
       [
         stuff_pg_ddl_statement,
