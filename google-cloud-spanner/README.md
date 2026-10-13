@@ -182,3 +182,4 @@ Github](https://github.com/googleapis/ruby-spanner/issues). Don't
 hesitate to [ask
 questions](http://stackoverflow.com/questions/tagged/google-cloud-ruby) about
 the client or APIs on [StackOverflow](http://stackoverflow.com).
+
