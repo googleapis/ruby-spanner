@@ -1,5 +1,11 @@
 # Release History
 
+### 2.36.1 (2026-10-13)
+
+#### Documentation
+
+* trigger a release to verify the new publishing pipeline ([#268](https://github.com/googleapis/ruby-spanner/issues/268)) 
+
 ### 2.36.0 (2026-05-08)
 
 #### Features
