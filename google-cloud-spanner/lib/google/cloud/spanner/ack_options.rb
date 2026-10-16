@@ -20,8 +20,8 @@ module Google
       # # AckOptions
       #
       # Optional settings for acknowledging a queue message with
-      # {Commit#ack_message}. A hash with the same keys can be passed
-      # instead.
+      # {Commit#ack_message} or {Transaction#ack_message}. A hash with the
+      # same keys can be passed instead.
       #
       # @example
       #   require "google/cloud/spanner"

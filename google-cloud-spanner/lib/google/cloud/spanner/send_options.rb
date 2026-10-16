@@ -20,8 +20,8 @@ module Google
       # # SendOptions
       #
       # Optional settings for sending a message to a queue with
-      # {Commit#send_message}. A hash with the same keys can be passed
-      # instead.
+      # {Commit#send_message} or {Transaction#send_message}. A hash with the
+      # same keys can be passed instead.
       #
       # @example
       #   require "google/cloud/spanner"
