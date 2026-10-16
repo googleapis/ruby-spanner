@@ -35,6 +35,12 @@ module Google
       #
       # A client is used to read and/or modify data in a Cloud Spanner database.
       #
+      # A client also works with queues. Send and acknowledge messages with
+      # {Commit#send_message} and {Commit#ack_message} inside {#commit}, or with
+      # {Transaction#send_message} and {Transaction#ack_message} inside
+      # {#transaction}. Receive messages by querying the queue's `RECEIVE_`
+      # function with {#execute_query}.
+      #
       # See {Google::Cloud::Spanner::Project#client}.
       #
       # @example
@@ -504,6 +510,20 @@ module Google
         #
         #   results.rows.each do |row|
         #     puts "User #{row[:id]} is #{row[:name]}"
+        #   end
+        #
+        # @example Receive messages from a queue with the RECEIVE_ function:
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   # RECEIVE_ needs a strong read, which is the default here.
+        #   results = db.execute_query "SELECT Id, Payload FROM RECEIVE_OrderQueue()"
+        #
+        #   results.rows.each do |row|
+        #     puts "Received message #{row[:Id]}"
         #   end
         #
         def execute_query sql, params: nil, types: nil, single_use: nil,
