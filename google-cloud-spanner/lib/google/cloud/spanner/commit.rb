@@ -290,7 +290,8 @@ module Google
         # @param [Object, Array<Object>] key A single key or array of composite key parts for the message.
         # @param [String, IO, StringIO, Hash, Google::Protobuf::MessageExts] payload
         #   The message payload. It is converted the same way as column values
-        #   (see {#upsert}):
+        #   (see {#upsert}), so its type must match the queue's payload column,
+        #   such as a `String` for `STRING` or a `StringIO` for `BYTES`:
         #   * `String` - Sent as text.
         #   * `IO`, `StringIO`, `File` - Sent as bytes (Base64-encoded). Ruby has
         #     no bytes type, so wrap binary data in a `StringIO`.
@@ -312,8 +313,20 @@ module Google
         #
         #   db = spanner.client "my-instance", "my-database"
         #
+        #   # OrderQueue has a STRING(MAX) payload column.
         #   db.commit do |c|
-        #     c.send_message "OrderQueue", 101, StringIO.new("Order payload")
+        #     c.send_message "OrderQueue", 101, "Order payload"
+        #   end
+        #
+        # @example Send binary data to a queue with a BYTES payload column
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.send_message "LabelQueue", 101, StringIO.new(File.binread("label.png"))
         #   end
         #
         # @example Deliver the message in five minutes
@@ -324,7 +337,7 @@ module Google
         #   db = spanner.client "my-instance", "my-database"
         #
         #   db.commit do |c|
-        #     c.send_message "OrderQueue", 101, StringIO.new("Order payload"),
+        #     c.send_message "OrderQueue", 101, "Order payload",
         #                    deliver_time: Time.now + 300
         #   end
         #
