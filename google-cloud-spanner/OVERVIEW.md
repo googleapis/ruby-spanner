@@ -341,14 +341,14 @@ results.rows.each do |row|
 end
 ```
 
-Optional settings go in a {Google::Cloud::Spanner::SendOptions SendOptions} or
-{Google::Cloud::Spanner::AckOptions AckOptions}, or in a hash with the same
-keys:
+To delay delivery, pass `deliver_time:`. To ack a message that might not
+exist, pass `ignore_not_found: true`:
 
 ```ruby
 db.commit do |c|
   c.send_message "OrderQueue", 102, StringIO.new("Order payload"),
-                 send_options: { deliver_time: Time.now + 300 }
+                 deliver_time: Time.now + 300
+  c.ack_message "OrderQueue", 101, ignore_not_found: true
 end
 ```
 
