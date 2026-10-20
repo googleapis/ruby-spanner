@@ -303,10 +303,18 @@ end
 A queue holds messages for consumers to receive. You create queues with the
 `CREATE QUEUE` statement (see the [DDL
 reference](https://cloud.google.com/spanner/docs/reference/standard-sql/data-definition-language)).
+The examples in this section use this queue:
+
+```sql
+CREATE QUEUE OrderQueue (
+  Id INT64 NOT NULL,
+  Payload STRING(MAX) NOT NULL
+) PRIMARY KEY (Id)
+```
 
 Use {Google::Cloud::Spanner::Commit#send_message Commit#send_message} to send a
-message. The payload is converted the same way as column values, so wrap binary
-data in a `StringIO`, as you would for a `BYTES` column:
+message. The payload is converted the same way as column values, so pass a
+`String` for a `STRING` payload column:
 
 ```ruby
 require "google/cloud/spanner"
@@ -316,7 +324,16 @@ spanner = Google::Cloud::Spanner.new
 db = spanner.client "my-instance", "my-database"
 
 db.commit do |c|
-  c.send_message "OrderQueue", 101, StringIO.new("Order payload")
+  c.send_message "OrderQueue", 101, "Order payload"
+end
+```
+
+If a queue's payload column is `BYTES`, wrap the binary data in a `StringIO`,
+as you would for a `BYTES` column in a table:
+
+```ruby
+db.commit do |c|
+  c.send_message "LabelQueue", 101, StringIO.new(File.binread("label.png"))
 end
 ```
 
@@ -346,7 +363,7 @@ exist, pass `ignore_not_found: true`:
 
 ```ruby
 db.commit do |c|
-  c.send_message "OrderQueue", 102, StringIO.new("Order payload"),
+  c.send_message "OrderQueue", 102, "Order payload",
                  deliver_time: Time.now + 300
   c.ack_message "OrderQueue", 101, ignore_not_found: true
 end
