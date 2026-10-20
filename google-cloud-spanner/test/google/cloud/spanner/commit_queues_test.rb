@@ -69,22 +69,15 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     end
   end
 
-  it "sets deliver_time from SendOptions or a Hash" do
-    send_options = Google::Cloud::Spanner::SendOptions.new deliver_time: deliver_time
-
-    commit.send_message "TestQueue", 1, "payload", send_options: send_options
-    commit.send_message "TestQueue", 2, "payload", send_options: { deliver_time: deliver_time }
+  it "sets deliver_time" do
+    commit.send_message "TestQueue", 1, "payload", deliver_time: deliver_time
 
     expected = Google::Cloud::Spanner::Convert.time_to_timestamp deliver_time
-    assert_equal [expected, expected], commit.mutations.map { |mutation| mutation["send"].deliver_time }
+    assert_equal expected, commit.mutations.first["send"].deliver_time
   end
 
-  it "raises ArgumentError for invalid send_options" do
-    assert_raises(ArgumentError) { commit.send_message "TestQueue", 1, "payload", send_options: { deliver_at: deliver_time } }
-    assert_raises(ArgumentError) { commit.send_message "TestQueue", 1, "payload", send_options: deliver_time }
-    assert_raises ArgumentError do
-      commit.send_message "TestQueue", 1, "payload", send_options: Google::Cloud::Spanner::AckOptions.new
-    end
+  it "raises ArgumentError for an unknown send_message keyword" do
+    assert_raises(ArgumentError) { commit.send_message "TestQueue", 1, "payload", deliver_at: deliver_time }
     assert_empty commit.mutations
   end
 
@@ -112,21 +105,14 @@ describe Google::Cloud::Spanner::Commit, :queues, :mock_spanner do
     assert_equal false, m2.ack.ignore_not_found
   end
 
-  it "sets ignore_not_found from AckOptions or a Hash" do
-    ack_options = Google::Cloud::Spanner::AckOptions.new ignore_not_found: true
+  it "sets ignore_not_found" do
+    commit.ack_message "TestQueue", 1, ignore_not_found: true
 
-    commit.ack_message "TestQueue", 1, ack_options: ack_options
-    commit.ack_message "TestQueue", 2, ack_options: { ignore_not_found: true }
-
-    assert_equal [true, true], commit.mutations.map { |mutation| mutation.ack.ignore_not_found }
+    assert_equal true, commit.mutations.first.ack.ignore_not_found
   end
 
-  it "raises ArgumentError for invalid ack_options" do
-    assert_raises(ArgumentError) { commit.ack_message "TestQueue", 1, ack_options: { ignore_missing: true } }
-    assert_raises(ArgumentError) { commit.ack_message "TestQueue", 1, ack_options: true }
-    assert_raises ArgumentError do
-      commit.ack_message "TestQueue", 1, ack_options: Google::Cloud::Spanner::SendOptions.new
-    end
+  it "raises ArgumentError for an unknown ack_message keyword" do
+    assert_raises(ArgumentError) { commit.ack_message "TestQueue", 1, ignore_missing: true }
     assert_empty commit.mutations
   end
 
