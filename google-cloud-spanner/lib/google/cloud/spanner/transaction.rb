@@ -1085,7 +1085,8 @@ module Google
         # @param [Object, Array<Object>] key A single key or array of composite key parts for the message.
         # @param [String, IO, StringIO, Hash, Google::Protobuf::MessageExts] payload
         #   The message payload. It is converted the same way as column values
-        #   (see {#upsert}):
+        #   (see {#upsert}), so its type must match the queue's payload column,
+        #   such as a `String` for `STRING` or a `StringIO` for `BYTES`:
         #   * `String` - Sent as text.
         #   * `IO`, `StringIO`, `File` - Sent as bytes (Base64-encoded). Ruby has
         #     no bytes type, so wrap binary data in a `StringIO`.
@@ -1106,9 +1107,10 @@ module Google
         #   spanner = Google::Cloud::Spanner.new
         #   db = spanner.client "my-instance", "my-database"
         #
+        #   # OrderQueue has a STRING(MAX) payload column.
         #   db.transaction do |tx|
         #     tx.insert "orders", [{ id: 101, status: "NEW" }]
-        #     tx.send_message "OrderQueue", 101, StringIO.new("Order payload")
+        #     tx.send_message "OrderQueue", 101, "Order payload"
         #   end
         #
         def send_message queue, key, payload, deliver_time: nil
