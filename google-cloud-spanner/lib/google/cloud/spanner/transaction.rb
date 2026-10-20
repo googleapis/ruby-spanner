@@ -1091,20 +1091,14 @@ module Google
         #     no bytes type, so wrap binary data in a `StringIO`.
         #   * `Hash` - Serialized to a JSON string.
         #   * `Google::Protobuf::MessageExts` - Serialized and Base64-encoded.
-        # @param [SendOptions, Hash] send_options A {SendOptions} or a hash of
-        #   send options. Send options are optional. The following options can
-        #   be provided:
-        #
-        #   * `:deliver_time` (Time) The time at which Spanner begins trying to
-        #     deliver the message. If not set, the message is delivered
-        #     immediately. A time in the past is replaced with a time closer to
-        #     the current time.
+        # @param [Time, nil] deliver_time The time at which Spanner begins
+        #   trying to deliver the message. Optional. If not set, the message is
+        #   delivered immediately. A time in the past is replaced with a time
+        #   closer to the current time.
         #
         # @return [Object, Array<Object>] The key of the message.
         #
-        # @raise [ArgumentError] If the payload type is unsupported, or if
-        #   `send_options` is not a {SendOptions}, a hash of its options, or
-        #   `nil`.
+        # @raise [ArgumentError] If the payload type is unsupported.
         #
         # @example Send a message in the same transaction as the row it describes
         #   require "google/cloud/spanner"
@@ -1117,9 +1111,9 @@ module Google
         #     tx.send_message "OrderQueue", 101, StringIO.new("Order payload")
         #   end
         #
-        def send_message queue, key, payload, send_options: nil
+        def send_message queue, key, payload, deliver_time: nil
           ensure_session!
-          @commit.send_message queue, key, payload, send_options: send_options
+          @commit.send_message queue, key, payload, deliver_time: deliver_time
         end
 
         ##
@@ -1130,18 +1124,11 @@ module Google
         #
         # @param [String] queue The name of the queue.
         # @param [Object, Array<Object>] key A single key or array of composite key parts to match.
-        # @param [AckOptions, Hash] ack_options An {AckOptions} or a hash of ack
-        #   options. Ack options are optional. The following options can be
-        #   provided:
-        #
-        #   * `:ignore_not_found` (Boolean) If `true`, the ack succeeds even if
-        #     the message doesn't exist. Default value is `false`, which fails
-        #     the commit with `NOT_FOUND` when the message doesn't exist.
+        # @param [Boolean] ignore_not_found If `true`, the ack succeeds even if
+        #   the message doesn't exist. Optional. The default is `false`, which
+        #   fails the commit with `NOT_FOUND` when the message doesn't exist.
         #
         # @return [Object, Array<Object>] The key of the message.
-        #
-        # @raise [ArgumentError] If `ack_options` is not an {AckOptions}, a
-        #   hash of its options, or `nil`.
         #
         # @example Ack a message in the same transaction as the write it caused
         #   require "google/cloud/spanner"
@@ -1154,9 +1141,9 @@ module Google
         #     tx.ack_message "OrderQueue", 101
         #   end
         #
-        def ack_message queue, key, ack_options: nil
+        def ack_message queue, key, ignore_not_found: false
           ensure_session!
-          @commit.ack_message queue, key, ack_options: ack_options
+          @commit.ack_message queue, key, ignore_not_found: ignore_not_found
         end
 
         ##

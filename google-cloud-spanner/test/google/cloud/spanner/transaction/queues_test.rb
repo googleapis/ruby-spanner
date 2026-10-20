@@ -41,14 +41,11 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
     assert_nil mutation["send"].deliver_time
   end
 
-  it "passes send_options to the send mutation" do
-    send_options = Google::Cloud::Spanner::SendOptions.new deliver_time: deliver_time
-
-    transaction.send_message "TestQueue", 1, "payload", send_options: send_options
-    transaction.send_message "TestQueue", 2, "payload", send_options: { deliver_time: deliver_time }
+  it "passes deliver_time to the send mutation" do
+    transaction.send_message "TestQueue", 1, "payload", deliver_time: deliver_time
 
     expected = Google::Cloud::Spanner::Convert.time_to_timestamp deliver_time
-    assert_equal [expected, expected], transaction.mutations.map { |mutation| mutation["send"].deliver_time }
+    assert_equal expected, transaction.mutations.first["send"].deliver_time
   end
 
   it "adds an ack mutation to the transaction" do
@@ -63,13 +60,10 @@ describe Google::Cloud::Spanner::Transaction, :queues, :mock_spanner do
     assert_equal false, mutation.ack.ignore_not_found
   end
 
-  it "passes ack_options to the ack mutation" do
-    ack_options = Google::Cloud::Spanner::AckOptions.new ignore_not_found: true
+  it "passes ignore_not_found to the ack mutation" do
+    transaction.ack_message "TestQueue", 1, ignore_not_found: true
 
-    transaction.ack_message "TestQueue", 1, ack_options: ack_options
-    transaction.ack_message "TestQueue", 2, ack_options: { ignore_not_found: true }
-
-    assert_equal [true, true], transaction.mutations.map { |mutation| mutation.ack.ignore_not_found }
+    assert_equal true, transaction.mutations.first.ack.ignore_not_found
   end
 
   it "raises when session is missing" do
