@@ -24,5 +24,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency "google-cloud-core", "~> 1.7"
   gem.add_dependency "google-cloud-spanner-admin-database-v1", "~> 1.4"
   gem.add_dependency "google-cloud-spanner-admin-instance-v1", "~> 1.6"
-  gem.add_dependency "google-cloud-spanner-v1", "~> 1.6"
+  gem.add_dependency "google-cloud-spanner-v1", "~> 1.12"
 end
