@@ -280,6 +280,124 @@ module Google
           keys
         end
 
+        ##
+        # Sends a message to a queue.
+        #
+        # All changes are accumulated in memory until the block passed to
+        # {Client#commit} completes.
+        #
+        # @param [String] queue The name of the queue.
+        # @param [Object, Array<Object>] key A single key or array of composite key parts for the message.
+        # @param [String, IO, StringIO, Hash, Google::Protobuf::MessageExts] payload
+        #   The message payload. It is converted the same way as column values
+        #   (see {#upsert}), so its type must match the queue's payload column,
+        #   such as a `String` for `STRING` or a `StringIO` for `BYTES`:
+        #   * `String` - Sent as text.
+        #   * `IO`, `StringIO`, `File` - Sent as bytes (Base64-encoded). Ruby has
+        #     no bytes type, so wrap binary data in a `StringIO`.
+        #   * `Hash` - Serialized to a JSON string.
+        #   * `Google::Protobuf::MessageExts` - Serialized and Base64-encoded.
+        # @param [Time, nil] deliver_time The time at which Spanner begins
+        #   trying to deliver the message. Optional. If not set, the message is
+        #   delivered immediately. A time in the past is replaced with a time
+        #   closer to the current time.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @raise [ArgumentError] If the payload type is unsupported.
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   # OrderQueue has a STRING(MAX) payload column.
+        #   db.commit do |c|
+        #     c.send_message "OrderQueue", 101, "Order payload"
+        #   end
+        #
+        # @example Send binary data to a queue with a BYTES payload column
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.send_message "LabelQueue", 101, StringIO.new(File.binread("label.png"))
+        #   end
+        #
+        # @example Deliver the message in five minutes
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.send_message "OrderQueue", 101, "Order payload",
+        #                    deliver_time: Time.now + 300
+        #   end
+        #
+        def send_message queue, key, payload, deliver_time: nil
+          send_mutation = V1::Mutation::Send.new(
+            queue: queue,
+            key: key_list_value(key),
+            payload: Convert.object_to_grpc_value(payload),
+            deliver_time: Convert.time_to_timestamp(deliver_time)
+          )
+          @mutations += [V1::Mutation.new(send: send_mutation)]
+          key
+        end
+
+        ##
+        # Acknowledges a message in a queue, which removes it from the queue.
+        #
+        # All changes are accumulated in memory until the block passed to
+        # {Client#commit} completes.
+        #
+        # @param [String] queue The name of the queue.
+        # @param [Object, Array<Object>] key A single key or array of composite key parts to match.
+        # @param [Boolean] ignore_not_found If `true`, the ack succeeds even if
+        #   the message doesn't exist. Optional. The default is `false`, which
+        #   fails the commit with `NOT_FOUND` when the message doesn't exist.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @example
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.ack_message "OrderQueue", 101
+        #   end
+        #
+        # @example Ack a message whether or not it exists
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.commit do |c|
+        #     c.ack_message "OrderQueue", 101, ignore_not_found: true
+        #   end
+        #
+        def ack_message queue, key, ignore_not_found: false
+          ack_mutation = V1::Mutation::Ack.new(
+            queue: queue,
+            key: key_list_value(key),
+            ignore_not_found: ignore_not_found
+          )
+          @mutations += [V1::Mutation.new(ack: ack_mutation)]
+          key
+        end
+
         # Return the current mutations added to this `Spanner::Commit` object.
         # @private
         # @return [Array<Google::Cloud::Spanner::V1::Mutation>]
@@ -323,6 +441,21 @@ module Google
             )
           end
           rows
+        end
+
+        ##
+        # @private
+        # Generates a `ListValue` protobuf containing gRPC values for the given primary key.
+        #
+        # @param [Object, Array<Object>] key A scalar key, or an array of a composite key's parts.
+        # @return [Google::Protobuf::ListValue]
+        #
+        def key_list_value key
+          key = [key] unless key.is_a? Array
+          key_list = key.map do |k|
+            Convert.object_to_grpc_value k
+          end
+          Google::Protobuf::ListValue.new values: key_list
         end
 
         def key_set keys
