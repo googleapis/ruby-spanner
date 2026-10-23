@@ -1,5 +1,14 @@
 # Release History
 
+### 2.37.0 (2026-10-23)
+
+#### Features
+
+* add send_message and ack_message to Commit ([#262](https://github.com/googleapis/ruby-spanner/issues/262)) 
+#### Documentation
+
+* link to the published Ruby version support policy ([#272](https://github.com/googleapis/ruby-spanner/issues/272)) 
+
 ### 2.36.1 (2026-10-13)
 
 #### Documentation
