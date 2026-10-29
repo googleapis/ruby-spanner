@@ -1076,6 +1076,79 @@ module Google
         end
 
         ##
+        # Sends a message to a queue.
+        #
+        # All changes are accumulated in memory until the block passed to
+        # {Client#transaction} completes.
+        #
+        # @param [String] queue The name of the queue.
+        # @param [Object, Array<Object>] key A single key or array of composite key parts for the message.
+        # @param [String, IO, StringIO, Hash, Google::Protobuf::MessageExts] payload
+        #   The message payload. It is converted the same way as column values
+        #   (see {#upsert}), so its type must match the queue's payload column,
+        #   such as a `String` for `STRING` or a `StringIO` for `BYTES`:
+        #   * `String` - Sent as text.
+        #   * `IO`, `StringIO`, `File` - Sent as bytes (Base64-encoded). Ruby has
+        #     no bytes type, so wrap binary data in a `StringIO`.
+        #   * `Hash` - Serialized to a JSON string.
+        #   * `Google::Protobuf::MessageExts` - Serialized and Base64-encoded.
+        # @param [Time, nil] deliver_time The time at which Spanner begins
+        #   trying to deliver the message. Optional. If not set, the message is
+        #   delivered immediately. A time in the past is replaced with a time
+        #   closer to the current time.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @raise [ArgumentError] If the payload type is unsupported.
+        #
+        # @example Send a message in the same transaction as the row it describes
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   # OrderQueue has a STRING(MAX) payload column.
+        #   db.transaction do |tx|
+        #     tx.insert "orders", [{ id: 101, status: "NEW" }]
+        #     tx.send_message "OrderQueue", 101, "Order payload"
+        #   end
+        #
+        def send_message queue, key, payload, deliver_time: nil
+          ensure_session!
+          @commit.send_message queue, key, payload, deliver_time: deliver_time
+        end
+
+        ##
+        # Acknowledges a message in a queue, which removes it from the queue.
+        #
+        # All changes are accumulated in memory until the block passed to
+        # {Client#transaction} completes.
+        #
+        # @param [String] queue The name of the queue.
+        # @param [Object, Array<Object>] key A single key or array of composite key parts to match.
+        # @param [Boolean] ignore_not_found If `true`, the ack succeeds even if
+        #   the message doesn't exist. Optional. The default is `false`, which
+        #   fails the commit with `NOT_FOUND` when the message doesn't exist.
+        #
+        # @return [Object, Array<Object>] The key of the message.
+        #
+        # @example Ack a message in the same transaction as the write it caused
+        #   require "google/cloud/spanner"
+        #
+        #   spanner = Google::Cloud::Spanner.new
+        #   db = spanner.client "my-instance", "my-database"
+        #
+        #   db.transaction do |tx|
+        #     tx.update "orders", [{ id: 101, status: "PROCESSED" }]
+        #     tx.ack_message "OrderQueue", 101
+        #   end
+        #
+        def ack_message queue, key, ignore_not_found: false
+          ensure_session!
+          @commit.ack_message queue, key, ignore_not_found: ignore_not_found
+        end
+
+        ##
         # @private
         # Returns the field names and types for a table.
         #
