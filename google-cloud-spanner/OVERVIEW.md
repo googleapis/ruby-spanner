@@ -298,6 +298,77 @@ db.snapshot do |snp|
 end
 ```
 
+## Using queues
+
+A queue holds messages for consumers to receive. You create queues with the
+`CREATE QUEUE` statement (see the [DDL
+reference](https://cloud.google.com/spanner/docs/reference/standard-sql/data-definition-language)).
+The examples in this section use this queue:
+
+```sql
+CREATE QUEUE OrderQueue (
+  Id INT64 NOT NULL,
+  Payload STRING(MAX) NOT NULL
+) PRIMARY KEY (Id)
+```
+
+Use {Google::Cloud::Spanner::Commit#send_message Commit#send_message} to send a
+message. The payload is converted the same way as column values, so pass a
+`String` for a `STRING` payload column:
+
+```ruby
+require "google/cloud/spanner"
+
+spanner = Google::Cloud::Spanner.new
+
+db = spanner.client "my-instance", "my-database"
+
+db.commit do |c|
+  c.send_message "OrderQueue", 101, "Order payload"
+end
+```
+
+If a queue's payload column is `BYTES`, wrap the binary data in a `StringIO`,
+as you would for a `BYTES` column in a table:
+
+```ruby
+db.commit do |c|
+  c.send_message "LabelQueue", 101, StringIO.new(File.binread("label.png"))
+end
+```
+
+Receive messages with the `RECEIVE_<queue>` table-valued function, and use
+{Google::Cloud::Spanner::Transaction#ack_message Transaction#ack_message} to
+acknowledge each one in the same transaction as the write it caused:
+
+```ruby
+require "google/cloud/spanner"
+
+spanner = Google::Cloud::Spanner.new
+
+db = spanner.client "my-instance", "my-database"
+
+results = db.execute_query "SELECT Id, Payload FROM RECEIVE_OrderQueue()"
+
+results.rows.each do |row|
+  db.transaction do |tx|
+    tx.update "orders", [{ id: row[:Id], status: "PROCESSED" }]
+    tx.ack_message "OrderQueue", row[:Id]
+  end
+end
+```
+
+To delay delivery, pass `deliver_time:`. To ack a message that might not
+exist, pass `ignore_not_found: true`:
+
+```ruby
+db.commit do |c|
+  c.send_message "OrderQueue", 102, "Order payload",
+                 deliver_time: Time.now + 300
+  c.ack_message "OrderQueue", 101, ignore_not_found: true
+end
+```
+
 ## Deleting databases
 
 Use {Google::Cloud::Spanner::Admin::Database#database_admin
