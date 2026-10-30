@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    google-cloud-spanner (2.36.0)
+    google-cloud-spanner (2.36.1)
       bigdecimal (~> 3.0)
       concurrent-ruby (~> 1.0)
       google-cloud-core (~> 1.7)
@@ -128,7 +128,7 @@ GEM
       google-protobuf (>= 3.18, < 5.a)
       googleapis-common-protos (~> 1.9.0)
       grpc (~> 1.41)
-    grpc-tools (1.82.0)
+    grpc-tools (1.85.0)
     io-console (0.8.2)
     irb (1.18.0)
       pp (>= 0.6.0)
@@ -350,7 +350,7 @@ CHECKSUMS
   google-cloud-core (1.8.0) sha256=e572edcbf189cfcab16590628a516cec3f4f63454b730e59f0b36575120281cf
   google-cloud-env (2.3.1) sha256=0faac01eb27be78c2591d64433663b1a114f8f7af55a4f819755426cac9178e7
   google-cloud-errors (1.6.0) sha256=1da8476dd706ad04b9d32e3c4b90d07d3463b37d6407cb56d41342ea7647d0a1
-  google-cloud-spanner (2.36.0)
+  google-cloud-spanner (2.36.1)
   google-cloud-spanner-admin-database-v1 (1.13.1) sha256=cc39f69c67b813e07764a50374e7c8e5d714d15ae3cd4ca0344fd8072ffba938
   google-cloud-spanner-admin-instance-v1 (1.6.0) sha256=1775b56518665854b27af393378761e6ff9b12156d746168df7bb14ce0138d54
   google-cloud-spanner-v1 (1.18.0) sha256=8c2c0944fa803bac0109056d586b6b7411a1458563776417df836897613a9e54
@@ -374,7 +374,7 @@ CHECKSUMS
   grpc (1.82.0-x86_64-linux-gnu) sha256=f12d54f47e96c34778dbca89b9955a8b2d662c1631ac1b4e47dd5f2dd8fadea2
   grpc (1.82.0-x86_64-linux-musl) sha256=d90e43052603d4afcdaca7225bde1b7cd8100a0866e93493da1dc730821474a5
   grpc-google-iam-v1 (1.12.0) sha256=a70ecad8987e340d5e22e7bf01be31256c84b29a3f78bebd385a4a110e1f2aef
-  grpc-tools (1.82.0) sha256=23acf881e3e88160b90c415d9e7e9bbbf0ef20a1c7f1c42ee860a114405f413f
+  grpc-tools (1.85.0) sha256=5db02e77dee25c5e207fb85f8aaa41350eb4689e267c4970872c4efee6c59a9a
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
   jaro_winkler (1.7.0) sha256=8daa05a5cd05bf7d27c1c65caa8ab0d47c05419d80210feaa17126db24044ada
