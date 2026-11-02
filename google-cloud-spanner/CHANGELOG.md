@@ -1,5 +1,11 @@
 # Release History
 
+### 2.37.1 (2026-11-02)
+
+#### Documentation
+
+* document queues in OVERVIEW.md and Client ([#265](https://github.com/googleapis/ruby-spanner/issues/265)) 
+
 ### 2.37.0 (2026-10-28)
 
 #### Features
