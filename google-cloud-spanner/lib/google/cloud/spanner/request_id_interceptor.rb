@@ -15,7 +15,6 @@
 
 require "grpc"
 require "securerandom"
-require "mutex_m"
 require "google/cloud/spanner/errors"
 
 module Google
