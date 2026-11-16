@@ -1,18 +1,18 @@
 PATH
   remote: .
   specs:
-    google-cloud-spanner (2.36.0)
+    google-cloud-spanner (2.37.1)
       bigdecimal (~> 3.0)
       concurrent-ruby (~> 1.0)
       google-cloud-core (~> 1.7)
       google-cloud-spanner-admin-database-v1 (~> 1.4)
       google-cloud-spanner-admin-instance-v1 (~> 1.6)
-      google-cloud-spanner-v1 (~> 1.6)
+      google-cloud-spanner-v1 (~> 1.12)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.9.0)
+    addressable (2.9.1)
       public_suffix (>= 2.0.2, < 8.0)
     ansi (1.6.0)
     ast (2.4.3)
@@ -326,7 +326,7 @@ DEPENDENCIES
   yard-doctest (~> 0.1.17)
 
 CHECKSUMS
-  addressable (2.9.0) sha256=7fdf6ac3660f7f4e867a0838be3f6cf722ace541dd97767fa42bc6cfa980c7af
+  addressable (2.9.1) sha256=f1212365945455c84e8d031eea40fc6bedf0c663a78d95b3ab93591040bc5c35
   ansi (1.6.0) sha256=ac9ea0c0ea8d32fb4e271348e609963ac78882f34b73836c2a02b3622e666658
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   autotest-suffix (1.1.0) sha256=9bb29331b7b66a9659b01ef10839bd61fc1a6e95477c8ea710bd01e10c380977
@@ -350,7 +350,7 @@ CHECKSUMS
   google-cloud-core (1.8.0) sha256=e572edcbf189cfcab16590628a516cec3f4f63454b730e59f0b36575120281cf
   google-cloud-env (2.3.1) sha256=0faac01eb27be78c2591d64433663b1a114f8f7af55a4f819755426cac9178e7
   google-cloud-errors (1.6.0) sha256=1da8476dd706ad04b9d32e3c4b90d07d3463b37d6407cb56d41342ea7647d0a1
-  google-cloud-spanner (2.36.0)
+  google-cloud-spanner (2.37.1)
   google-cloud-spanner-admin-database-v1 (1.13.1) sha256=cc39f69c67b813e07764a50374e7c8e5d714d15ae3cd4ca0344fd8072ffba938
   google-cloud-spanner-admin-instance-v1 (1.6.0) sha256=1775b56518665854b27af393378761e6ff9b12156d746168df7bb14ce0138d54
   google-cloud-spanner-v1 (1.18.0) sha256=8c2c0944fa803bac0109056d586b6b7411a1458563776417df836897613a9e54
