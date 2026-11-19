@@ -164,7 +164,6 @@ GEM
       drb (~> 2.0)
       minitest (~> 5.16)
     multi_json (1.21.1)
-    mutex_m (0.3.0)
     net-http (0.9.1)
       uri (>= 0.11.1)
     nokogiri (1.19.4-aarch64-linux-gnu)
@@ -316,7 +315,6 @@ DEPENDENCIES
   minitest-focus (~> 1.4)
   minitest-reporters (~> 1.8.0)
   minitest-rg (~> 5.3)
-  mutex_m (~> 0.3.0)
   pry
   rake
   redcarpet (~> 3.0)
@@ -393,7 +391,6 @@ CHECKSUMS
   minitest-rg (5.4.0) sha256=54d42bb8ce876381245be5866f3c1dd704ef79c06ba5c9ff280c0aa28c56effb
   minitest-server (1.0.10) sha256=275439bf3ffc433fcbe161733248f1d9749ebf122892cf010bf864aaa95cef75
   multi_json (1.21.1) sha256=e6126a31808e3b4d19f483c775ceac34df190dffa62adfb63a165ee14ba68080
-  mutex_m (0.3.0) sha256=cfcb04ac16b69c4813777022fdceda24e9f798e48092a2b817eb4c0a782b0751
   net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
   nokogiri (1.19.4-aarch64-linux-gnu) sha256=1269fb644a6de405057a53dd5c762b1209b43ca7424f839454d3dbc677c31a8f
   nokogiri (1.19.4-aarch64-linux-musl) sha256=35c65b9ce72b3bb03207bdbe7067915019dc18c1b9b59139684bd6690fdd01af
